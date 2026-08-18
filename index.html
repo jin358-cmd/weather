@@ -173,9 +173,13 @@
       <section class="card section-block weather-block" aria-label="鄉鎮天氣與 8 小時降雨預測">
         <div class="grid weather-air-grid">
         <article class="card weather-card weather-air-card msn-weather-card" aria-label="即時天氣">
+          <div class="weather-icon-picker" role="group" aria-label="天氣圖示風格">
+            <span class="weather-icon-picker-label">圖示風格</span>
+            <div id="weatherIconThemeOptions" class="weather-icon-theme-options"></div>
+          </div>
           <div class="weather-now">
             <div class="weather-now-main">
-              <div id="weatherIcon" class="weather-icon weather-icon-pastel" aria-hidden="true"></div>
+              <div id="weatherIcon" class="weather-icon weather-icon-pastel weather-icon-theme-kawaii" aria-hidden="true"></div>
               <div class="weather-now-side">
                 <p id="tempValue" class="weather-temp-main">--</p>
                 <p class="weather-feel-line">體感 <span id="feelValue">--</span></p>
@@ -383,7 +387,7 @@
         <h2 class="visual-break-caption">災害警示圖</h2>
       </div>
 
-      <section class="card map-card" aria-label="災害警示圖">
+      <section class="card map-card map-card-responsive" aria-label="災害警示圖">
         <div class="map-layout">
           <div class="map-pane-wrap">
             <div id="warningMap" class="warning-map map-pane" aria-label="災害警示圖"></div>
@@ -399,7 +403,7 @@
           <aside class="layer-panel">
             <ul id="mapLayerList" class="layer-list" hidden></ul>
             <p id="powerOutageMeta" class="timestamp">停電區域資料讀取中...</p>
-            <p id="floodLayerMeta" class="timestamp">
+            <p id="floodLayerMeta" class="timestamp flood-layer-meta-mobile-hide">
               積淹水圖層改接水利署 IoW 即時感測，顏色越深代表水深越高。
             </p>
             <div class="map-legend" aria-label="地圖圖例對照">

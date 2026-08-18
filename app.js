@@ -460,6 +460,7 @@ const weatherPlace = document.querySelector("#weatherPlace");
 const tempValue = document.querySelector("#tempValue");
 const feelValue = document.querySelector("#feelValue");
 const weatherIcon = document.querySelector("#weatherIcon");
+const weatherIconThemeOptions = document.querySelector("#weatherIconThemeOptions");
 const humidityValue = document.querySelector("#humidityValue");
 const windValue = document.querySelector("#windValue");
 const rainValue = document.querySelector("#rainValue");
@@ -567,6 +568,7 @@ const AUTO_REFRESH_OPTIONS = {
   60: { ms: 60 * 60 * 1000, label: "1 小時" }
 };
 const AUTO_REFRESH_STORAGE_KEY = "autoRefreshIntervalMinutesV1";
+const WEATHER_ICON_THEME_KEY = "weatherIconThemeV1";
 const DEFAULT_AUTO_REFRESH_MINUTES = 15;
 const SUBSCRIPTION_STORAGE_KEY = "weatherMemberSubscriptionV1";
 const NOTIFICATION_DIGEST_STORAGE_KEY = "subscriptionNotificationDigestV1";
@@ -662,7 +664,9 @@ const appState = {
   nextAutoRefreshAt: Date.now() + AUTO_REFRESH_OPTIONS[DEFAULT_AUTO_REFRESH_MINUTES].ms,
   autoRefreshRunning: false,
   subscription: null,
-  lastNotifiedAt: 0
+  lastNotifiedAt: 0,
+  lastWeatherCode: null,
+  weeklyForecast: []
 };
 let autoRefreshTickTimer = null;
 let notificationRegistration = null;
@@ -3194,7 +3198,7 @@ function formatEarthquakeMagnitudeLabel(magnitude) {
   return `${value.toFixed(1)}(級)`;
 }
 
-function getWeatherIconSvg(code) {
+function getKawaiiWeatherIconSvg(code) {
   const weatherCode = Number(code);
   // Kawaii eyes: oversized sparkly eyes, blush, soft smile.
   if ([95, 96, 99].includes(weatherCode)) {
@@ -3333,10 +3337,175 @@ function getWeatherIconSvg(code) {
     </svg>`;
 }
 
+const WEATHER_ICON_THEMES = {
+  kawaii: { label: "可愛動態", className: "weather-icon-theme-kawaii" },
+  flat: { label: "扁平簡約", className: "weather-icon-theme-flat" },
+  line: { label: "線條風格", className: "weather-icon-theme-line" },
+  glass: { label: "玻璃質感", className: "weather-icon-theme-glass" },
+  vivid: { label: "鮮明動態", className: "weather-icon-theme-vivid" }
+};
+
+function getWeatherCategory(code) {
+  const weatherCode = Number(code);
+  if ([95, 96, 99].includes(weatherCode)) {
+    return "thunder";
+  }
+  if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) {
+    return "snow";
+  }
+  if ([61, 63, 65, 80, 81, 82, 51, 53, 55, 56, 57, 66, 67].includes(weatherCode)) {
+    return "rain";
+  }
+  if ([45, 48, 3].includes(weatherCode)) {
+    return "overcast";
+  }
+  if ([1, 2].includes(weatherCode)) {
+    return "partly";
+  }
+  return "clear";
+}
+
+const FLAT_WEATHER_ICONS = {
+  clear:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="18" fill="#fbbf24"/><g stroke="#f59e0b" stroke-width="3" stroke-linecap="round"><path d="M48 12v8"/><path d="M48 76v8"/><path d="M12 48h8"/><path d="M76 48h8"/></g></svg>',
+  partly:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="12" fill="#fbbf24"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="#e2e8f0"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#cbd5e1"/><ellipse cx="56" cy="62" rx="12" ry="9" fill="#f1f5f9"/></svg>',
+  overcast:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#94a3b8"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#64748b"/><ellipse cx="68" cy="54" rx="14" ry="10" fill="#cbd5e1"/></svg>',
+  rain:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#cbd5e1"/><path class="rain-drop" d="M30 58 v14" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v14" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v14" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/></svg>',
+  snow:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#e2e8f0"/><circle cx="34" cy="62" r="4" fill="#bae6fd"/><circle cx="48" cy="68" r="4" fill="#bae6fd"/><circle cx="62" cy="62" r="4" fill="#bae6fd"/></svg>',
+  thunder:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#94a3b8"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#fbbf24"/><path class="rain-drop" d="M28 62 v12" stroke="#60a5fa" stroke-width="3" stroke-linecap="round"/></svg>'
+};
+
+const LINE_WEATHER_ICONS = {
+  clear:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="16" fill="none" stroke="#f59e0b" stroke-width="3"/><g stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"><path d="M48 14v8"/><path d="M48 74v8"/><path d="M14 48h8"/><path d="M74 48h8"/></g></svg>',
+  partly:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle cx="72" cy="28" r="10" fill="none" stroke="#f59e0b" stroke-width="2.5"/><path class="cloud-body" d="M22 58 q8 -12 22 -10 q6 -10 18 -8 q12 0 18 10 q10 2 10 14 q0 10 -12 10 H30 q-12 0 -12 -10 q0 -8 4 -16" fill="none" stroke="#64748b" stroke-width="2.5"/></svg>',
+  overcast:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><path class="cloud-body" d="M18 54 q8 -14 24 -12 q6 -12 22 -10 q14 0 20 12 q12 2 12 16 q0 12 -14 12 H28 q-14 0 -14 -12 q0 -10 4 -18" fill="none" stroke="#475569" stroke-width="2.8"/></svg>',
+  rain:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><path class="cloud-body" d="M20 46 q8 -12 22 -10 q6 -10 18 -8 q12 0 18 10 q10 2 10 14 q0 10 -12 10 H30 q-12 0 -12 -10 q0 -8 4 -16" fill="none" stroke="#64748b" stroke-width="2.5"/><path class="rain-drop" d="M32 62 v14" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/><path class="rain-drop" d="M48 64 v14" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/><path class="rain-drop" d="M64 62 v14" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/></svg>',
+  snow:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><path class="cloud-body" d="M20 42 q8 -12 22 -10 q6 -10 18 -8 q12 0 18 10 q10 2 10 14 q0 10 -12 10 H30 q-12 0 -12 -10 q0 -8 4 -16" fill="none" stroke="#64748b" stroke-width="2.5"/><path d="M34 62 l0 10 M29 67 l10 0 M31 64 l6 6 M31 70 l6 -6" stroke="#0284c7" stroke-width="2"/><path d="M62 62 l0 10 M57 67 l10 0 M59 64 l6 6 M59 70 l6 -6" stroke="#0284c7" stroke-width="2"/></svg>',
+  thunder:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><path class="cloud-body" d="M18 44 q8 -12 22 -10 q6 -10 18 -8 q12 0 18 10 q10 2 10 14 q0 10 -12 10 H30 q-12 0 -12 -10 q0 -8 4 -16" fill="none" stroke="#475569" stroke-width="2.5"/><path class="bolt" d="M52 50 L44 64 H50 L46 78 L64 58 H56 L60 50 Z" fill="none" stroke="#ca8a04" stroke-width="2.2"/></svg>'
+};
+
+const GLASS_WEATHER_ICONS = {
+  clear:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><defs><radialGradient id="gSun"><stop offset="0%" stop-color="#fff7c2"/><stop offset="100%" stop-color="#fbbf24"/></radialGradient></defs><circle class="sun-core" cx="48" cy="48" r="18" fill="url(#gSun)" opacity="0.95"/></svg>',
+  partly:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="11" fill="#fde68a" opacity="0.85"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="rgba(255,255,255,0.75)" stroke="rgba(148,163,184,0.6)" stroke-width="1.5"/></svg>',
+  overcast:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="rgba(148,163,184,0.55)" stroke="rgba(100,116,139,0.65)" stroke-width="1.5"/></svg>',
+  rain:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="rgba(226,232,240,0.8)"/><path class="rain-drop" d="M30 58 v14" stroke="rgba(56,189,248,0.9)" stroke-width="4" stroke-linecap="round"/></svg>',
+  snow:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="rgba(241,245,249,0.85)"/><circle cx="48" cy="66" r="5" fill="rgba(186,230,253,0.95)"/></svg>',
+  thunder:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="rgba(148,163,184,0.7)"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="rgba(251,191,36,0.95)"/></svg>'
+};
+
+const VIVID_WEATHER_ICONS = {
+  clear:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="20" fill="#ff9500"/><g stroke="#ffcc00" stroke-width="3.2" stroke-linecap="round"><path d="M48 8 v10"/><path d="M48 78 v10"/><path d="M8 48 h10"/><path d="M78 48 h10"/></g></svg>',
+  partly:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="26" r="13" fill="#ffb703"/><ellipse class="cloud-body" cx="38" cy="58" rx="24" ry="13" fill="#ffffff"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#dbeafe"/></svg>',
+  overcast:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#64748b"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#475569"/></svg>',
+  rain:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#94a3b8"/><path class="rain-drop" d="M30 58 v16" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v16" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v16" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/></svg>',
+  snow:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#cbd5e1"/><circle cx="34" cy="64" r="5" fill="#48cae4"/><circle cx="48" cy="70" r="5" fill="#48cae4"/><circle cx="62" cy="64" r="5" fill="#48cae4"/></svg>',
+  thunder:
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#475569"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#ffd60a"/><path class="rain-drop" d="M28 62 v12" stroke="#0096c7" stroke-width="3.5" stroke-linecap="round"/></svg>'
+};
+
+function getFlatWeatherIconSvg(code) {
+  return FLAT_WEATHER_ICONS[getWeatherCategory(code)] || FLAT_WEATHER_ICONS.clear;
+}
+
+function getLineWeatherIconSvg(code) {
+  return LINE_WEATHER_ICONS[getWeatherCategory(code)] || LINE_WEATHER_ICONS.clear;
+}
+
+function getGlassWeatherIconSvg(code) {
+  return GLASS_WEATHER_ICONS[getWeatherCategory(code)] || GLASS_WEATHER_ICONS.clear;
+}
+
+function getVividWeatherIconSvg(code) {
+  return VIVID_WEATHER_ICONS[getWeatherCategory(code)] || VIVID_WEATHER_ICONS.clear;
+}
+
+function getWeatherIconTheme() {
+  const saved = localStorage.getItem(WEATHER_ICON_THEME_KEY);
+  return saved && WEATHER_ICON_THEMES[saved] ? saved : "kawaii";
+}
+
+function setWeatherIconTheme(themeKey) {
+  const nextTheme = WEATHER_ICON_THEMES[themeKey] ? themeKey : "kawaii";
+  localStorage.setItem(WEATHER_ICON_THEME_KEY, nextTheme);
+  if (weatherIcon) {
+    Object.values(WEATHER_ICON_THEMES).forEach((theme) => {
+      weatherIcon.classList.remove(theme.className);
+    });
+    weatherIcon.classList.add(WEATHER_ICON_THEMES[nextTheme].className);
+  }
+  weatherIconThemeOptions?.querySelectorAll(".weather-icon-theme-btn").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.theme === nextTheme);
+  });
+  const currentCode = appState.lastWeatherCode;
+  if (Number.isFinite(currentCode)) {
+    renderWeatherIcon(currentCode);
+  }
+}
+
+function getWeatherIconSvg(code, theme = getWeatherIconTheme()) {
+  switch (theme) {
+    case "flat":
+      return getFlatWeatherIconSvg(code);
+    case "line":
+      return getLineWeatherIconSvg(code);
+    case "glass":
+      return getGlassWeatherIconSvg(code);
+    case "vivid":
+      return getVividWeatherIconSvg(code);
+    default:
+      return getKawaiiWeatherIconSvg(code);
+  }
+}
+
+function initWeatherIconThemePicker() {
+  if (!weatherIconThemeOptions) {
+    return;
+  }
+  weatherIconThemeOptions.innerHTML = "";
+  Object.entries(WEATHER_ICON_THEMES).forEach(([key, theme]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "weather-icon-theme-btn";
+    button.dataset.theme = key;
+    button.textContent = theme.label;
+    button.addEventListener("click", () => {
+      setWeatherIconTheme(key);
+      if (appState.weeklyForecast?.length) {
+        renderWeeklyForecast(appState.weeklyForecast, appState.weather?.label || "");
+      }
+    });
+    weatherIconThemeOptions.append(button);
+  });
+  setWeatherIconTheme(getWeatherIconTheme());
+}
+
 function renderWeatherIcon(weatherCode) {
   if (!weatherIcon) {
     return;
   }
+  appState.lastWeatherCode = Number(weatherCode);
   weatherIcon.innerHTML = getWeatherIconSvg(weatherCode);
 }
 
@@ -3470,6 +3639,7 @@ function buildWeeklyForecastDays(daily = {}) {
 }
 
 function renderWeeklyForecast(days = [], locationLabel = "") {
+  appState.weeklyForecast = days;
   if (weeklyForecastSummary) {
     weeklyForecastSummary.textContent = locationLabel
       ? `${locationLabel}｜一週天氣預報`
@@ -4985,9 +5155,73 @@ async function enrichCwaEarthquakeDetails(quakes) {
   return quakes;
 }
 
-function getEarthquakeLocatedLabel(place) {
+const COMPASS_DIRECTIONS = ["北方", "東北方", "東方", "東南方", "南方", "西南方", "西方", "西北方"];
+
+function getBearingDegrees(fromLat, fromLon, toLat, toLon) {
+  const φ1 = (fromLat * Math.PI) / 180;
+  const φ2 = (toLat * Math.PI) / 180;
+  const Δλ = ((toLon - fromLon) * Math.PI) / 180;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  const bearing = (Math.atan2(y, x) * 180) / Math.PI;
+  return (bearing + 360) % 360;
+}
+
+function getCompassDirectionLabel(bearingDeg) {
+  const index = Math.round(bearingDeg / 45) % 8;
+  return COMPASS_DIRECTIONS[index];
+}
+
+function findNearestCountyGovernment(lat, lon) {
+  let nearest = null;
+  let minDist = Infinity;
+  CITY_LOCATIONS.forEach((city) => {
+    const dist = getDistanceKm(lat, lon, city.lat, city.lon);
+    if (dist < minDist) {
+      minDist = dist;
+      nearest = city;
+    }
+  });
+  return nearest;
+}
+
+function extractEarthquakeRegionName(place) {
   const text = String(place || "").trim();
-  const match = text.match(/位於\s*([^)）]+)/);
+  const withoutLocated = text.replace(/^位於\s*/, "");
+  const regionName = withoutLocated.replace(/[（(][^)）]+[)）]/g, "").trim();
+  return regionName || text;
+}
+
+function parseEarthquakeDirectionFromPlace(place) {
+  const match = String(place || "").match(/[（(]([^)）]+(?:政府)[^)）]*)[)）]/);
+  return match?.[1]?.trim() || "";
+}
+
+function getEarthquakeCountyDirectionLabel(quake) {
+  const parsed = parseEarthquakeDirectionFromPlace(quake?.place);
+  if (parsed) {
+    return parsed;
+  }
+  if (!Number.isFinite(quake?.lat) || !Number.isFinite(quake?.lon)) {
+    return "";
+  }
+  const county = findNearestCountyGovernment(quake.lat, quake.lon);
+  if (!county) {
+    return "";
+  }
+  const bearing = getBearingDegrees(county.lat, county.lon, quake.lat, quake.lon);
+  return `${county.name}政府${getCompassDirectionLabel(bearing)}`;
+}
+
+function getEarthquakeLocatedLabel(place, quake = null) {
+  const source = quake?.place || place;
+  const regionName = extractEarthquakeRegionName(source);
+  const directionLabel = quake ? getEarthquakeCountyDirectionLabel(quake) : parseEarthquakeDirectionFromPlace(source);
+  if (directionLabel && regionName) {
+    return `位於(${directionLabel})${regionName}`;
+  }
+  const text = String(source || "").trim();
+  const match = text.match(/位於\s*(.+)/);
   if (match?.[1]) {
     return `位於${match[1].trim()}`;
   }
@@ -5018,7 +5252,8 @@ function createEarthquakeListItem(quake) {
     <span class="earthquake-mag">${formatEarthquakeMagnitudeLabel(quake.magnitude)}</span>
     <span class="earthquake-body">
       <strong>${serialText}｜震度 ${formatIntensityLabel(quake.intensityValue)}<span class="earthquake-place-label">${getEarthquakeLocatedLabel(
-        quake.place
+        quake.place,
+        quake
       )}</span></strong>
       <small>${formatDateTime(quake.timeMs)}${distanceText}｜深度 ${
         Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"
@@ -5052,7 +5287,7 @@ function renderEarthquakePanel() {
 
   const latest = quakes[0];
   if (earthquakeSummary) {
-    const placeLabel = getEarthquakeLocatedLabel(latest.place);
+    const placeLabel = getEarthquakeLocatedLabel(latest.place, latest);
     earthquakeSummary.innerHTML = `最新：規模 ${latest.magnitude.toFixed(1)}｜最大震度 ${formatIntensityLabel(
       latest.intensityValue
     )}<span class="earthquake-place-label">${placeLabel}</span>`;
@@ -5109,20 +5344,30 @@ function renderEarthquakePanel() {
 
 function buildEarthquakePopupHtml(quake) {
   const style = getEarthquakeMarkerStyle(quake);
+  const compact = isCompactEarthquakeMapView();
   const distanceText = Number.isFinite(quake.distanceKm)
     ? `<div>距所選位置約 ${quake.distanceKm.toFixed(0)} km</div>`
     : "";
-  const areas = (quake.intensityAreas || [])
-    .slice(0, 8)
-    .map((area) => `<li>${area.area}：${area.intensity}</li>`)
-    .join("");
+  const areas = compact
+    ? ""
+    : (quake.intensityAreas || [])
+        .slice(0, 8)
+        .map((area) => `<li>${area.area}：${area.intensity}</li>`)
+        .join("");
   const report = quake.reportContent || buildCwaEarthquakeReportContent(quake);
+  const locatedLabel = getEarthquakeLocatedLabel(quake.place, quake);
+  const linksHtml = compact
+    ? ""
+    : `<div class="eq-popup-links">
+        <a href="${quake.pwsUrl || quake.url}" target="_blank" rel="noopener noreferrer">開啟國家緊急訊息（公眾警示）</a>
+        <a href="${quake.url}" target="_blank" rel="noopener noreferrer">測報中心詳情</a>
+        <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>
+      </div>`;
   return `
     <div class="eq-popup">
       <strong>${style.label}｜規模 ${quake.magnitude.toFixed(1)}</strong>
       <div>最大震度：${formatIntensityLabel(quake.intensityValue)}</div>
-      <div>${getEarthquakeLocatedLabel(quake.place)}</div>
-      <div>${quake.place}</div>
+      <div>${locatedLabel}</div>
       <div>${formatDateTime(quake.timeMs)}</div>
       <div>深度 ${Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"}${
         quake.approxCoords ? "（暫估位置）" : ""
@@ -5130,11 +5375,7 @@ function buildEarthquakePopupHtml(quake) {
       ${distanceText}
       <div class="eq-popup-report">${report}</div>
       ${areas ? `<ul class="eq-popup-areas">${areas}</ul>` : ""}
-      <div class="eq-popup-links">
-        <a href="${quake.pwsUrl || quake.url}" target="_blank" rel="noopener noreferrer">開啟國家緊急訊息（公眾警示）</a>
-        <a href="${quake.url}" target="_blank" rel="noopener noreferrer">測報中心詳情</a>
-        <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>
-      </div>
+      ${linksHtml}
     </div>
   `;
 }
@@ -7575,6 +7816,7 @@ function scheduleHeroTextFit() {
 }
 
 initRegionSelectors();
+initWeatherIconThemePicker();
 initCameraRegionSelect();
 initCameraCitySelect();
 initFreewayRegionSelect();
