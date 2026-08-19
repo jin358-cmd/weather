@@ -568,7 +568,7 @@ const AUTO_REFRESH_OPTIONS = {
   60: { ms: 60 * 60 * 1000, label: "1 小時" }
 };
 const AUTO_REFRESH_STORAGE_KEY = "autoRefreshIntervalMinutesV1";
-const WEATHER_ICON_THEME_KEY = "weatherIconThemeV1";
+const WEATHER_ICON_THEME_KEY = "weatherIconThemeV2";
 const DEFAULT_AUTO_REFRESH_MINUTES = 15;
 const SUBSCRIPTION_STORAGE_KEY = "weatherMemberSubscriptionV1";
 const NOTIFICATION_DIGEST_STORAGE_KEY = "subscriptionNotificationDigestV1";
@@ -1363,7 +1363,7 @@ async function locateByDevice() {
     windyLocateFocus = {
       lat: latitude,
       lon: longitude,
-      zoom: resolveWindyLocateZoom(accuracy),
+      zoom: 5,
       precision: 6
     };
     updateWindyTrackEmbed({ force: true });
@@ -3412,17 +3412,17 @@ const GLASS_WEATHER_ICONS = {
 
 const VIVID_WEATHER_ICONS = {
   clear:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="20" fill="#ff9500"/><g stroke="#ffcc00" stroke-width="3.2" stroke-linecap="round"><path d="M48 8 v10"/><path d="M48 78 v10"/><path d="M8 48 h10"/><path d="M78 48 h10"/></g></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><g class="sun-rays" fill="none" stroke="#ffcc00" stroke-width="3.4" stroke-linecap="round"><path d="M48 8 v11"/><path d="M48 77 v11"/><path d="M8 48 h11"/><path d="M77 48 h11"/><path d="M20 20 l8 8"/><path d="M68 68 l8 8"/><path d="M20 76 l8 -8"/><path d="M68 28 l8 -8"/></g><circle class="sun-core" cx="48" cy="48" r="18" fill="#ff9500"/></svg>',
   partly:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="26" r="13" fill="#ffb703"/><ellipse class="cloud-body" cx="38" cy="58" rx="24" ry="13" fill="#ffffff"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#dbeafe"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><g class="sun-rays" fill="none" stroke="#ffcc00" stroke-width="2.8" stroke-linecap="round"><path d="M72 8 v7"/><path d="M72 38 v7"/><path d="M54 23 h7"/><path d="M83 23 h7"/></g><circle class="sun-core" cx="72" cy="23" r="11" fill="#ffb703"/><ellipse class="cloud-body" cx="38" cy="58" rx="24" ry="13" fill="#ffffff"/><ellipse class="cloud-body" cx="24" cy="62" rx="13" ry="9" fill="#dbeafe"/><ellipse class="cloud-body" cx="54" cy="62" rx="12" ry="9" fill="#f8fbff"/></svg>',
   overcast:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#64748b"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#475569"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="46" rx="30" ry="16" fill="#64748b"/><ellipse class="cloud-body" cx="28" cy="52" rx="15" ry="10" fill="#475569"/><ellipse class="cloud-body" cx="68" cy="52" rx="14" ry="10" fill="#94a3b8"/></svg>',
   rain:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#94a3b8"/><path class="rain-drop" d="M30 58 v16" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v16" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v16" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="36" rx="26" ry="14" fill="#64748b"/><ellipse class="cloud-body" cx="28" cy="40" rx="12" ry="8" fill="#475569"/><path class="rain-drop" d="M28 54 v18" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/><path class="rain-drop" d="M44 56 v18" stroke="#00b4d8" stroke-width="4.5" stroke-linecap="round"/><path class="rain-drop" d="M60 54 v18" stroke="#0077b6" stroke-width="4.5" stroke-linecap="round"/></svg>',
   snow:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#cbd5e1"/><circle cx="34" cy="64" r="5" fill="#48cae4"/><circle cx="48" cy="70" r="5" fill="#48cae4"/><circle cx="62" cy="64" r="5" fill="#48cae4"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="34" rx="26" ry="14" fill="#cbd5e1"/><circle class="snow-flake" cx="32" cy="62" r="4.5" fill="#48cae4"/><circle class="snow-flake" cx="48" cy="72" r="4.5" fill="#90e0ef"/><circle class="snow-flake" cx="64" cy="62" r="4.5" fill="#48cae4"/></svg>',
   thunder:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#475569"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#ffd60a"/><path class="rain-drop" d="M28 62 v12" stroke="#0096c7" stroke-width="3.5" stroke-linecap="round"/></svg>'
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="36" rx="28" ry="15" fill="#334155"/><path class="bolt" d="M52 46 L42 62 H51 L44 80 L68 56 H56 L62 46 Z" fill="#ffd60a"/><path class="rain-drop" d="M26 58 v14" stroke="#0096c7" stroke-width="3.6" stroke-linecap="round"/><path class="rain-drop" d="M36 60 v14" stroke="#00b4d8" stroke-width="3.6" stroke-linecap="round"/></svg>'
 };
 
 function getFlatWeatherIconSvg(code) {
@@ -3443,11 +3443,11 @@ function getVividWeatherIconSvg(code) {
 
 function getWeatherIconTheme() {
   const saved = localStorage.getItem(WEATHER_ICON_THEME_KEY);
-  return saved && WEATHER_ICON_THEMES[saved] ? saved : "kawaii";
+  return "flat";
 }
 
 function setWeatherIconTheme(themeKey) {
-  const nextTheme = WEATHER_ICON_THEMES[themeKey] ? themeKey : "kawaii";
+  const nextTheme = "flat";
   localStorage.setItem(WEATHER_ICON_THEME_KEY, nextTheme);
   if (weatherIcon) {
     Object.values(WEATHER_ICON_THEMES).forEach((theme) => {
@@ -3480,25 +3480,10 @@ function getWeatherIconSvg(code, theme = getWeatherIconTheme()) {
 }
 
 function initWeatherIconThemePicker() {
-  if (!weatherIconThemeOptions) {
-    return;
+  if (weatherIconThemeOptions) {
+    weatherIconThemeOptions.style.display = "none";
   }
-  weatherIconThemeOptions.innerHTML = "";
-  Object.entries(WEATHER_ICON_THEMES).forEach(([key, theme]) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "weather-icon-theme-btn";
-    button.dataset.theme = key;
-    button.textContent = theme.label;
-    button.addEventListener("click", () => {
-      setWeatherIconTheme(key);
-      if (appState.weeklyForecast?.length) {
-        renderWeeklyForecast(appState.weeklyForecast, appState.weather?.label || "");
-      }
-    });
-    weatherIconThemeOptions.append(button);
-  });
-  setWeatherIconTheme(getWeatherIconTheme());
+  setWeatherIconTheme("flat");
 }
 
 function renderWeatherIcon(weatherCode) {
@@ -3669,7 +3654,7 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
         <strong>${index === 0 ? "今天" : day.weekday}</strong>
         <span>${day.monthDay}</span>
       </div>
-      <div class="weekly-forecast-icon" aria-hidden="true">${getWeatherIconSvg(day.weatherCode)}</div>
+      <div class="weekly-forecast-icon ${WEATHER_ICON_THEMES[getWeatherIconTheme()].className}" aria-hidden="true">${getWeatherIconSvg(day.weatherCode)}</div>
       <div class="weekly-forecast-side">
         <span class="weekly-forecast-label">${day.label}</span>
         <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
@@ -4087,16 +4072,61 @@ function parseTyphoonOfficialText(newsMarkdown, warnMarkdown) {
   };
 }
 
+function getWindyWrap() {
+  return windyEmbed?.closest(".windy-wrap-large") || windyEmbed?.parentElement || null;
+}
+
+function getWindyEmbedPixelSize() {
+  const wrap = getWindyWrap();
+  const measured = Math.round(wrap?.getBoundingClientRect().width || wrap?.clientWidth || 0);
+  const size = measured >= 80 ? measured : WINDY_EMBED_WIDTH;
+  const clamped = Math.max(240, Math.min(size, 560));
+  return { width: clamped, height: clamped };
+}
+
+function lockWindyWrapSize() {
+  const wrap = getWindyWrap();
+  if (!wrap) {
+    return;
+  }
+  const width = Math.round(wrap.getBoundingClientRect().width);
+  if (width < 80) {
+    return;
+  }
+  wrap.style.width = `${width}px`;
+  wrap.style.height = `${width}px`;
+  wrap.style.maxWidth = `${width}px`;
+  wrap.style.maxHeight = `${width}px`;
+  wrap.style.minWidth = `${width}px`;
+  wrap.style.minHeight = `${width}px`;
+  wrap.style.aspectRatio = "1 / 1";
+}
+
+function unlockWindyWrapSize() {
+  const wrap = getWindyWrap();
+  if (!wrap) {
+    return;
+  }
+  wrap.style.width = "";
+  wrap.style.height = "";
+  wrap.style.maxWidth = "";
+  wrap.style.maxHeight = "";
+  wrap.style.minWidth = "";
+  wrap.style.minHeight = "";
+  wrap.style.aspectRatio = "";
+}
+
 function buildWindyEmbedUrl(lat, lon, zoom = 5, { precision = 3 } = {}) {
   const digits = Math.min(6, Math.max(3, Number(precision) || 3));
   const fmt = (value) => Number(value).toFixed(digits);
+  const box = getWindyEmbedPixelSize();
   const params = new URLSearchParams({
     lat: fmt(lat),
     lon: fmt(lon),
     detailLat: fmt(lat),
     detailLon: fmt(lon),
-    width: String(WINDY_EMBED_WIDTH),
-    height: String(WINDY_EMBED_HEIGHT),
+    width: String(box.width),
+    height: String(box.height),
     zoom: String(zoom),
     level: "surface",
     overlay: "wind",
@@ -4166,8 +4196,11 @@ function updateWindyTrackEmbed({ force = false } = {}) {
     }
     windyEmbed.src = nextUrl.toString();
   }
+  windyEmbed.style.width = "100%";
   windyEmbed.style.height = "100%";
   windyEmbed.style.minHeight = "100%";
+  windyEmbed.style.maxWidth = "none";
+  windyEmbed.style.maxHeight = "none";
   if (windyExternalLink) {
     windyExternalLink.href = `https://www.windy.com/?${Number(focus.lat).toFixed(5)},${Number(focus.lon).toFixed(5)},${focus.zoom},i:pressure`;
   }
@@ -4222,11 +4255,10 @@ function locateWindyEmbed() {
     windyLocateFocus = {
       lat: latitude,
       lon: longitude,
-      zoom: resolveWindyLocateZoom(accuracy),
+      zoom: 5,
       precision: 6
     };
-    // Reload Windy embed with high-precision coordinates so its marker/detail
-    // point aligns to the browser GPS location (embed geolocation enabled).
+    lockWindyWrapSize();
     updateWindyTrackEmbed({ force: true });
 
     const nearest = findNearestTownship(latitude, longitude);
@@ -7189,8 +7221,38 @@ function syncMapLegendState() {
     item.classList.toggle("legend-item-empty", markers.length === 0);
     item.setAttribute("aria-disabled", markers.length === 0 ? "true" : "false");
   });
-  // Keep flood badge count identical to markers currently on the map.
   syncMapFloodCountBadge(getFloodMarkersOnMap().length);
+  syncMapAlertBadges();
+}
+
+const ALERT_BADGE_CONFIG = [
+  { key: "flood-4", label: "積水 等級4", bg: "#d00000" },
+  { key: "flood-3", label: "積水 等級3", bg: "#e85d04" },
+  { key: "flood-2", label: "積水 等級2", bg: "#ffba08", color: "#333" },
+  { key: "flood-1", label: "積水 等級1", bg: "#ffd166", color: "#333" },
+  { key: "power-disaster", label: "災害停電", bg: "#6d28d9" },
+  { key: "power-planned", label: "計畫停電", bg: "#7c3aed" },
+  { key: "earthquake", label: "地震震央", bg: "#dc2626" },
+  { key: "cctv", label: "CCTV", bg: "#2563eb" },
+  { key: "city-focus", label: "焦點範圍", bg: "#0891b2" }
+];
+
+function syncMapAlertBadges() {
+  const container = document.querySelector("#mapAlertBadges");
+  if (!container) return;
+  container.innerHTML = "";
+  ALERT_BADGE_CONFIG.forEach(({ key, label, bg, color }) => {
+    const count = (mapLegendMarkers[key] || []).length;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "map-alert-badge";
+    btn.style.background = bg;
+    if (color) btn.style.color = color;
+    btn.dataset.empty = count === 0 ? "true" : "false";
+    btn.textContent = `${label} ${count}`;
+    btn.addEventListener("click", () => focusMapLegendMarkers(key));
+    container.append(btn);
+  });
 }
 
 function focusMapLegendMarkers(legendKey) {
@@ -7286,19 +7348,7 @@ function addDisasterMapBaseTiles(map) {
       'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
   });
 
-  // Default dark basemap keeps flood / outage / CCTV markers highly readable.
   darkTiles.addTo(map);
-  L.control
-    .layers(
-      {
-        "災害警示底圖（深色）": darkTiles,
-        "台灣通用電子地圖": nlscTiles,
-        "地形圖 OpenTopo": topoTiles
-      },
-      null,
-      { position: "topright", collapsed: true }
-    )
-    .addTo(map);
 }
 
 function initWarningMap() {
@@ -7829,6 +7879,7 @@ syncNoticeDetailsOpen();
 fitHeroTexts();
 window.addEventListener("resize", () => {
   scheduleHeroTextFit();
+  unlockWindyWrapSize();
   if (warningMap) {
     warningMap.invalidateSize();
     fitMapToFocusArea();
@@ -7836,6 +7887,7 @@ window.addEventListener("resize", () => {
 });
 window.addEventListener("orientationchange", () => {
   scheduleHeroTextFit();
+  unlockWindyWrapSize();
   window.setTimeout(() => {
     if (warningMap) {
       warningMap.invalidateSize();
