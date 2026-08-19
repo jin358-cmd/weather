@@ -3976,7 +3976,7 @@ body.eq-sheet-open {
 
   .map-pane,
   .warning-map {
-    --fluid-map-height: min(42dvh, 360px);
+    --fluid-map-height: min(62dvh, 520px);
     min-height: var(--fluid-map-height);
     height: var(--fluid-map-height);
   }
@@ -4213,7 +4213,7 @@ body.eq-sheet-open {
   .map-pane,
   .warning-map,
   .typhoon-wind-map {
-    --fluid-map-height: min(36dvh, 300px);
+    --fluid-map-height: min(55dvh, 440px);
     min-height: var(--fluid-map-height);
     height: var(--fluid-map-height);
   }
@@ -4303,7 +4303,7 @@ body.eq-sheet-open {
   .map-pane,
   .warning-map,
   .typhoon-wind-map {
-    --fluid-map-height: min(32dvh, 260px);
+    --fluid-map-height: min(50dvh, 400px);
     min-height: var(--fluid-map-height);
     height: var(--fluid-map-height);
   }
