@@ -1,6 +1,23 @@
 # 停班停課+即時災害通報平台
 
-這是一個純前端網站，提供：
+## 全台天氣與停班停課 Dashboard（目前首頁）
+
+首頁已升級為公務風格 Dashboard，包含：
+
+- 全台總覽（摘要、警特報、縣市天氣卡、停班停課表）
+- 縣市詳情（即時天氣、6 小時／7 天預報、警特報、停班停課）
+- 訂閱設定（mock state，預留 API）
+- 通知歷史（類型篩選與日期排序）
+
+模組位置：
+
+- 資料：`data/weather.js`、`data/alerts.js`、`data/suspensions.js`、`data/notifications.js`
+- Provider：`lib/weather-provider.js`（TypeScript 契約：`lib/weather-provider.ts`）
+- 元件：`components/*`
+- 入口：`index.html` + `dashboard.js` + `dashboard.css`
+- 舊版即時災害通報：`legacy.html`
+
+這是一個純前端網站，另提供：
 
 - 台灣各縣市即時天氣資訊（溫度、濕度、風速、降雨量）
 - 鄉鎮級天氣資訊（體感溫度、降雨機率、雲量、氣壓）
@@ -26,7 +43,7 @@ python3 -m http.server 4173
 
 預期公開網址：
 
-**https://amjin358-svg.github.io/jin/**
+**https://jin358-cmd.github.io/weather/**
 
 ### 訂閱通知（每日天氣預報 Email）
 

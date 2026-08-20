@@ -1,12 +1,12 @@
 {
-  "name": "停班停課+即時災害通報平台",
-  "short_name": "台灣災防",
+  "name": "全台天氣與停班停課 Dashboard",
+  "short_name": "天氣Dashboard",
   "description": "整合天氣、停班停課、積淹水、停電與颱風即時資訊",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f3f7ff",
-  "theme_color": "#1f5ae1",
+  "background_color": "#f4f7fb",
+  "theme_color": "#1e3a8a",
   "lang": "zh-Hant",
   "icons": [
     {
