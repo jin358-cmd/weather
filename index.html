@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
-    <title>停班停課+即時災害通報平台</title>
+    <title>停班停課+即時災害通報平台｜YEAR 2700</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -12,12 +18,15 @@
     />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#1f5ae1" />
+    <meta name="theme-color" content="#05060a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="台灣災防" />
+    <meta name="apple-mobile-web-app-title" content="台灣災防 2700" />
   </head>
-  <body>
+  <body class="theme-cyberpunk-2700">
     <div class="ambient-bg" aria-hidden="true">
+      <span class="cyber-grid"></span>
+      <span class="cyber-scanlines"></span>
+      <span class="cyber-horizon"></span>
       <span class="ambient-orb ambient-orb-a"></span>
       <span class="ambient-orb ambient-orb-b"></span>
       <span class="ambient-orb ambient-orb-c"></span>
@@ -25,8 +34,9 @@
     <main class="app">
       <header class="hero">
         <div class="hero-content">
-          <p class="eyebrow hero-fit-text">Real-Time School & Work Suspension & Disaster Alert Platform</p>
+          <p class="eyebrow hero-fit-text">YEAR 2700 · NEON GRID DISASTER NET</p>
           <h1 class="hero-fit-text">停班停課+即時災害通報平台</h1>
+          <p class="hero-tagline">賽博災防網絡 · 即時懸浮警報</p>
         </div>
         <button id="refreshBtn" type="button" class="refresh-btn">立即更新資料</button>
       </header>
