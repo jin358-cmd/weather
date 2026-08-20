@@ -1708,7 +1708,7 @@ function resolveCameraLandDistrict(camera = {}) {
   return best?.town || "";
 }
 
-function getFilteredSortedCityCameras() {
+function getFilteredSortedCityCameras({ forMap = false } = {}) {
   if (!cityCameraDataset || !Array.isArray(cityCameraDataset.cameras)) {
     return [];
   }
@@ -1775,7 +1775,10 @@ function getFilteredSortedCityCameras() {
       .sort((a, b) => a.distanceKm - b.distanceKm)
   );
 
-  if (!useLocateRadius) {
+  if (!forMap && !useLocateRadius) {
+    return scored;
+  }
+  if (forMap) {
     return scored;
   }
   const nearby = scored.filter((camera) => camera.withinLocateRadius);
@@ -1790,51 +1793,49 @@ function getFilteredSortedCityCameras() {
 }
 
 function getCityCamerasForDisasterMap() {
-  // Mark every usable city CCTV inside the locate-center radius (ignore list keyword / live verify).
   if (!cityCameraDataset || !Array.isArray(cityCameraDataset.cameras)) {
     return [];
   }
-  const selectedCity = getSelectedCameraCityName() || citySelect?.value || "";
+
+  const liveIds = getLiveCityCameraIds();
   const focusPoint = getCityCameraFocusPoint();
-  const focus = getCctvLocationFocus();
   const focusLat = Number(focusPoint?.lat);
   const focusLon = Number(focusPoint?.lon);
   const radiusKm = CITY_CCTV_RADIUS_KM;
+  const focus = getCctvLocationFocus();
 
-  const scored = dedupeCamerasByIdentity(
-    cityCameraDataset.cameras
-      .filter((camera) => isCameraUrlUsable(camera.html))
-      .filter((camera) => !selectedCity || camera.city === selectedCity)
-      .map((camera) => {
-        const lat = Number(camera.gisy);
-        const lon = Number(camera.gisx);
-        const distanceKm =
-          Number.isFinite(focusLat) && Number.isFinite(focusLon) && Number.isFinite(lat) && Number.isFinite(lon)
-            ? getDistanceKm(focusLat, focusLon, lat, lon)
-            : Infinity;
-        const landTown = resolveCameraLandDistrict(camera);
-        return {
-          ...camera,
-          distanceKm,
-          landTown,
-          focusLabel: focus?.label || selectedCity || "",
-          areaLabel: landTown ? `${camera.city || ""}${landTown}` : camera.city || focus?.label || "",
-          withinLocateRadius: Number.isFinite(distanceKm) && distanceKm <= radiusKm
-        };
-      })
-      .filter((camera) => Number.isFinite(Number(camera.gisy)) && Number.isFinite(Number(camera.gisx)))
-      .sort((a, b) => a.distanceKm - b.distanceKm)
-  );
+  const enrichCamera = (camera) => {
+    const lat = Number(camera.gisy);
+    const lon = Number(camera.gisx);
+    const distanceKm =
+      Number.isFinite(focusLat) && Number.isFinite(focusLon) && Number.isFinite(lat) && Number.isFinite(lon)
+        ? getDistanceKm(focusLat, focusLon, lat, lon)
+        : Infinity;
+    const landTown = resolveCameraLandDistrict(camera);
+    return {
+      ...camera,
+      distanceKm,
+      landTown,
+      focusLabel: focus?.label || camera.city || "",
+      areaLabel: landTown ? `${camera.city || ""}${landTown}` : camera.city || focus?.label || "",
+      withinLocateRadius: Number.isFinite(distanceKm) && distanceKm <= radiusKm
+    };
+  };
 
-  const nearby = scored.filter((camera) => camera.withinLocateRadius);
-  if (nearby.length) {
-    return nearby;
+  if (liveIds.size > 0) {
+    return dedupeCamerasByIdentity(
+      cityCameraDataset.cameras
+        .filter((camera) => liveIds.has(String(camera.id)))
+        .filter((camera) => isCameraUrlUsable(camera.html))
+        .filter((camera) => Number.isFinite(Number(camera.gisy)) && Number.isFinite(Number(camera.gisx)))
+        .map(enrichCamera)
+        .sort((a, b) => a.distanceKm - b.distanceKm)
+    );
   }
-  // Soft fallback: nearest cameras in the same city when the ring is empty.
-  return scored.slice(0, Math.max(CITY_CCTV_PREVIEW_LIMIT * 2, 12)).map((camera) => ({
-    ...camera,
-    locateFallback: true
-  }));
+
+  return getFilteredSortedCityCameras({ forMap: false }).filter(
+    (camera) => Number.isFinite(Number(camera.gisy)) && Number.isFinite(Number(camera.gisx))
+  );
 }
 
 function dedupeCamerasByIdentity(cameras = []) {
@@ -7162,7 +7163,9 @@ function updateCameraMapLayer() {
     const areaText = camera.city || camera.areaLabel || "";
     const scopeNote = camera.locateFallback
       ? `範圍外最近鏡頭（定位中心 ${CITY_CCTV_RADIUS_KM} 公里內無點）`
-      : `定位中心點區域 ${CITY_CCTV_RADIUS_KM} 公里內`;
+      : camera.withinLocateRadius
+        ? `定位中心點區域 ${CITY_CCTV_RADIUS_KM} 公里內`
+        : "可選路口監控（點選檢視）";
     const useImage = isLikelyDirectImageStream(camera.html);
     const previewHtml = useImage
       ? `<img class="cctv-map-popup-media" src="${camera.html}" alt="${camera.id} 路口監控預覽" loading="lazy" referrerpolicy="no-referrer-when-downgrade" />`
