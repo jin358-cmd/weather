@@ -3,26 +3,182 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>全台天氣與停班停課 Dashboard</title>
+    <title>災害預報展示｜滾動示範首頁</title>
+    <meta name="description" content="以 GSAP ScrollTrigger 與 Lenis 打造的滾動式災害預報展示首頁示範" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./dashboard.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.css"
+    />
+    <link rel="stylesheet" href="./scroll-home.css" />
     <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#1e3a8a" />
-    <meta name="description" content="全台天氣、警特報與停班停課總覽 Dashboard" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="天氣Dashboard" />
+    <meta name="theme-color" content="#0b1f3a" />
   </head>
   <body>
-    <a class="sr-only" href="#dashboardView">跳到主要內容</a>
-    <div id="dashboardApp"></div>
-    <p class="mobile-legacy-link-wrap">
-      <a class="legacy-link" href="./legacy.html" aria-label="開啟即時災害通報舊版頁面">即時災害通報（舊版）</a>
-    </p>
-    <script type="module" src="./dashboard.js"></script>
+    <a class="skip-link" href="#main">跳到主要內容</a>
+
+    <header class="site-nav" role="banner">
+      <a class="site-nav__brand" href="./index.html" aria-label="災害預報展示首頁">災害預報展示</a>
+      <nav class="site-nav__links" aria-label="網站導覽">
+        <a href="#story">預報故事</a>
+        <a href="#alerts">警特報</a>
+        <a href="#timeline">時序</a>
+        <a class="site-nav__cta" href="./dashboard.html" aria-label="進入全台 Dashboard">進入 Dashboard</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- Hero: one composition -->
+      <section class="hero" aria-label="首頁主視覺">
+        <div class="hero__media" aria-hidden="true">
+          <div class="hero__gradient"></div>
+          <div class="hero__radar"></div>
+        </div>
+        <div class="hero__content">
+          <p class="hero__brand">台灣災害預報網絡</p>
+          <h1 class="hero__title">把警報，滾成一條清楚的路徑</h1>
+          <p class="hero__lead">用滾動式敘事呈現颱風、豪雨與停班停課預報，先看示範，再進入完整 Dashboard。</p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#story" aria-label="開始瀏覽預報故事">開始瀏覽</a>
+            <a class="btn btn--ghost" href="./dashboard.html" aria-label="開啟資料總覽 Dashboard">資料總覽</a>
+          </div>
+        </div>
+        <p class="hero__scroll-hint" aria-hidden="true">
+          <span>向下滾動</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </p>
+      </section>
+
+      <!-- Pinned story panel -->
+      <section id="story" class="story" aria-label="災害預報故事">
+        <div class="story__pin">
+          <div class="story__stage">
+            <div class="story__panel is-active" data-story-panel="0">
+              <p class="eyebrow">01 · 監測</p>
+              <h2>全台即時監測網</h2>
+              <p>整合氣象署警特報、縣市天氣與停班停課公告，形成單一預報視圖。</p>
+            </div>
+            <div class="story__panel" data-story-panel="1">
+              <p class="eyebrow">02 · 判讀</p>
+              <h2>風險層級一目了然</h2>
+              <p>以綠／黃／橘／紅語意色標示正常、注意、警戒與嚴重狀態，降低判讀成本。</p>
+            </div>
+            <div class="story__panel" data-story-panel="2">
+              <p class="eyebrow">03 · 行動</p>
+              <h2>從預報走到決策</h2>
+              <p>滾動故事之後，可進入 Dashboard 訂閱關注縣市，接收警特報與停班停課通知。</p>
+            </div>
+          </div>
+          <aside class="story__visual" aria-hidden="true">
+            <div class="story__orb story__orb--a"></div>
+            <div class="story__orb story__orb--b"></div>
+            <div class="story__meter">
+              <span data-meter-fill></span>
+            </div>
+            <p class="story__meter-label" data-meter-label>監測進度 0%</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Alert cards reveal -->
+      <section id="alerts" class="alerts" aria-label="災害類型展示">
+        <div class="section-head">
+          <p class="eyebrow">災害類型</p>
+          <h2>這次示範涵蓋的預報卡片</h2>
+        </div>
+        <div class="alerts__track">
+          <article class="alert-card alert-card--typhoon" data-alert-card>
+            <h3>颱風動態</h3>
+            <p>路徑、警戒範圍與沿海風險摘要。</p>
+            <span class="tag tag--severe">嚴重</span>
+          </article>
+          <article class="alert-card alert-card--rain" data-alert-card>
+            <h3>豪雨特報</h3>
+            <p>短延時強降雨與積水熱區提示。</p>
+            <span class="tag tag--warning">警戒</span>
+          </article>
+          <article class="alert-card alert-card--heat" data-alert-card>
+            <h3>高溫資訊</h3>
+            <p>日間高溫與熱傷害預防提醒。</p>
+            <span class="tag tag--watch">注意</span>
+          </article>
+          <article class="alert-card alert-card--suspend" data-alert-card>
+            <h3>停班停課</h3>
+            <p>縣市公告狀態與資料來源對照。</p>
+            <span class="tag tag--danger">停止</span>
+          </article>
+        </div>
+      </section>
+
+      <!-- Horizontal timeline scrub -->
+      <section id="timeline" class="timeline" aria-label="預報時序橫向展示">
+        <div class="timeline__intro">
+          <p class="eyebrow">預報時序</p>
+          <h2>未來 6 小時風險演進</h2>
+          <p>左右推移（桌面由滾動驅動）查看示範時段的降雨與風力變化。</p>
+        </div>
+        <div class="timeline__viewport">
+          <div class="timeline__row" data-timeline-row>
+            <article class="timeline__item">
+              <time>08:00</time>
+              <strong>多雲</strong>
+              <span>降雨 20% · 風 3 m/s</span>
+            </article>
+            <article class="timeline__item">
+              <time>09:00</time>
+              <strong>短暫雨</strong>
+              <span>降雨 45% · 風 4 m/s</span>
+            </article>
+            <article class="timeline__item is-warn">
+              <time>10:00</time>
+              <strong>局部大雨</strong>
+              <span>降雨 70% · 風 6 m/s</span>
+            </article>
+            <article class="timeline__item is-warn">
+              <time>11:00</time>
+              <strong>雷雨</strong>
+              <span>降雨 85% · 風 8 m/s</span>
+            </article>
+            <article class="timeline__item">
+              <time>12:00</time>
+              <strong>轉多雲</strong>
+              <span>降雨 40% · 風 5 m/s</span>
+            </article>
+            <article class="timeline__item">
+              <time>13:00</time>
+              <strong>改善中</strong>
+              <span>降雨 25% · 風 4 m/s</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing CTA -->
+      <section class="closing" aria-label="進入完整平台">
+        <div class="closing__inner" data-closing>
+          <p class="eyebrow">下一步</p>
+          <h2>示範到此，進入完整資料平台</h2>
+          <p>Dashboard 提供全台總覽、縣市詳情、訂閱設定與通知歷史。</p>
+          <div class="closing__actions">
+            <a class="btn btn--primary" href="./dashboard.html" aria-label="開啟全台天氣與停班停課 Dashboard">開啟 Dashboard</a>
+            <a class="btn btn--ghost" href="./legacy.html" aria-label="開啟即時災害通報舊版">即時災害舊版</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>首頁示範採用 Lenis 平滑滾動與 GSAP ScrollTrigger。正式資料流仍由 Dashboard／Provider 介面承接。</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="./scroll-home.js" defer></script>
   </body>
 </html>

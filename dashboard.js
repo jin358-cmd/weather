@@ -53,6 +53,7 @@ function renderShell() {
         </div>
         ${DashboardNavigation({ activeView: state.view, variant: "side" })}
         <p class="dash-sidebar__legacy">
+          <a class="legacy-link" href="./index.html" aria-label="返回滾動式首頁">← 滾動式首頁</a>
           <a class="legacy-link" href="./legacy.html" aria-label="開啟即時災害通報舊版頁面">即時災害通報（舊版）</a>
         </p>
       </aside>

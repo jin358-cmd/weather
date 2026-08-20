@@ -1,6 +1,18 @@
 # 停班停課+即時災害通報平台
 
-## 全台天氣與停班停課 Dashboard（目前首頁）
+## 滾動式災害預報首頁示範（目前首頁）
+
+首頁 `index.html` 使用 **Lenis** 平滑滾動 + **GSAP ScrollTrigger** 做滾動敘事示範：
+
+- Hero 主視覺與雷達 scrub
+- 釘住式預報故事（監測 → 判讀 → 行動）
+- 警特報卡片進場
+- 橫向 6 小時時序 scrub
+- CTA 進入 Dashboard
+
+完整資料平台：`dashboard.html`
+
+## 全台天氣與停班停課 Dashboard
 
 首頁已升級為公務風格 Dashboard，包含：
 

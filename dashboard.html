@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>全台天氣與停班停課 Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./dashboard.css" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#1e3a8a" />
+    <meta name="description" content="全台天氣、警特報與停班停課總覽 Dashboard" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="天氣Dashboard" />
+  </head>
+  <body>
+    <a class="sr-only" href="#dashboardView">跳到主要內容</a>
+    <div id="dashboardApp"></div>
+    <p class="mobile-legacy-link-wrap">
+      <a class="legacy-link" href="./index.html" aria-label="返回滾動式首頁">← 滾動式首頁</a>　<a class="legacy-link" href="./legacy.html" aria-label="開啟即時災害通報舊版頁面">即時災害通報（舊版）</a>
+    </p>
+    <script type="module" src="./dashboard.js"></script>
+  </body>
+</html>
