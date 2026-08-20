@@ -304,8 +304,42 @@ input:focus-visible {
 }
 
 .dash-nav--bottom .dash-nav__list {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px;
+}
+
+.dash-sidebar__legacy {
+  display: grid;
+  gap: 8px;
+}
+
+.dash-sidebar__legacy .legacy-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+}
+
+@media (max-width: 719px) {
+  .dash-header__title {
+    font-size: 1.2rem;
+  }
+
+  .city-detail__temp {
+    font-size: 2.25rem;
+  }
+
+  .subscription-cities {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-chips {
+    gap: 6px;
+  }
+
+  .filter-chip {
+    flex: 1 1 calc(50% - 6px);
+    justify-content: center;
+  }
 }
 
 .dash-nav--bottom .dash-nav__link {

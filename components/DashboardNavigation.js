@@ -2,13 +2,12 @@ import { iconSvg } from "./icons.js";
 import { escapeHtml } from "./StatusBadge.js";
 
 const NAV_ITEMS = [
-  { id: "overview", label: "全台總覽", icon: "overview" },
   { id: "city", label: "縣市詳情", icon: "city" },
   { id: "subscription", label: "訂閱設定", icon: "bell" },
   { id: "history", label: "通知歷史", icon: "history" }
 ];
 
-export function DashboardNavigation({ activeView = "overview", variant = "side" }) {
+export function DashboardNavigation({ activeView = "city", variant = "side" }) {
   return `
     <nav class="dash-nav dash-nav--${variant}" aria-label="主要導覽">
       <ul class="dash-nav__list">

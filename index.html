@@ -24,11 +24,21 @@
 
     <header class="site-nav" role="banner">
       <a class="site-nav__brand" href="./index.html" aria-label="災害預報展示首頁">災害預報展示</a>
-      <nav class="site-nav__links" aria-label="網站導覽">
+      <button
+        type="button"
+        class="site-nav__menu-btn"
+        id="navMenuBtn"
+        aria-label="開啟導覽選單"
+        aria-expanded="false"
+        aria-controls="siteNavLinks"
+      >
+        <span class="site-nav__menu-icon" aria-hidden="true"></span>
+      </button>
+      <nav class="site-nav__links" id="siteNavLinks" aria-label="網站導覽">
         <a href="#story">預報故事</a>
         <a href="#alerts">警特報</a>
         <a href="#timeline">時序</a>
-        <a class="site-nav__cta" href="./dashboard.html" aria-label="進入全台 Dashboard">進入 Dashboard</a>
+        <a class="site-nav__cta" href="./dashboard.html" aria-label="進入縣市詳情">縣市詳情</a>
       </nav>
     </header>
 
@@ -42,10 +52,10 @@
         <div class="hero__content">
           <p class="hero__brand">台灣災害預報網絡</p>
           <h1 class="hero__title">把警報，滾成一條清楚的路徑</h1>
-          <p class="hero__lead">用滾動式敘事呈現颱風、豪雨與停班停課預報，先看示範，再進入完整 Dashboard。</p>
+          <p class="hero__lead">用滾動式敘事呈現颱風、豪雨與停班停課預報，支援手機到桌面的響應式瀏覽。</p>
           <div class="hero__actions">
             <a class="btn btn--primary" href="#story" aria-label="開始瀏覽預報故事">開始瀏覽</a>
-            <a class="btn btn--ghost" href="./dashboard.html" aria-label="開啟資料總覽 Dashboard">資料總覽</a>
+            <a class="btn btn--ghost" href="./dashboard.html" aria-label="開啟縣市詳情">縣市詳情</a>
           </div>
         </div>
         <p class="hero__scroll-hint" aria-hidden="true">
@@ -71,7 +81,7 @@
             <div class="story__panel" data-story-panel="2">
               <p class="eyebrow">03 · 行動</p>
               <h2>從預報走到決策</h2>
-              <p>滾動故事之後，可進入 Dashboard 訂閱關注縣市，接收警特報與停班停課通知。</p>
+              <p>滾動故事之後，可進入縣市詳情與訂閱設定，接收警特報與停班停課通知。</p>
             </div>
           </div>
           <aside class="story__visual" aria-hidden="true">
@@ -162,10 +172,10 @@
       <section class="closing" aria-label="進入完整平台">
         <div class="closing__inner" data-closing>
           <p class="eyebrow">下一步</p>
-          <h2>示範到此，進入完整資料平台</h2>
-          <p>Dashboard 提供全台總覽、縣市詳情、訂閱設定與通知歷史。</p>
+          <h2>示範到此，進入縣市詳情</h2>
+          <p>可查看單一縣市天氣、警特報、停班停課，以及訂閱與通知歷史。</p>
           <div class="closing__actions">
-            <a class="btn btn--primary" href="./dashboard.html" aria-label="開啟全台天氣與停班停課 Dashboard">開啟 Dashboard</a>
+            <a class="btn btn--primary" href="./dashboard.html" aria-label="開啟縣市詳情">開啟縣市詳情</a>
             <a class="btn btn--ghost" href="./legacy.html" aria-label="開啟即時災害通報舊版">即時災害舊版</a>
           </div>
         </div>

@@ -159,7 +159,39 @@
     });
   }
 
+  function initMobileNav() {
+    const header = document.querySelector(".site-nav");
+    const button = document.querySelector("#navMenuBtn");
+    const links = document.querySelector("#siteNavLinks");
+    if (!header || !button || !links) {
+      return;
+    }
+
+    const closeMenu = () => {
+      header.classList.remove("is-open");
+      button.setAttribute("aria-expanded", "false");
+      button.setAttribute("aria-label", "開啟導覽選單");
+    };
+
+    button.addEventListener("click", () => {
+      const open = header.classList.toggle("is-open");
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+      button.setAttribute("aria-label", open ? "關閉導覽選單" : "開啟導覽選單");
+    });
+
+    links.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => closeMenu());
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.matchMedia("(min-width: 860px)").matches) {
+        closeMenu();
+      }
+    });
+  }
+
   function init() {
+    initMobileNav();
     initLenis();
 
     if (reduceMotion) {

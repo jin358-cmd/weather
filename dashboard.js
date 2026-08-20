@@ -1,17 +1,13 @@
 import { getWeatherProvider } from "./lib/weather-provider.js";
 import { DashboardHeader } from "./components/DashboardHeader.js";
 import { DashboardNavigation } from "./components/DashboardNavigation.js";
-import { WeatherSummary } from "./components/WeatherSummary.js";
-import { AlertCardList } from "./components/AlertCard.js";
-import { WeatherCard } from "./components/WeatherCard.js";
-import { SuspensionTable } from "./components/SuspensionTable.js";
 import { CityDetail } from "./components/CityDetail.js";
 import { SubscriptionPanel } from "./components/SubscriptionPanel.js";
 import { NotificationHistory } from "./components/NotificationHistory.js";
 import { EmptyState } from "./components/StatusBadge.js";
 
 const state = {
-  view: "overview",
+  view: "city",
   selectedCityId: "taipei",
   notifyFilter: "all",
   overview: null,
@@ -29,16 +25,6 @@ function byCityId(list, cityId) {
   return list?.find((item) => item.cityId === cityId) || null;
 }
 
-function highestAlertLevelForCity(alerts, cityId) {
-  const rank = { info: 1, watch: 2, warning: 3, severe: 4 };
-  let best = null;
-  alerts.forEach((alert) => {
-    if (!alert.cityIds.includes(cityId)) return;
-    if (!best || rank[alert.level] > rank[best]) best = alert.level;
-  });
-  return best;
-}
-
 function renderShell() {
   const app = document.querySelector("#dashboardApp");
   if (!app) return;
@@ -49,7 +35,7 @@ function renderShell() {
       <aside class="dash-sidebar" aria-label="側邊導覽">
         <div class="dash-sidebar__brand">
           <strong>災防天氣平台</strong>
-          <span>全台總覽 Dashboard</span>
+          <span>縣市詳情與訂閱</span>
         </div>
         ${DashboardNavigation({ activeView: state.view, variant: "side" })}
         <p class="dash-sidebar__legacy">
@@ -60,7 +46,7 @@ function renderShell() {
 
       <div class="dash-main">
         ${DashboardHeader({
-          title: "全台天氣與停班停課 Dashboard",
+          title: "天氣與停班停課資訊",
           lastUpdatedAt,
           refreshing: state.refreshing
         })}
@@ -96,17 +82,7 @@ function renderView() {
     return;
   }
 
-  if (state.view === "overview") {
-    viewRoot.innerHTML = renderOverview();
-  } else if (state.view === "city") {
-    const weather = byCityId(state.overview.cities, state.selectedCityId);
-    viewRoot.innerHTML = CityDetail({
-      weather,
-      alerts: state.overview.alerts,
-      suspensions: state.overview.suspensions,
-      selectedCityId: state.selectedCityId
-    });
-  } else if (state.view === "subscription") {
+  if (state.view === "subscription") {
     viewRoot.innerHTML = SubscriptionPanel({
       settings: state.subscription,
       message: state.subscriptionMessage
@@ -116,32 +92,17 @@ function renderView() {
       items: state.notifications,
       activeType: state.notifyFilter
     });
+  } else {
+    const weather = byCityId(state.overview.cities, state.selectedCityId);
+    viewRoot.innerHTML = CityDetail({
+      weather,
+      alerts: state.overview.alerts,
+      suspensions: state.overview.suspensions,
+      selectedCityId: state.selectedCityId
+    });
   }
 
   bindViewEvents();
-}
-
-function renderOverview() {
-  const { summary, alerts, cities, suspensions } = state.overview;
-  return `
-    ${WeatherSummary({ summary })}
-    ${AlertCardList({ alerts })}
-    <section class="city-weather-grid-wrap" aria-label="全台縣市天氣">
-      <h2 class="section-title">全台縣市天氣</h2>
-      <div class="city-weather-grid">
-        ${cities
-          .map((weather) =>
-            WeatherCard({
-              weather,
-              alertLevel: highestAlertLevelForCity(alerts, weather.cityId),
-              suspension: byCityId(suspensions, weather.cityId)
-            })
-          )
-          .join("")}
-      </div>
-    </section>
-    ${SuspensionTable({ rows: suspensions })}
-  `;
 }
 
 function bindShellEvents() {

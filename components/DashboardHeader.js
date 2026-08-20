@@ -16,7 +16,7 @@ export function DashboardHeader({ title, lastUpdatedAt, refreshing = false }) {
           type="button"
           id="refreshDashboardBtn"
           class="btn btn--primary btn--touch"
-          aria-label="更新全台天氣與停班停課資料"
+          aria-label="更新天氣與停班停課資料"
           ${refreshing ? "disabled" : ""}
         >
           ${iconSvg("refresh", { size: 18 })}
