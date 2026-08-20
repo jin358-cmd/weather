@@ -1,7 +1,7 @@
 {
-  "name": "停班停課+即時災害通報平台",
-  "short_name": "台灣災防",
-  "description": "整合天氣、停班停課、積淹水、停電與颱風即時資訊",
+  "name": "全台天氣與停班停課資訊平台",
+  "short_name": "全台天氣",
+  "description": "整合全台天氣、警特報與停班停課公告資訊",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
