@@ -27,7 +27,11 @@
 - Provider：`lib/weather-provider.js`（TypeScript 契約：`lib/weather-provider.ts`）
 - 元件：`components/*`
 - 入口：`index.html` + `dashboard.js` + `dashboard.css`
-- 舊版即時災害通報：`legacy.html`
+完整即時災害通報平台（原功能保留）：`legacy.html`
+
+- 停班停課、颱風動態、地震通報、鄉鎮天氣
+- 訂閱通知、路口／國道 CCTV、災害警示圖
+- 入口維持 GitHub Pages 靜態部署，腳本為 `app.js` + `styles.css`
 
 這是一個純前端網站，另提供：
 
