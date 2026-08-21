@@ -611,6 +611,10 @@ h2 {
   gap: 6px;
 }
 
+.controls.card {
+  overflow: visible;
+}
+
 label {
   font-size: 14px;
   color: var(--muted);
