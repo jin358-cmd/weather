@@ -547,6 +547,18 @@ const mapLegendMarkers = {
   cctv: [],
   "city-focus": []
 };
+const MAP_LEGEND_CALLOUT_CONFIG = {
+  "flood-4": { title: "積水 4", color: "#d00000", layer: "flood-warning" },
+  "flood-3": { title: "積水 3", color: "#e85d04", layer: "flood-warning" },
+  "flood-2": { title: "積水 2", color: "#ffba08", layer: "flood-warning" },
+  "flood-1": { title: "積水 1", color: "#ffd166", layer: "flood-warning" },
+  "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage" },
+  "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage" },
+  earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points" },
+  cctv: { title: "路口 CCTV", color: "#0096c7", layer: "cctv-points" },
+  "city-focus": { title: "焦點範圍", color: "#00d4ff", layer: "city-focus" }
+};
+let mapLegendLabelLayer = null;
 const mapLayerOrder = ["city-focus", "flood-warning", "power-outage", "earthquake-points", "cctv-points"];
 const mapLayerVisibility = {
   "power-outage": true,
@@ -985,6 +997,7 @@ function updatePowerOutageMapLayer() {
       })
       .join("<hr/>");
     marker.bindPopup(`${popupLines}<br/>來源：台灣電力公司開放資料`);
+    marker._legendPlace = String(sample.area || sample.label || sample.info || "").trim();
     mapPowerOutageLayer.addLayer(marker);
     if (type === "disaster") {
       mapLegendMarkers["power-disaster"].push(marker);
@@ -5480,6 +5493,7 @@ function updateEarthquakeMapLayer() {
         openEarthquakeDetailSheet(quake);
       }
     });
+    marker._legendPlace = String(quake.place || "").trim();
     mapEarthquakeLayer.addLayer(marker);
     mapLegendMarkers.earthquake.push(marker);
   });
@@ -6794,6 +6808,7 @@ function syncMapLayerVisibility(layerKey) {
   if (!shouldShow && hasLayer) {
     warningMap.removeLayer(layer);
   }
+  updateMapLegendLocationPins();
 }
 
 function renderLayerControl() {
@@ -6867,6 +6882,7 @@ function updateFloodMapLayer() {
       `
     );
     mapFloodLayer.addLayer(marker);
+    marker._legendPlace = `${point.county || ""}${point.town || ""}`.trim();
     const level = Number(point.level) || getFloodLevelByDepth(point.depthCm);
     const key = `flood-${Math.min(4, Math.max(1, level))}`;
     mapLegendMarkers[key]?.push(marker);
@@ -7108,6 +7124,7 @@ function updateCityFocusLayer() {
     interactive: true
   });
   center.bindPopup(`所選位置焦點範圍<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`);
+  center._legendPlace = String(location.label || "").trim();
   mapCityFocusLayer.addLayer(ring);
   mapCityFocusLayer.addLayer(center);
   mapLegendMarkers["city-focus"].push(center);
@@ -7195,12 +7212,192 @@ function updateCameraMapLayer() {
       `,
       { maxWidth: 300, className: "cctv-popup-wrap", autoPanPadding: [24, 24] }
     );
+    const township = findNearestTownship(lat, lon);
+    marker._legendPlace = township
+      ? `${township.city}${township.town}`
+      : String(areaText || "").trim();
     mapCameraLayer.addLayer(marker);
     mapLegendMarkers.cctv.push(marker);
   });
   mapLayerVisibility["cctv-points"] = true;
   syncMapLayerVisibility("cctv-points");
   syncMapLegendState();
+}
+
+function escapeMapLegendHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function getLeafletLatLng(layer) {
+  if (!layer) {
+    return null;
+  }
+  if (typeof layer.getLatLng === "function") {
+    const latlng = layer.getLatLng();
+    if (latlng && Number.isFinite(latlng.lat) && Number.isFinite(latlng.lng)) {
+      return latlng;
+    }
+  }
+  if (typeof layer.getBounds === "function") {
+    try {
+      const bounds = layer.getBounds();
+      if (bounds?.isValid?.()) {
+        return bounds.getCenter();
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return null;
+}
+
+function formatTownshipPlace(lat, lon) {
+  const township = findNearestTownship(lat, lon);
+  if (!township) {
+    return `${Number(lat).toFixed(3)}, ${Number(lon).toFixed(3)}`;
+  }
+  return `${township.city}${township.town}`;
+}
+
+function getLegendMarkersCentroid(markers) {
+  const points = (markers || []).map(getLeafletLatLng).filter(Boolean);
+  if (!points.length) {
+    return null;
+  }
+  const lat = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
+  const lng = points.reduce((sum, point) => sum + point.lng, 0) / points.length;
+  return L.latLng(lat, lng);
+}
+
+function getLegendAnchorLatLng(markers) {
+  const points = (markers || []).map(getLeafletLatLng).filter(Boolean);
+  if (!points.length) {
+    return null;
+  }
+  const focus = getActiveWeatherLocation();
+  if (focus && Number.isFinite(focus.lat) && Number.isFinite(focus.lon)) {
+    points.sort(
+      (a, b) =>
+        getDistanceKm(a.lat, a.lng, focus.lat, focus.lon) -
+        getDistanceKm(b.lat, b.lng, focus.lat, focus.lon)
+    );
+    return points[0];
+  }
+  return getLegendMarkersCentroid(markers);
+}
+
+function describeLegendMarkerPlaces(markers) {
+  const places = [];
+  const seen = new Set();
+  (markers || []).forEach((marker) => {
+    const metaPlace = String(marker?._legendPlace || "").trim();
+    const latlng = getLeafletLatLng(marker);
+    const place = metaPlace || (latlng ? formatTownshipPlace(latlng.lat, latlng.lng) : "");
+    if (!place || seen.has(place)) {
+      return;
+    }
+    seen.add(place);
+    places.push(place);
+  });
+  if (!places.length) {
+    const center = getLegendMarkersCentroid(markers);
+    return center ? formatTownshipPlace(center.lat, center.lng) : "位置未定";
+  }
+  if (places.length <= 2) {
+    return places.join("、");
+  }
+  return `${places.slice(0, 2).join("、")}等 ${places.length} 處`;
+}
+
+function ensureMapLegendLabelLayer() {
+  if (!warningMap || typeof L === "undefined") {
+    return null;
+  }
+  if (!warningMap.getPane("legendLabelPane")) {
+    warningMap.createPane("legendLabelPane");
+    const pane = warningMap.getPane("legendLabelPane");
+    if (pane) {
+      pane.style.zIndex = "690";
+    }
+  }
+  if (!mapLegendLabelLayer) {
+    mapLegendLabelLayer = L.layerGroup();
+  }
+  if (!warningMap.hasLayer(mapLegendLabelLayer)) {
+    mapLegendLabelLayer.addTo(warningMap);
+  }
+  return mapLegendLabelLayer;
+}
+
+function updateMapLegendLocationPins() {
+  const layer = ensureMapLegendLabelLayer();
+  if (!layer) {
+    return;
+  }
+  layer.clearLayers();
+  const pins = [];
+  Object.keys(MAP_LEGEND_CALLOUT_CONFIG).forEach((key) => {
+    const config = MAP_LEGEND_CALLOUT_CONFIG[key];
+    if (config.layer && mapLayerVisibility[config.layer] === false) {
+      return;
+    }
+    const markers = mapLegendMarkers[key] || [];
+    if (!markers.length) {
+      return;
+    }
+    const center = getLegendAnchorLatLng(markers);
+    if (!center) {
+      return;
+    }
+    const nearestPlace = formatTownshipPlace(center.lat, center.lng);
+    const allPlaces = describeLegendMarkerPlaces(markers);
+    pins.push({
+      key,
+      config,
+      center,
+      count: markers.length,
+      place: allPlaces.includes(nearestPlace) ? allPlaces : `${nearestPlace}｜${allPlaces}`
+    });
+  });
+  pins.sort((a, b) => b.center.lat - a.center.lat || a.center.lng - b.center.lng);
+  pins.forEach((pin, index) => {
+    pin.slot = 0;
+    for (let i = 0; i < index; i += 1) {
+      const other = pins[i];
+      if (getDistanceKm(pin.center.lat, pin.center.lng, other.center.lat, other.center.lng) < 12) {
+        pin.slot = Math.max(pin.slot, other.slot + 1);
+      }
+    }
+  });
+  pins.forEach((pin) => {
+    const html = `
+      <span class="map-legend-callout-dot" style="background:${pin.config.color}"></span>
+      <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; transform: translateY(${pin.slot * 30}px)">
+        <strong>${escapeMapLegendHtml(pin.config.title)}</strong>
+        <span class="map-legend-callout-place">${escapeMapLegendHtml(pin.place)}</span>
+        <em>${pin.count} 處</em>
+      </span>
+    `;
+    const marker = L.marker(pin.center, {
+      pane: "legendLabelPane",
+      interactive: true,
+      keyboard: false,
+      zIndexOffset: 800 + pin.slot,
+      title: `${pin.config.title}｜${pin.place}`,
+      icon: L.divIcon({
+        className: "map-legend-callout",
+        html,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      })
+    });
+    marker.on("click", () => focusMapLegendMarkers(pin.key));
+    layer.addLayer(marker);
+  });
 }
 
 function syncMapLegendState() {
@@ -7216,15 +7413,27 @@ function syncMapLegendState() {
     const key = item.dataset.legendKey;
     const markers = mapLegendMarkers[key] || [];
     const countEl = item.querySelector("[data-legend-count]");
+    const placeEl = item.querySelector("[data-legend-place]");
+    const placeText = markers.length ? describeLegendMarkerPlaces(markers) : "目前無點位";
     if (countEl) {
       countEl.textContent = String(markers.length);
       countEl.removeAttribute("aria-hidden");
     }
+    if (placeEl) {
+      placeEl.textContent = placeText;
+    }
     item.classList.toggle("legend-item-empty", markers.length === 0);
     item.setAttribute("aria-disabled", markers.length === 0 ? "true" : "false");
+    const label = item.querySelector(".legend-label")?.textContent?.trim() || key;
+    item.title = markers.length ? `${label}｜位置：${placeText}` : `${label}｜目前無點位`;
+    item.setAttribute(
+      "aria-label",
+      markers.length ? `${label}，${markers.length} 處，位置 ${placeText}` : `${label}，目前無點位`
+    );
   });
   syncMapFloodCountBadge(getFloodMarkersOnMap().length);
   syncMapAlertBadges();
+  updateMapLegendLocationPins();
 }
 
 const ALERT_BADGE_CONFIG = [
@@ -7371,6 +7580,7 @@ function initWarningMap() {
   warningMap.createPane("earthquakePane");
   warningMap.createPane("cameraPane");
   warningMap.createPane("focusPane");
+  warningMap.createPane("legendLabelPane");
   const focusPane = warningMap.getPane("focusPane");
   if (focusPane) {
     focusPane.style.zIndex = "680";
@@ -7378,6 +7588,10 @@ function initWarningMap() {
   const earthquakePane = warningMap.getPane("earthquakePane");
   if (earthquakePane) {
     earthquakePane.style.zIndex = "670";
+  }
+  const legendLabelPane = warningMap.getPane("legendLabelPane");
+  if (legendLabelPane) {
+    legendLabelPane.style.zIndex = "690";
   }
 
   addDisasterMapBaseTiles(warningMap);
