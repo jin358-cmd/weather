@@ -1611,6 +1611,7 @@ label {
 
 .camera-load-progress .refresh-progress-pct {
   font-size: 1.05rem;
+  color: #fff;
 }
 
 .freeway-load-progress-label {
@@ -1623,7 +1624,7 @@ label {
 
 .camera-load-progress-label {
   margin: 0;
-  color: var(--heading, #c2a36b);
+  color: #fff;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.04em;

@@ -221,6 +221,12 @@ body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-pct {
   color: #f4efe6;
 }
 
+.theme-elegant .camera-load-progress-label,
+body.theme-elegant[data-legacy-theme="dusk"] .camera-load-progress-label,
+body.theme-elegant[data-legacy-theme="dusk"] .camera-load-progress .refresh-progress-pct {
+  color: #fff !important;
+}
+
 .theme-elegant .card {
   background: var(--card);
   border: 1px solid var(--border);

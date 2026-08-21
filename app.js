@@ -514,8 +514,11 @@ const cityCameraLoadProgressHost = document.querySelector("#cityCameraLoadProgre
 const cityCameraLoadProgress = document.querySelector("#cityCameraLoadProgress");
 const cityCameraLoadProgressPie = document.querySelector("#cityCameraLoadProgressPie");
 const cityCameraLoadProgressPct = document.querySelector("#cityCameraLoadProgressPct");
+const cityCameraLoadProgressLabel = document.querySelector("#cityCameraLoadProgressLabel");
 let cityCameraLoadProgressToken = 0;
 let cityCameraLoadProgressHideTimer = 0;
+let cityCameraLoadProgressFound = 0;
+let cityCameraLoadProgressLimit = 8;
 const mapLayerList = document.querySelector("#mapLayerList");
 const airSummary = document.querySelector("#airSummary");
 const aqiMetric = document.querySelector("#aqiMetric");
@@ -3394,11 +3397,14 @@ async function renderCameraList() {
   const liveCameras = await collectVerifiedLiveCameras(rows, {
     isCurrent,
     limit: CITY_CCTV_PREVIEW_LIMIT,
-    onProgress: ({ pct }) => {
+    onProgress: ({ pct, found, limit }) => {
       if (!isCurrent()) {
         return;
       }
-      setCityCameraLoadProgress(12 + Math.round(Math.max(0, Math.min(100, pct)) * 0.5));
+      setCityCameraLoadProgress(12 + Math.round(Math.max(0, Math.min(100, pct)) * 0.5), {
+        found,
+        limit: limit || CITY_CCTV_PREVIEW_LIMIT
+      });
     }
   });
   if (!isCurrent()) {
@@ -3437,7 +3443,10 @@ async function renderCameraList() {
       setVerifiedCityCameras(confirmedLive);
     }
     if (isCurrent()) {
-      setCityCameraLoadProgress(62 + Math.round(((index + 1) / totalCards) * 36));
+      setCityCameraLoadProgress(62 + Math.round(((index + 1) / totalCards) * 36), {
+        found: confirmedLive.length,
+        limit: CITY_CCTV_PREVIEW_LIMIT
+      });
     }
   }
   if (!isCurrent()) {
@@ -3580,8 +3589,14 @@ function hideFreewayLoadProgress() {
   }, 280);
 }
 
-function setCityCameraLoadProgress(pct) {
+function setCityCameraLoadProgress(pct, { found, limit } = {}) {
   const value = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+  if (Number.isFinite(found)) {
+    cityCameraLoadProgressFound = Math.max(0, found);
+  }
+  if (Number.isFinite(limit) && limit > 0) {
+    cityCameraLoadProgressLimit = limit;
+  }
   if (cityCameraLoadProgressPie) {
     cityCameraLoadProgressPie.style.setProperty("--pct", String(value));
   }
@@ -3591,12 +3606,17 @@ function setCityCameraLoadProgress(pct) {
   if (cityCameraLoadProgress) {
     cityCameraLoadProgress.setAttribute("aria-valuenow", String(value));
   }
+  if (cityCameraLoadProgressLabel) {
+    cityCameraLoadProgressLabel.textContent = `路口監控讀取進度 ${value}%（已確認 ${cityCameraLoadProgressFound}/${cityCameraLoadProgressLimit}）`;
+  }
 }
 
 function showCityCameraLoadProgress() {
   window.clearTimeout(cityCameraLoadProgressHideTimer);
   cityCameraLoadProgressToken += 1;
-  setCityCameraLoadProgress(6);
+  cityCameraLoadProgressFound = 0;
+  cityCameraLoadProgressLimit = CITY_CCTV_PREVIEW_LIMIT;
+  setCityCameraLoadProgress(6, { found: 0, limit: CITY_CCTV_PREVIEW_LIMIT });
   if (cityCameraLoadProgressHost) {
     cityCameraLoadProgressHost.hidden = false;
     cityCameraLoadProgressHost.setAttribute("aria-busy", "true");
