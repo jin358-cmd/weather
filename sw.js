@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v53-closure-empty-oneline-mobile";
+const SW_VERSION = "jin-v54-air-center-map-layers-on";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

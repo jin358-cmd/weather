@@ -297,7 +297,9 @@ body {
 .app .camera-card > .timestamp,
 .app .freeway-details > .timestamp,
 .app .rain-forecast-inline .weather-subheading,
-.app .rain-forecast-inline .timestamp {
+.app .rain-forecast-inline .timestamp,
+.app .air-inline-summary,
+.app .air-details > summary {
   text-align: center;
 }
 
@@ -2671,11 +2673,18 @@ input[type="checkbox"] {
 .air-details > summary {
   cursor: pointer;
   list-style: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
   font-size: 16px;
   font-weight: 800;
   color: #072445;
   line-height: 1.35;
-  padding: 6px 4px;
+  padding: 6px 28px;
+  position: relative;
 }
 
 .air-details > summary::-webkit-details-marker {
@@ -2690,6 +2699,10 @@ input[type="checkbox"] {
   content: " ▾";
   color: #1f5ae1;
   font-weight: 800;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .air-details[open] > summary::after {
@@ -2704,9 +2717,10 @@ input[type="checkbox"] {
   margin: 0;
   font-size: 16px;
   font-weight: 800;
-  padding: 6px 8px;
+  padding: 6px 28px;
   border-radius: 8px;
   border: 1px solid transparent;
+  text-align: center;
 }
 
 .subscription-status-box {
@@ -3296,10 +3310,7 @@ input[type="checkbox"] {
 }
 
 .map-category-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 10px;
+  display: none;
 }
 
 .map-category-chip {

@@ -7702,16 +7702,15 @@ function fitMapToTaiwan(animate = false) {
 }
 
 function isMapCategoryVisible(key) {
-  return mapCategoryVisibility[key] !== false;
+  return true;
 }
 
 function syncMapLayerVisibilityFromCategories() {
-  mapLayerVisibility["flood-warning"] = ["flood-1", "flood-2", "flood-3", "flood-4"].some(isMapCategoryVisible);
-  mapLayerVisibility["power-outage"] =
-    isMapCategoryVisible("power-disaster") || isMapCategoryVisible("power-planned");
-  mapLayerVisibility["earthquake-points"] = isMapCategoryVisible("earthquake");
-  mapLayerVisibility["cctv-points"] = isMapCategoryVisible("cctv");
-  mapLayerVisibility["city-focus"] = isMapCategoryVisible("city-focus");
+  mapLayerVisibility["flood-warning"] = true;
+  mapLayerVisibility["power-outage"] = true;
+  mapLayerVisibility["earthquake-points"] = true;
+  mapLayerVisibility["cctv-points"] = true;
+  mapLayerVisibility["city-focus"] = true;
 }
 
 function refreshDisasterMapLayers() {
@@ -7725,8 +7724,10 @@ function refreshDisasterMapLayers() {
   syncMapLegendState();
 }
 
-function toggleMapCategory(key) {
-  mapCategoryVisibility[key] = !isMapCategoryVisible(key);
+function toggleMapCategory(_key) {
+  Object.keys(mapCategoryVisibility).forEach((key) => {
+    mapCategoryVisibility[key] = true;
+  });
   refreshDisasterMapLayers();
 }
 
@@ -7734,25 +7735,8 @@ function renderMapCategoryFilters() {
   if (!mapCategoryFilters) {
     return;
   }
-  mapCategoryFilters.innerHTML = "";
-  Object.keys(MAP_LEGEND_CALLOUT_CONFIG).forEach((key) => {
-    const config = MAP_LEGEND_CALLOUT_CONFIG[key];
-    const count = (mapLegendMarkers[key] || []).length;
-    const visible = isMapCategoryVisible(key);
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "map-category-chip";
-    btn.dataset.categoryKey = key;
-    btn.setAttribute("aria-pressed", visible ? "true" : "false");
-    btn.title = visible ? `隱藏${config.title}` : `顯示${config.title}`;
-    btn.innerHTML = `
-      <span class="map-category-swatch" style="background:${config.color}" aria-hidden="true"></span>
-      <span class="map-category-label">${config.title}</span>
-      <span class="map-category-count">${count}</span>
-    `;
-    btn.addEventListener("click", () => toggleMapCategory(key));
-    mapCategoryFilters.append(btn);
-  });
+  mapCategoryFilters.replaceChildren();
+  mapCategoryFilters.hidden = true;
 }
 
 function fitMapToFocusArea() {
