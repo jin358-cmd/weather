@@ -111,6 +111,33 @@
   padding: 22px 20px;
 }
 
+body.theme-elegant[data-legacy-theme="dusk"] .hero {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-layer {
+  mix-blend-mode: lighten;
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-a {
+  background:
+    radial-gradient(ellipse 52% 42% at 12% 38%, rgba(194, 163, 107, 0.42), transparent 58%),
+    linear-gradient(120deg, rgba(194, 163, 107, 0.2), transparent 40%, rgba(88, 140, 190, 0.28) 70%, transparent 92%);
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-b {
+  background:
+    radial-gradient(ellipse 46% 36% at 88% 28%, rgba(90, 150, 210, 0.32), transparent 60%),
+    linear-gradient(250deg, transparent 18%, rgba(244, 239, 230, 0.12) 50%, transparent 78%);
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
+  background:
+    radial-gradient(ellipse 40% 28% at 48% 90%, rgba(194, 163, 107, 0.22), transparent 64%),
+    repeating-linear-gradient(108deg, transparent 0 52px, rgba(244, 239, 230, 0.05) 52px 54px);
+}
+
 .theme-elegant .hero .eyebrow {
   color: var(--hero-eyebrow);
   font-family: var(--font-body);
@@ -119,6 +146,7 @@
   text-shadow: none;
   white-space: normal;
   overflow: visible;
+  font-size: clamp(1.15rem, 3.8vw, 1.95rem);
 }
 
 .theme-elegant .hero h1 {
@@ -130,6 +158,7 @@
   white-space: normal;
   overflow: visible;
   line-height: 1.25;
+  font-size: clamp(1.55rem, 5.2vw, 2.85rem);
 }
 
 .theme-elegant .refresh-btn {
@@ -294,6 +323,17 @@
   background: var(--card) !important;
   color: var(--text) !important;
   border-color: var(--border) !important;
+}
+
+.theme-elegant .map-category-chip {
+  background: var(--surface-muted);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.theme-elegant .map-category-chip[aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--primary-soft);
 }
 
 .theme-elegant .metrics div,
