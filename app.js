@@ -653,6 +653,7 @@ const CCTV_VISIBLE_LIMIT = 8;
 const CCTV_VERIFY_POOL_SIZE = 48;
 let cityCameraRenderToken = 0;
 let freewayCameraRenderToken = 0;
+let freewayFeedTimer = 0;
 let jsZipModulePromise = null;
 const appState = {
   weather: null,
@@ -1563,6 +1564,70 @@ function getFreewayCameraFocusPoint() {
 
 function isFreewayCameraStream(url = "") {
   return /cctvn\.freeway\.gov\.tw|abs2mjpg|bmjpg\?camera=/i.test(String(url || ""));
+}
+
+function getCameraEntranceExitLabel(camera) {
+  const text = String(camera?.stakenumber || "").trim();
+  const match = text.match(/[（(]([^）)]+)[）)]/);
+  if (match?.[1]) {
+    return match[1].trim();
+  }
+  const names = extractFreewayInterchangeNames(text);
+  if (names.length) {
+    return names.join("到");
+  }
+  return camera?.id || "交流道出入口";
+}
+
+function stopFreewayFeedRefresh() {
+  if (freewayFeedTimer) {
+    window.clearInterval(freewayFeedTimer);
+    freewayFeedTimer = 0;
+  }
+}
+
+function startFreewayFeedRefresh(img, url) {
+  stopFreewayFeedRefresh();
+  const apply = () => {
+    if (!img?.isConnected) {
+      stopFreewayFeedRefresh();
+      return;
+    }
+    const joiner = String(url).includes("?") ? "&" : "?";
+    img.src = `${url}${joiner}_ts=${Date.now()}`;
+  };
+  apply();
+  freewayFeedTimer = window.setInterval(apply, 1600);
+}
+
+function getEarthquakeDisasterLevel(quake) {
+  const mag = Number(quake?.magnitude) || 0;
+  const intensity = Number(quake?.intensityValue) || 0;
+  if (mag >= 6 || intensity >= 5) {
+    return "red";
+  }
+  if (mag >= 5 || intensity >= 4) {
+    return "orange";
+  }
+  if (mag >= 4 || intensity >= 3) {
+    return "yellow";
+  }
+  return "gray";
+}
+
+function syncEarthquakeSummaryLevel(quake) {
+  if (!earthquakeSummary) {
+    return;
+  }
+  ["eq-level-gray", "eq-level-yellow", "eq-level-orange", "eq-level-red", "intensity-3-plus", "intensity-below-3"].forEach(
+    (name) => {
+      earthquakeSummary.classList.remove(name);
+    }
+  );
+  if (!quake) {
+    return;
+  }
+  earthquakeSummary.classList.add(`eq-level-${getEarthquakeDisasterLevel(quake)}`);
 }
 
 function getFreewayEntranceExitLabel(camera) {
@@ -3141,6 +3206,7 @@ async function renderFreewayCameraList() {
   }
   const token = ++freewayCameraRenderToken;
   const isCurrent = () => token === freewayCameraRenderToken;
+  stopFreewayFeedRefresh();
   freewayCameraList.innerHTML = "";
   if (!freewayCameraDataset || !Array.isArray(freewayCameraDataset.cameras)) {
     freewayCameraList.innerHTML = `<p class="status-warn">目前無法載入國道監控資料。</p>`;
@@ -3153,16 +3219,55 @@ async function renderFreewayCameraList() {
     return;
   }
 
-  for (const camera of rows) {
+  const monitor = document.createElement("div");
+  monitor.className = "freeway-monitor";
+  const first = rows[0];
+  const firstCaption = formatFreewayCameraCaption(first);
+  const firstUrl = String(first.html || "");
+  monitor.innerHTML = `
+    <div class="freeway-monitor-bezel">
+      <p class="freeway-monitor-label">即時檢查畫面</p>
+      <div class="freeway-monitor-screen">
+        <img class="freeway-monitor-feed" alt="${escapeMapLegendHtml(firstCaption)}" referrerpolicy="origin" />
+      </div>
+    </div>
+    <p class="freeway-monitor-caption">${escapeMapLegendHtml(firstCaption)}</p>
+    <div class="freeway-monitor-channels" role="list" aria-label="國道監控鏡頭"></div>
+    <p class="freeway-monitor-actions">
+      <a class="freeway-monitor-live-link" href="${firstUrl}" target="_blank" rel="noopener noreferrer">開啟即時影像</a>
+    </p>
+  `;
+  const feed = monitor.querySelector(".freeway-monitor-feed");
+  const captionEl = monitor.querySelector(".freeway-monitor-caption");
+  const liveLink = monitor.querySelector(".freeway-monitor-live-link");
+  const channels = monitor.querySelector(".freeway-monitor-channels");
+
+  const showCamera = (camera, button) => {
     if (!isCurrent()) {
       return;
     }
-    const card = createCameraCard(camera, "", {
-      forceImage: true,
-      variant: "freeway"
+    const caption = formatFreewayCameraCaption(camera);
+    const url = String(camera.html || "");
+    captionEl.textContent = caption;
+    feed.alt = caption;
+    liveLink.href = url;
+    channels.querySelectorAll(".freeway-channel-btn").forEach((item) => {
+      item.classList.toggle("is-active", item === button);
     });
-    freewayCameraList.append(card);
-  }
+    startFreewayFeedRefresh(feed, url);
+  };
+
+  rows.forEach((camera, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `freeway-channel-btn${index === 0 ? " is-active" : ""}`;
+    button.textContent = getCameraEntranceExitLabel(camera);
+    button.addEventListener("click", () => showCamera(camera, button));
+    channels.append(button);
+  });
+
+  freewayCameraList.append(monitor);
+  showCamera(first, channels.querySelector(".freeway-channel-btn"));
 }
 
 async function renderAllCameraLists() {
@@ -5316,7 +5421,7 @@ function renderEarthquakePanel() {
   if (!quakes.length) {
     if (earthquakeSummary) {
       earthquakeSummary.textContent = "目前中央氣象署無近期台灣地區有感地震";
-      earthquakeSummary.classList.remove("intensity-3-plus", "intensity-below-3");
+      syncEarthquakeSummaryLevel(null);
     }
     renderEarthquakeSourceMeta(Date.now());
     earthquakeList.innerHTML = "<li>目前無符合條件的地震事件。</li>";
@@ -5329,8 +5434,7 @@ function renderEarthquakePanel() {
     earthquakeSummary.innerHTML = `最新：規模 ${latest.magnitude.toFixed(1)}｜最大震度 ${formatIntensityLabel(
       latest.intensityValue
     )}<span class="earthquake-place-label">${placeLabel}</span>`;
-    earthquakeSummary.classList.toggle("intensity-3-plus", isIntensityThreePlus(latest));
-    earthquakeSummary.classList.toggle("intensity-below-3", !isIntensityThreePlus(latest));
+    syncEarthquakeSummaryLevel(latest);
   }
   renderEarthquakeSourceMeta(Date.now());
 

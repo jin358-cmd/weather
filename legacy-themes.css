@@ -245,15 +245,28 @@
   color: var(--heading);
 }
 
-.theme-elegant .earthquake-summary,
-.theme-elegant .earthquake-summary.intensity-below-3,
-.theme-elegant .earthquake-summary.intensity-below-3 .earthquake-place-label {
-  color: #111 !important;
+.theme-elegant .earthquake-summary {
+  font-size: clamp(1.05rem, 2.6vw, 1.45rem) !important;
 }
 
-.theme-elegant .earthquake-summary.intensity-3-plus,
-.theme-elegant .earthquake-summary.intensity-3-plus .earthquake-place-label {
-  color: #dc2626 !important;
+.theme-elegant .earthquake-summary.eq-level-gray,
+.theme-elegant .earthquake-summary.eq-level-gray .earthquake-place-label {
+  color: #334155 !important;
+}
+
+.theme-elegant .earthquake-summary.eq-level-yellow,
+.theme-elegant .earthquake-summary.eq-level-yellow .earthquake-place-label {
+  color: #854d0e !important;
+}
+
+.theme-elegant .earthquake-summary.eq-level-orange,
+.theme-elegant .earthquake-summary.eq-level-orange .earthquake-place-label {
+  color: #9a3412 !important;
+}
+
+.theme-elegant .earthquake-summary.eq-level-red,
+.theme-elegant .earthquake-summary.eq-level-red .earthquake-place-label {
+  color: #991b1b !important;
 }
 
 .theme-elegant .weather-feel-line,

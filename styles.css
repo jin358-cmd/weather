@@ -1270,6 +1270,97 @@ label {
   color: #039855 !important;
 }
 
+.freeway-monitor {
+  display: grid;
+  gap: 10px;
+}
+
+.freeway-monitor-bezel {
+  padding: 10px 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #121821;
+  box-shadow: inset 0 0 0 1px rgba(194, 163, 107, 0.22);
+}
+
+.freeway-monitor-label {
+  margin: 0 0 8px;
+  color: #c2a36b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.freeway-monitor-screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #0b0f14;
+}
+
+.freeway-monitor-feed,
+.freeway-monitor-screen iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: contain;
+  background: #0b0f14;
+}
+
+.freeway-monitor-caption {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.freeway-monitor-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.freeway-channel-btn {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-solid, var(--card));
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.freeway-channel-btn.is-active,
+.freeway-channel-btn:hover,
+.freeway-channel-btn:focus-visible {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 18%, var(--card-solid, var(--card)));
+  color: var(--heading, var(--text));
+  outline: none;
+}
+
+.freeway-monitor-actions {
+  margin: 0;
+}
+
+.freeway-monitor-live-link {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.freeway-monitor-live-link:hover,
+.freeway-monitor-live-link:focus-visible {
+  text-decoration: underline;
+}
+
 .camera-more-details {
   margin-top: 10px;
 }
@@ -3001,28 +3092,42 @@ input[type="checkbox"] {
 
 .earthquake-summary {
   margin: 0;
-  color: #111;
-  font-size: clamp(10px, 2.1vw, 14px);
+  font-size: clamp(1.05rem, 2.6vw, 1.45rem);
   line-height: 1.35;
-  font-weight: 700;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: #f4efe6;
-}
-
-.earthquake-summary.intensity-below-3,
-.earthquake-summary.intensity-below-3 .earthquake-place-label {
-  color: #111;
-}
-
-.earthquake-summary.intensity-3-plus,
-.earthquake-summary.intensity-3-plus .earthquake-place-label {
-  color: #dc2626;
   font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #94a3b8;
+  color: #334155;
+  background: #e8eef5;
 }
 
-.earthquake-summary.intensity-3-plus {
-  background: #fef2f2;
+.earthquake-summary.eq-level-gray,
+.earthquake-summary.eq-level-gray .earthquake-place-label {
+  color: #334155;
+  background: #e8eef5;
+  border-color: #94a3b8;
+}
+
+.earthquake-summary.eq-level-yellow,
+.earthquake-summary.eq-level-yellow .earthquake-place-label {
+  color: #854d0e;
+  background: #fef3c7;
+  border-color: #eab308;
+}
+
+.earthquake-summary.eq-level-orange,
+.earthquake-summary.eq-level-orange .earthquake-place-label {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #f97316;
+}
+
+.earthquake-summary.eq-level-red,
+.earthquake-summary.eq-level-red .earthquake-place-label {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #dc2626;
 }
 
 .earthquake-place-label {
