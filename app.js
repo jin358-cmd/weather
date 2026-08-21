@@ -7361,9 +7361,10 @@ function initWarningMap() {
     return;
   }
   warningMap = L.map("warningMap", {
-    zoomControl: true,
+    zoomControl: false,
     attributionControl: true
   }).setView([23.7, 120.96], 7);
+  L.control.zoom({ position: "bottomleft" }).addTo(warningMap);
 
   warningMap.createPane("outagePane");
   warningMap.createPane("floodPane");

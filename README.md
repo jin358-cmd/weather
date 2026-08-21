@@ -1,16 +1,15 @@
 # 停班停課+即時災害通報平台
 
-## 滾動式災害預報首頁示範（目前首頁）
+## 目前首頁
 
-首頁 `index.html` 使用 **Lenis** 平滑滾動 + **GSAP ScrollTrigger** 做滾動敘事示範：
+`index.html` 為即時災害通報平台（暮藍靜夜風格）。
 
-- Hero 主視覺與雷達 scrub
-- 釘住式預報故事（監測 → 判讀 → 行動）
-- 警特報卡片進場
-- 橫向 6 小時時序 scrub
-- CTA 進入 Dashboard
+- 停班停課、颱風動態、地震通報、鄉鎮天氣
+- 訂閱通知、路口／國道 CCTV、災害警示圖
+- 災害警示圖圖例對照顯示於地圖上方，可點選聚焦
+- `legacy.html` 會導向首頁，保留舊網址
 
-完整資料平台：`dashboard.html`
+縣市詳情頁：`dashboard.html`
 
 ## 全台天氣與停班停課 Dashboard
 
@@ -26,8 +25,8 @@
 - 資料：`data/weather.js`、`data/alerts.js`、`data/suspensions.js`、`data/notifications.js`
 - Provider：`lib/weather-provider.js`（TypeScript 契約：`lib/weather-provider.ts`）
 - 元件：`components/*`
-- 入口：`index.html` + `dashboard.js` + `dashboard.css`
-完整即時災害通報平台（原功能保留）：`legacy.html`
+- 入口：`dashboard.html` + `dashboard.js` + `dashboard.css`
+- 即時災害通報平台：`index.html`（`legacy.html` 導向此頁）
 
 - 停班停課、颱風動態、地震通報、鄉鎮天氣
 - 訂閱通知、路口／國道 CCTV、災害警示圖
