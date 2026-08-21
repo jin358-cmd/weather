@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v60-closure-meta-match-eq-source";
+const SW_VERSION = "jin-v61-locate-btn-larger";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

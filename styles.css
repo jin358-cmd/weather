@@ -857,8 +857,8 @@ label {
 
 .locate-btn .locate-icon svg,
 .locate-icon svg {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   fill: #ff2d95;
   filter: drop-shadow(0 0 6px rgba(255, 45, 149, 0.65));
 }
@@ -867,18 +867,18 @@ label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: 50%;
-  max-width: 50%;
+  gap: 8px;
+  width: 64%;
+  max-width: 64%;
   box-sizing: border-box;
-  height: 48px;
-  min-height: 48px;
-  max-height: 48px;
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
   border: 2px solid #0b7a45;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #0f9d58;
   color: #fff;
-  font-size: clamp(15px, 3.8vw, 18px);
+  font-size: clamp(16px, 4vw, 19px);
   font-weight: 800;
   cursor: pointer;
   position: relative;
@@ -886,7 +886,7 @@ label {
   white-space: nowrap;
   overflow: hidden;
   flex-wrap: nowrap;
-  padding: 0 8px;
+  padding: 0 16px;
   line-height: 1.05;
 }
 
@@ -898,7 +898,7 @@ label {
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
-  font-size: clamp(15px, 3.8vw, 18px);
+  font-size: clamp(16px, 4vw, 19px);
   font-weight: 800;
   letter-spacing: 0;
 }
@@ -4822,34 +4822,34 @@ body.eq-sheet-open {
   }
 
   .locate-btn {
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
-    padding: 0 6px;
-    font-size: clamp(14px, 3.6vw, 17px);
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    padding: 0 12px;
+    font-size: clamp(15px, 3.8vw, 18px);
   }
 
   .locate-wrap .locate-btn {
-    width: 50%;
-    max-width: 50%;
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
-    padding: 0 6px;
+    width: 68%;
+    max-width: 68%;
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    padding: 0 12px;
     white-space: nowrap;
     overflow: visible;
     flex-wrap: nowrap;
-    font-size: clamp(14px, 3.6vw, 17px);
+    font-size: clamp(15px, 3.8vw, 18px);
   }
 
   .locate-btn .locate-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
   }
 
   .locate-btn-label {
     white-space: nowrap;
-    font-size: clamp(14px, 3.6vw, 17px);
+    font-size: clamp(15px, 3.8vw, 18px);
   }
 
   .grid {
