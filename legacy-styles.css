@@ -1583,20 +1583,7 @@ input[type="checkbox"] {
 }
 
 .weather-icon-picker {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.weather-icon-picker-label {
-  font-size: var(--fluid-small);
-  font-weight: 700;
-  color: var(--msn-muted);
-  white-space: nowrap;
+  display: none;
 }
 
 .weather-icon-theme-options {
