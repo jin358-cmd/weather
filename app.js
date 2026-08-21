@@ -4370,6 +4370,18 @@ function readClosureCache() {
   }
 }
 
+function fitClosureMetaLine() {
+  if (!closureMeta) {
+    return;
+  }
+  fitSingleLineText(closureMeta, {
+    maxPx: 14,
+    minPx: 10,
+    fillRatio: 0.98
+  });
+  closureMeta.style.letterSpacing = "";
+}
+
 function renderClosureMeta(updateAt, sourceLabel, { cacheSuffix = false } = {}) {
   if (!closureMeta) {
     return;
@@ -4387,6 +4399,9 @@ function renderClosureMeta(updateAt, sourceLabel, { cacheSuffix = false } = {}) 
     cacheNote.textContent = "（目前使用快取，請稍後重試）";
     closureMeta.append(cacheNote);
   }
+  window.requestAnimationFrame(() => {
+    fitClosureMetaLine();
+  });
 }
 
 function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
@@ -8860,6 +8875,7 @@ function fitHeroTexts() {
     minPx: 18
   });
   fitSubscriptionTopicTexts();
+  fitClosureMetaLine();
 }
 
 let heroFitRaf = 0;
