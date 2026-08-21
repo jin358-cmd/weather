@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v55-closure-source-match-locate-type";
+const SW_VERSION = "jin-v56-region-updated-center";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

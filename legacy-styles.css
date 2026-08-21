@@ -497,6 +497,12 @@ h2 {
   gap: 6px;
 }
 
+.controls #regionMemoryMeta,
+.controls #lastUpdated {
+  width: 100%;
+  text-align: center;
+}
+
 label {
   font-size: 14px;
   color: var(--muted);
