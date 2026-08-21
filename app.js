@@ -8246,18 +8246,7 @@ function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1 } = {}) {
 
 function fitSubscriptionTopicTexts() {
   document.querySelectorAll(".topic-option .topic-option-text").forEach((element) => {
-    const parent = element.parentElement;
-    const parentWidth = Math.floor(parent?.getBoundingClientRect().width || 0);
-    const checkboxWidth = Math.ceil(parent?.querySelector("input")?.getBoundingClientRect().width || 18);
-    const available = Math.max(40, parentWidth - checkboxWidth - 10);
-    // Temporarily constrain width so fitSingleLineText measures against one row.
-    element.style.width = `${available}px`;
-    element.style.maxWidth = `${available}px`;
-    fitSingleLineText(element, {
-      maxPx: 10,
-      minPx: 8,
-      fillRatio: 1
-    });
+    clearFittedTextStyles(element);
   });
 }
 

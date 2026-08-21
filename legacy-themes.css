@@ -236,6 +236,25 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   letter-spacing: 0;
 }
 
+.theme-elegant .topic-option,
+.theme-elegant .topic-option-text {
+  color: var(--heading) !important;
+  font-family: var(--font-body) !important;
+  font-size: clamp(1.15rem, 4.4vw, 1.42rem) !important;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0;
+  white-space: normal;
+  overflow: visible;
+}
+
+.theme-elegant .topic-option input {
+  width: 1.2em;
+  height: 1.2em;
+  margin-top: 0.22em;
+  accent-color: var(--primary);
+}
+
 .theme-elegant .auto-refresh-countdown {
   color: #9fd4f5 !important;
   font-family: var(--font-body) !important;
@@ -556,5 +575,10 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
     letter-spacing: 0;
     line-height: 1.2;
     font-size: clamp(13px, 4.15vw, 20px);
+  }
+
+  .theme-elegant .topic-option,
+  .theme-elegant .topic-option-text {
+    font-size: clamp(1.12rem, 4.6vw, 1.32rem) !important;
   }
 }
