@@ -263,10 +263,15 @@
 
 .theme-elegant .rain-forecast-inline .weather-subheading,
 .theme-elegant .rain-forecast-inline #rainProjection,
-.theme-elegant .rain-forecast-inline .timestamp,
-.theme-elegant .rain-forecast-inline .rain-row span,
-.theme-elegant .rain-forecast-inline .rain-row strong {
+.theme-elegant .rain-forecast-inline .timestamp {
   color: var(--primary) !important;
+}
+
+.theme-elegant .rain-forecast-inline .rain-row-time,
+.theme-elegant .rain-forecast-inline .rain-row-probability,
+.theme-elegant .rain-forecast-inline .rain-row span.rain-row-time,
+.theme-elegant .rain-forecast-inline .rain-row strong.rain-row-probability {
+  color: #2f2f2f !important;
 }
 
 .theme-elegant .layer-panel,
