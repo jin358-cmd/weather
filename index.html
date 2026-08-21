@@ -44,7 +44,9 @@
           <p class="eyebrow">災防網絡 · 即時警報</p>
           <h1 class="hero-fit-text">停班停課+即時災害通報平台</h1>
         </div>
-        <button id="refreshBtn" type="button" class="refresh-btn">立即更新資料</button>
+        <button id="refreshBtn" type="button" class="refresh-btn">
+          <span class="refresh-btn-label">立即更新資料</span>
+        </button>
       </header>
 
       <section class="controls card">
@@ -562,6 +564,21 @@
         <a href="mailto:amjin358@gmail.com">Copyright © 2026 弘泰科技</a>
       </p>
     </footer>
+
+    <div id="refreshProgressHost" class="refresh-progress-host" hidden aria-busy="false">
+      <div
+        id="refreshProgress"
+        class="refresh-progress"
+        role="progressbar"
+        aria-label="資料更新進度"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <span id="refreshProgressPie" class="refresh-progress-pie" aria-hidden="true"></span>
+        <span id="refreshProgressPct" class="refresh-progress-pct">0%</span>
+      </div>
+    </div>
 
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
