@@ -1425,9 +1425,9 @@ label {
   width: 100%;
   max-width: 100%;
   text-align: center;
-  font-size: clamp(1.05rem, 3.2vw, 1.35rem);
-  font-weight: 700;
-  line-height: 1.4;
+  font-size: var(--hero-heading-size, clamp(1.5rem, 5.4vw, 2.5rem));
+  font-weight: 800;
+  line-height: 1.3;
   justify-self: center;
 }
 

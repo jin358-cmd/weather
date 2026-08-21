@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v56-region-updated-center";
+const SW_VERSION = "jin-v57-closure-empty-title-cap";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

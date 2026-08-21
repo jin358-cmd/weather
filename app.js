@@ -4397,25 +4397,33 @@ function readClosureCache() {
   }
 }
 
+function getHeroTitleFontPx() {
+  const title = document.querySelector(".hero h1") || document.querySelector(".hero .eyebrow");
+  const px = title ? Number.parseFloat(window.getComputedStyle(title).fontSize) : NaN;
+  return Number.isFinite(px) && px > 0 ? px : 24;
+}
+
 function fitClosureEmptyMessage() {
   const msg = closureList?.querySelector(".closure-empty-msg");
   if (!msg) {
     return;
   }
+  const titlePx = getHeroTitleFontPx();
+  const availablePx = Math.floor(
+    closureList.getBoundingClientRect().width ||
+      msg.parentElement?.getBoundingClientRect().width ||
+      0
+  );
   if (!window.matchMedia("(max-width: 860px)").matches) {
     clearFittedTextStyles(msg);
+    msg.style.fontSize = `${titlePx}px`;
     return;
   }
-  const availablePx = Math.floor(
-    (closureList.getBoundingClientRect().width ||
-      msg.parentElement?.getBoundingClientRect().width ||
-      0)
-  );
   fitSingleLineText(msg, {
-    maxPx: Math.min(32, Math.max(13, Math.floor(availablePx / 12))),
+    maxPx: titlePx,
     minPx: 11,
     fillRatio: 0.98,
-    fillLine: true,
+    fillLine: false,
     availablePx
   });
 }
