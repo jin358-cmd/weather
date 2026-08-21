@@ -103,6 +103,7 @@
 }
 
 .theme-elegant .hero {
+  --hero-heading-size: clamp(1.5rem, 5.4vw, 2.5rem);
   background: var(--hero-bg);
   color: var(--hero-text);
   border: 1px solid var(--hero-border);
@@ -163,7 +164,7 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   text-shadow: 0 2px 10px rgba(18, 24, 33, 0.72);
   white-space: normal;
   overflow: visible;
-  font-size: clamp(1.5rem, 5.4vw, 2.5rem);
+  font-size: var(--hero-heading-size);
 }
 
 .theme-elegant .hero h1 {
@@ -172,13 +173,15 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   font-weight: 900;
   letter-spacing: 0;
   text-shadow: 0 2px 14px rgba(18, 24, 33, 0.78);
-  white-space: nowrap;
-  overflow: hidden;
+  white-space: normal;
+  overflow: visible;
   text-overflow: clip;
-  line-height: 1.12;
+  line-height: 1.22;
   width: 100%;
   max-width: 100%;
-  font-size: clamp(16px, 7.2vw, 96px);
+  word-break: normal;
+  overflow-wrap: anywhere;
+  font-size: var(--hero-heading-size);
 }
 
 .theme-elegant .refresh-btn {
@@ -671,17 +674,17 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
 
   .theme-elegant .hero h1,
   body.theme-elegant[data-legacy-theme="dusk"] .hero h1 {
-    white-space: nowrap;
-    overflow: hidden;
+    white-space: normal;
+    overflow: visible;
     text-overflow: clip;
     letter-spacing: 0;
-    line-height: 1.12;
+    line-height: 1.22;
     width: 100%;
     max-width: 100%;
-    word-break: keep-all;
-    overflow-wrap: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
     line-break: auto;
-    font-size: clamp(18px, 7.2vw, 42px);
+    font-size: var(--hero-heading-size);
   }
 
   .theme-elegant .topic-option,

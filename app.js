@@ -8845,30 +8845,17 @@ function clearFittedTextStyles(element) {
 
 function fitHeroTexts() {
   const title = document.querySelector(".hero h1");
+  const eyebrow = document.querySelector(".hero .eyebrow");
   const subtitle = document.querySelector(".hero .subtitle.hero-fit-text");
   const riskBadge = document.querySelector("#typhoonRiskBadge.hero-fit-text");
   const content = document.querySelector(".hero-content");
-  const hero = document.querySelector(".hero");
   const width = Math.floor(content?.getBoundingClientRect().width || document.documentElement.clientWidth || 0);
-  const isMobileHero = window.matchMedia("(max-width: 860px)").matches;
   if (title) {
-    const available = Math.max(
-      160,
-      Math.floor(
-        title.getBoundingClientRect().width ||
-          hero?.clientWidth ||
-          window.visualViewport?.width ||
-          document.documentElement.clientWidth ||
-          0
-      )
-    );
-    fitSingleLineText(title, {
-      maxPx: Math.max(isMobileHero ? 22 : 28, Math.floor(available / (isMobileHero ? 5 : 6))),
-      minPx: isMobileHero ? 16 : 13,
-      fillRatio: 1,
-      fillLine: true,
-      availablePx: available
-    });
+    clearFittedTextStyles(title);
+    const headingSize = eyebrow ? window.getComputedStyle(eyebrow).fontSize : "";
+    if (headingSize) {
+      title.style.fontSize = headingSize;
+    }
   }
   fitSingleLineText(subtitle, {
     maxPx: Math.min(18, Math.floor(width * 0.038)),
