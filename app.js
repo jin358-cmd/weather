@@ -3786,17 +3786,17 @@ function getWeatherCategory(code) {
 
 const FLAT_WEATHER_ICONS = {
   clear:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="18" fill="#fbbf24"/><g stroke="#f59e0b" stroke-width="3" stroke-linecap="round"><path d="M48 12v8"/><path d="M48 76v8"/><path d="M12 48h8"/><path d="M76 48h8"/></g></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="18" fill="#c2410c"/><g stroke="#9a3412" stroke-width="3" stroke-linecap="round"><path d="M48 12v8"/><path d="M48 76v8"/><path d="M12 48h8"/><path d="M76 48h8"/></g></svg>',
   partly:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="12" fill="#fbbf24"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="#e2e8f0"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#cbd5e1"/><ellipse cx="56" cy="62" rx="12" ry="9" fill="#f1f5f9"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="12" fill="#c2410c"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="#4b6178"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#334155"/><ellipse cx="56" cy="62" rx="12" ry="9" fill="#64748b"/></svg>',
   overcast:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#94a3b8"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#64748b"/><ellipse cx="68" cy="54" rx="14" ry="10" fill="#cbd5e1"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#334155"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#1e293b"/><ellipse cx="68" cy="54" rx="14" ry="10" fill="#475569"/></svg>',
   rain:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#cbd5e1"/><path class="rain-drop" d="M30 58 v14" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v14" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v14" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#334155"/><path class="rain-drop" d="M30 58 v14" stroke="#075985" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v14" stroke="#075985" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v14" stroke="#075985" stroke-width="4" stroke-linecap="round"/></svg>',
   snow:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#e2e8f0"/><circle cx="34" cy="62" r="4" fill="#bae6fd"/><circle cx="48" cy="68" r="4" fill="#bae6fd"/><circle cx="62" cy="62" r="4" fill="#bae6fd"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#475569"/><circle cx="34" cy="62" r="4" fill="#0369a1"/><circle cx="48" cy="68" r="4" fill="#0284c7"/><circle cx="62" cy="62" r="4" fill="#0369a1"/></svg>',
   thunder:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#94a3b8"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#fbbf24"/><path class="rain-drop" d="M28 62 v12" stroke="#60a5fa" stroke-width="3" stroke-linecap="round"/></svg>'
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#1e293b"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#b45309"/><path class="rain-drop" d="M28 62 v12" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round"/></svg>'
 };
 
 const LINE_WEATHER_ICONS = {

@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v30-hero-title-3x-mobile";
+const SW_VERSION = "jin-v31-weather-icon-deeper";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
