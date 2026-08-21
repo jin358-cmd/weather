@@ -4412,8 +4412,10 @@ function fitClosureEmptyMessage() {
     return;
   }
   const titlePx = getClosureFieldTitleFontPx();
+  const host = closureList.closest(".card") || closureList;
   const availablePx = Math.floor(
     closureList.getBoundingClientRect().width ||
+      host.getBoundingClientRect().width ||
       msg.parentElement?.getBoundingClientRect().width ||
       0
   );
@@ -4425,7 +4427,7 @@ function fitClosureEmptyMessage() {
   fitSingleLineText(msg, {
     maxPx: titlePx,
     minPx: 11,
-    fillRatio: 0.98,
+    fillRatio: 1,
     fillLine: false,
     availablePx
   });

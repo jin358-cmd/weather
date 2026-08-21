@@ -266,7 +266,8 @@ body {
   margin-inline: 0;
 }
 
-.app .closure-list.is-empty {
+.app .closure-list.is-empty,
+.app .closure-list.is-empty .closure-empty-msg {
   width: 100%;
   max-width: 100%;
   margin-inline: auto;
@@ -4732,6 +4733,7 @@ body.eq-sheet-open {
 
 @media (max-width: 860px) {
   .app {
+    --field-col-width: min(94%, 32rem);
     width: 100%;
     max-width: 100%;
     margin: 0 auto 24px;
@@ -4742,6 +4744,12 @@ body.eq-sheet-open {
 
   .app > * {
     min-width: 0;
+    max-width: 100%;
+  }
+
+  .app .closure-list.is-empty,
+  .app .closure-list.is-empty .closure-empty-msg {
+    width: 100%;
     max-width: 100%;
   }
 
