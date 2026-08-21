@@ -263,9 +263,9 @@ body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-pct {
 
 .theme-elegant .topic-option,
 .theme-elegant .topic-option-text {
-  color: #7ec8ff !important;
+  color: #111 !important;
   font-family: var(--font-body) !important;
-  font-size: clamp(1.15rem, 4.4vw, 1.42rem) !important;
+  font-size: clamp(1rem, 3.5vw, 1.18rem) !important;
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: 0;
@@ -273,9 +273,13 @@ body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-pct {
   overflow: visible;
 }
 
+.theme-elegant .subscription-card label,
+.theme-elegant .subscription-card .timestamp,
+.theme-elegant .subscription-card .subscription-email-note,
+.theme-elegant .subscription-card .notification-hint,
 .theme-elegant #subscriptionStatus.timestamp,
 .theme-elegant .subscription-status-box {
-  color: #1d4ed8 !important;
+  color: #111 !important;
 }
 
 .theme-elegant .in-page-alert:not(.in-page-alert-locate-done),
@@ -621,6 +625,11 @@ body.theme-elegant[data-legacy-theme="dusk"] {
   --font-body: "Noto Sans TC", sans-serif;
 }
 
+body.theme-elegant[data-legacy-theme="dusk"] .subscription-card {
+  background: #f4efe6;
+  border-color: #c9bfae;
+}
+
 body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="page"] {
   color: #f4efe6;
 }
@@ -656,6 +665,6 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
 
   .theme-elegant .topic-option,
   .theme-elegant .topic-option-text {
-    font-size: clamp(1.12rem, 4.6vw, 1.32rem) !important;
+    font-size: clamp(0.95rem, 3.6vw, 1.1rem) !important;
   }
 }
