@@ -1342,7 +1342,7 @@ label {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 10px 28px rgba(15, 22, 34, 0.18);
-  color: #1f2a44;
+  color: #1d4ed8;
   animation: alertSlideUp 0.25s ease-out;
 }
 
@@ -1355,13 +1355,7 @@ label {
   overflow: hidden;
   width: 100%;
   max-width: 100%;
-}
-
-.in-page-alert-body {
-  display: grid;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
+  color: #1d4ed8;
 }
 
 .in-page-alert p,
@@ -1373,6 +1367,14 @@ label {
   overflow: hidden;
   width: 100%;
   max-width: 100%;
+  color: #1d4ed8;
+}
+
+.in-page-alert-body {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
 }
 
 .in-page-alert-subscribe-tip .in-page-alert-title {
@@ -2461,7 +2463,7 @@ input[type="checkbox"] {
   border: 2px solid #1f5ae1;
   border-radius: 10px;
   background: #eaf2ff;
-  color: #123a7a;
+  color: #1d4ed8;
   font-size: 12px;
   font-weight: 700;
   line-height: 1.4;
@@ -2486,6 +2488,7 @@ input[type="checkbox"] {
 .alert-block .topic-option,
 .alert-block .topic-option-text {
   font-size: clamp(1.15rem, 4.4vw, 1.42rem);
+  color: #1d4ed8;
 }
 
 .alert-block .subscription-status-box {
@@ -2512,6 +2515,7 @@ input[type="checkbox"] {
   line-height: 1.45;
   font-size: clamp(1.15rem, 4.4vw, 1.42rem);
   font-weight: 700;
+  color: #1d4ed8;
 }
 
 #notificationHint.subscription-status-box {
@@ -4191,7 +4195,7 @@ body.eq-sheet-open {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  color: #2d3856;
+  color: #1d4ed8;
   min-width: 0;
   width: 100%;
   overflow: visible;
@@ -4213,6 +4217,7 @@ body.eq-sheet-open {
   line-height: 1.45;
   font-size: clamp(1.15rem, 4.4vw, 1.42rem);
   font-weight: 700;
+  color: #1d4ed8;
 }
 
 .closure-group {
