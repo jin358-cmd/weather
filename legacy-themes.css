@@ -296,9 +296,11 @@ body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-pct {
 }
 
 .theme-elegant .auto-refresh-countdown {
-  color: #9fd4f5 !important;
+  color: #0a1628 !important;
+  background: #f4efe6;
+  border-color: #0a1628;
   font-family: var(--font-body) !important;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0;
 }
 
