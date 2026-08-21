@@ -250,8 +250,8 @@ async function showSystemNotification(title, body, tag) {
     renotify: true,
     requireInteraction: true,
     vibrate: [180, 90, 180, 90, 180],
-    icon: "./icons/icon-192.svg",
-    badge: "./icons/icon-192.svg",
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
     data: { source: "background" }
   });
 }
@@ -302,8 +302,8 @@ self.addEventListener("message", (event) => {
       renotify: true,
       requireInteraction: true,
       vibrate: [180, 90, 180, 90, 180],
-      icon: "./icons/icon-192.svg",
-      badge: "./icons/icon-192.svg",
+      icon: "./icons/icon-192.png",
+      badge: "./icons/icon-192.png",
       data: data.data || {}
     })
   );

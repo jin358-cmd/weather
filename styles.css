@@ -1377,7 +1377,16 @@ label {
   min-width: 0;
 }
 
-.in-page-alert-subscribe-tip .in-page-alert-title {
+.in-page-alert-refresh-done {
+  border-color: #7ec8ff;
+}
+
+.in-page-alert-refresh-done .in-page-alert-title,
+.in-page-alert-refresh-done .in-page-alert-line {
+  color: #1d4ed8;
+  white-space: normal;
+  overflow: visible;
+}
   font-size: 18px;
   font-weight: 800;
   line-height: 1.3;

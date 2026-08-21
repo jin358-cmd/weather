@@ -6078,6 +6078,7 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     variant === "locate-done" ? "in-page-alert-locate-done" : "",
     isReadableTip ? "in-page-alert-readable-tip" : "",
     variant === "subscribe-tip" ? "in-page-alert-subscribe-tip" : "",
+    variant === "refresh-done" ? "in-page-alert-refresh-done" : "",
     variant === "not-open" ? "in-page-alert-not-open" : ""
   ]
     .filter(Boolean)
@@ -6266,6 +6267,60 @@ async function getNotificationRegistration() {
   }
 }
 
+async function showWindowsSystemNotification(title, body, { tag } = {}) {
+  if (!window.isSecureContext || typeof Notification === "undefined") {
+    return false;
+  }
+  if (Notification.permission !== "granted") {
+    return false;
+  }
+  const payload = {
+    body: String(body || ""),
+    tag: tag || `jin-${Date.now()}`,
+    renotify: true,
+    silent: false,
+    requireInteraction: true,
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png"
+  };
+  try {
+    await initServiceWorker();
+    const registration = await getNotificationRegistration();
+    if (registration?.showNotification) {
+      await registration.showNotification(title, payload);
+      return true;
+    }
+  } catch {
+    /* fall through to Notification constructor */
+  }
+  try {
+    const notification = new Notification(title, payload);
+    return Boolean(notification);
+  } catch {
+    return false;
+  }
+}
+
+async function notifyAutoRefreshComplete() {
+  const timeText = formatDateTime(Date.now());
+  const intervalLabel = getAutoRefreshIntervalLabel();
+  const title = "資料已更新";
+  const body = `已完成每 ${intervalLabel} 自動更新。更新時間：${timeText}`;
+  showInPageAlert(title, body, { timeoutMs: 9000, fullscreen: false, variant: "refresh-done" });
+  await showWindowsSystemNotification(title, body, { tag: "jin-auto-refresh" });
+}
+
+function armSystemNotificationPermission() {
+  const onGesture = () => {
+    document.removeEventListener("pointerdown", onGesture, true);
+    if (typeof Notification === "undefined" || Notification.permission !== "default") {
+      return;
+    }
+    ensureNotificationPermission().catch(() => {});
+  };
+  document.addEventListener("pointerdown", onGesture, true);
+}
+
 async function showAppNotification(title, body, { tag, data } = {}) {
   const payload = {
     body,
@@ -6273,8 +6328,8 @@ async function showAppNotification(title, body, { tag, data } = {}) {
     renotify: true,
     requireInteraction: true,
     vibrate: [200, 100, 200, 100, 200],
-    icon: "./icons/icon-192.svg",
-    badge: "./icons/icon-192.svg",
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
     data: data || {}
   };
 
@@ -8117,6 +8172,13 @@ function loadAutoRefreshIntervalPreference() {
   const saved = Number(localStorage.getItem(AUTO_REFRESH_STORAGE_KEY));
   if (AUTO_REFRESH_OPTIONS[saved]) {
     appState.autoRefreshIntervalMinutes = saved;
+  } else {
+    appState.autoRefreshIntervalMinutes = DEFAULT_AUTO_REFRESH_MINUTES;
+    try {
+      localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(DEFAULT_AUTO_REFRESH_MINUTES));
+    } catch {
+      /* ignore storage errors */
+    }
   }
   if (autoRefreshIntervalSelect) {
     autoRefreshIntervalSelect.value = String(appState.autoRefreshIntervalMinutes);
@@ -8172,7 +8234,10 @@ async function tickAutoRefreshCountdown() {
   appState.autoRefreshRunning = true;
   updateAutoRefreshMeta();
   try {
-    await performFullRefresh("auto");
+    const refreshed = await performFullRefresh("auto");
+    if (refreshed) {
+      await notifyAutoRefreshComplete();
+    }
   } finally {
     appState.autoRefreshRunning = false;
     if (shouldRescheduleAutoRefresh()) {
@@ -8198,6 +8263,7 @@ function restartAutoRefreshTimers() {
 
 function startAutoRefreshTimers() {
   loadAutoRefreshIntervalPreference();
+  armSystemNotificationPermission();
   restartAutoRefreshTimers();
 }
 
@@ -8258,8 +8324,10 @@ async function performFullRefresh(triggerSource) {
       scheduleNextAutoRefresh();
     }
     updateAutoRefreshMeta();
+    return true;
   } catch (error) {
     lastUpdated.textContent = `更新失敗：${error.message}`;
+    return false;
   } finally {
     if (showProgress) {
       setRefreshButtonLoading(false);
@@ -8436,6 +8504,7 @@ function applyAutoRefreshIntervalSelection() {
   appState.autoRefreshIntervalMinutes = minutes;
   localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(minutes));
   beginAutoRefreshCountdown();
+  ensureNotificationPermission().catch(() => {});
 }
 
 autoRefreshIntervalSelect?.addEventListener("change", applyAutoRefreshIntervalSelection);
