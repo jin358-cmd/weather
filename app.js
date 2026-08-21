@@ -1230,13 +1230,13 @@ function fillFreewayInterchangeSelect(preferred = "") {
 
   const allOption = document.createElement("option");
   allOption.value = "all";
-  allOption.textContent = "全部交流道／路段";
+  allOption.textContent = "全部路段";
   freewayInterchangeSelect.append(allOption);
 
   options.forEach((item) => {
     const option = document.createElement("option");
     option.value = item.name;
-    option.textContent = item.city ? `${item.name}（${item.city}）` : item.name;
+    option.textContent = simplifyFreewayOptionLabel(item.city ? `${item.name}（${item.city}）` : item.name);
     freewayInterchangeSelect.append(option);
   });
 
@@ -1628,17 +1628,23 @@ function isFreewayCameraStream(url = "") {
   return /cctvn\.freeway\.gov\.tw|abs2mjpg|bmjpg\?camera=/i.test(String(url || ""));
 }
 
+function simplifyFreewayOptionLabel(text = "") {
+  const raw = String(text || "").trim();
+  const simplified = raw.replaceAll("交流道", "").replace(/[ \t]+/g, " ").trim();
+  return simplified || raw;
+}
+
 function getCameraEntranceExitLabel(camera) {
   const text = String(camera?.stakenumber || "").trim();
   const match = text.match(/[（(]([^）)]+)[）)]/);
   if (match?.[1]) {
-    return match[1].trim();
+    return simplifyFreewayOptionLabel(match[1]);
   }
   const names = extractFreewayInterchangeNames(text);
   if (names.length) {
-    return names.join("到");
+    return simplifyFreewayOptionLabel(names.join("到"));
   }
-  return camera?.id || "交流道出入口";
+  return camera?.id || "出入口";
 }
 
 function stopFreewayFeedRefresh() {
@@ -1695,28 +1701,28 @@ function syncEarthquakeSummaryLevel(quake) {
 function getFreewayEntranceExitLabel(camera) {
   const selected = getSelectedFreewayInterchangeName();
   if (selected) {
-    return selected;
+    return simplifyFreewayOptionLabel(selected);
   }
   const text = String(camera?.stakenumber || "").trim();
   const match = text.match(/[（(]([^）)]+)[）)]/);
   if (match?.[1]) {
-    return match[1].trim();
+    return simplifyFreewayOptionLabel(match[1]);
   }
   const names = extractFreewayInterchangeNames(text);
   if (names.length) {
-    return names.join("到");
+    return simplifyFreewayOptionLabel(names.join("到"));
   }
   const city = getSelectedFreewayCityName();
   if (city) {
-    return `${city}交流道出入口`;
+    return `${city}出入口`;
   }
-  return "交流道出入口";
+  return "出入口";
 }
 
 function formatFreewayCameraCaption(camera) {
   const stake = String(camera?.stakenumber || "").trim();
   if (stake) {
-    return stake;
+    return simplifyFreewayOptionLabel(stake);
   }
   const segment = getFreewayEntranceExitLabel(camera);
   const region = getSelectedFreewayRegion();
@@ -2109,9 +2115,9 @@ function getFilteredSortedFreewayCameras() {
           distanceKm,
           routeCode: getCameraRouteCode(camera.id),
           focusLabel: interchangeName
-            ? interchangeName
+            ? simplifyFreewayOptionLabel(interchangeName)
             : selectedCity
-              ? `${selectedCity}交流道｜${region.label}`
+              ? `${selectedCity}｜${region.label}`
               : `公路局即時｜${region.label}`,
           interchangeNames: names
         };
