@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v44-remove-live-video-link";
+const SW_VERSION = "jin-v45-hero-flow-cyan-mix";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

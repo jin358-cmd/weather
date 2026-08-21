@@ -122,38 +122,43 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-layer {
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-ribbon {
-  opacity: 0.92;
+  opacity: 0.94;
   background: linear-gradient(
     108deg,
     #101820 0%,
-    #1a2d46 14%,
-    #c2a36b 30%,
-    #24364e 46%,
-    #d4ba86 62%,
-    #2f425c 78%,
+    #1a2d46 10%,
+    #c2a36b 22%,
+    #1a5368 34%,
+    #2ec8d4 46%,
+    #24364e 58%,
+    #d4ba86 70%,
+    #2a6d82 84%,
     #101820 100%
   );
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-a {
-  opacity: 0.55;
+  opacity: 0.56;
   background:
     radial-gradient(ellipse 52% 42% at 12% 38%, rgba(194, 163, 107, 0.55), transparent 58%),
-    linear-gradient(120deg, rgba(194, 163, 107, 0.28), transparent 40%, rgba(88, 140, 190, 0.38) 70%, transparent 92%);
+    radial-gradient(ellipse 40% 34% at 78% 62%, rgba(46, 200, 212, 0.42), transparent 62%),
+    linear-gradient(120deg, rgba(194, 163, 107, 0.26), transparent 38%, rgba(46, 200, 212, 0.4) 68%, transparent 92%);
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-b {
-  opacity: 0.5;
+  opacity: 0.52;
   background:
-    radial-gradient(ellipse 46% 36% at 88% 28%, rgba(90, 150, 210, 0.42), transparent 60%),
-    linear-gradient(250deg, transparent 18%, rgba(244, 239, 230, 0.18) 50%, transparent 78%);
+    radial-gradient(ellipse 46% 36% at 88% 28%, rgba(46, 200, 212, 0.48), transparent 60%),
+    radial-gradient(ellipse 38% 32% at 18% 72%, rgba(194, 163, 107, 0.28), transparent 64%),
+    linear-gradient(250deg, transparent 16%, rgba(90, 150, 210, 0.28) 42%, rgba(122, 240, 248, 0.22) 62%, transparent 84%);
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
-  opacity: 0.4;
+  opacity: 0.42;
   background:
-    radial-gradient(ellipse 40% 28% at 48% 90%, rgba(194, 163, 107, 0.3), transparent 64%),
-    repeating-linear-gradient(108deg, transparent 0 52px, rgba(244, 239, 230, 0.08) 52px 54px);
+    radial-gradient(ellipse 40% 28% at 48% 90%, rgba(194, 163, 107, 0.28), transparent 64%),
+    radial-gradient(ellipse 34% 24% at 22% 18%, rgba(46, 200, 212, 0.26), transparent 60%),
+    repeating-linear-gradient(108deg, transparent 0 50px, rgba(46, 200, 212, 0.12) 50px 52px, transparent 52px 104px, rgba(244, 239, 230, 0.08) 104px 106px);
 }
 
 .theme-elegant .hero .eyebrow {
