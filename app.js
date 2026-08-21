@@ -1561,6 +1561,41 @@ function getFreewayCameraFocusPoint() {
   return getCameraFocusPoint(getSelectedFreewayRegion(), getSelectedFreewayCityName() || citySelect.value);
 }
 
+function isFreewayCameraStream(url = "") {
+  return /cctvn\.freeway\.gov\.tw|abs2mjpg|bmjpg\?camera=/i.test(String(url || ""));
+}
+
+function getFreewayEntranceExitLabel(camera) {
+  const selected = getSelectedFreewayInterchangeName();
+  if (selected) {
+    return selected;
+  }
+  const text = String(camera?.stakenumber || "").trim();
+  const match = text.match(/[（(]([^）)]+)[）)]/);
+  if (match?.[1]) {
+    return match[1].trim();
+  }
+  const names = extractFreewayInterchangeNames(text);
+  if (names.length) {
+    return names.join("到");
+  }
+  const city = getSelectedFreewayCityName();
+  if (city) {
+    return `${city}交流道出入口`;
+  }
+  return "交流道出入口";
+}
+
+function formatFreewayCameraCaption(camera) {
+  const stake = String(camera?.stakenumber || "").trim();
+  if (stake) {
+    return stake;
+  }
+  const segment = getFreewayEntranceExitLabel(camera);
+  const region = getSelectedFreewayRegion();
+  return `${region?.label || "國道"}（${segment}）`;
+}
+
 function isCameraUrlUsable(url) {
   if (!url) {
     return false;
@@ -2486,7 +2521,10 @@ function probeImageStream(url, { timeoutMs = 8000 } = {}) {
 
 async function probeCameraStream(url, { timeoutMs = 4500 } = {}) {
   if (!url || !isCameraUrlUsable(url)) {
-    return { ok: false, reason: "unusable" };
+    return Promise.resolve({ ok: false, reason: "unusable" });
+  }
+  if (isFreewayCameraStream(url)) {
+    return Promise.resolve({ ok: true, reason: "freeway-mjpeg" });
   }
   if (isLikelyDirectImageStream(url)) {
     return probeImageStream(url, { timeoutMs });
@@ -2655,23 +2693,31 @@ async function prefetchCityMonitorStreams(cityName, { label = "" } = {}) {
   return { city, total: unique.length, done };
 }
 
-function createCameraCard(camera, _scopeLabel, { forceImage = false } = {}) {
+function createCameraCard(camera, _scopeLabel, { forceImage = false, variant = "city" } = {}) {
   const card = document.createElement("article");
-  card.className = "camera-item camera-item-pending";
-  card.hidden = true;
+  const isFreeway = variant === "freeway" || isFreewayCameraStream(camera.html);
+  card.className = isFreeway
+    ? "camera-item camera-item-live camera-item-freeway"
+    : "camera-item camera-item-pending";
+  card.hidden = !isFreeway;
   card.dataset.cameraId = camera.id || "";
   const streamUrl = camera.html;
   const [roadA, roadB] = getCameraIntersectionRoads(camera);
-  const useImage = forceImage || isLikelyDirectImageStream(streamUrl);
+  const useImage = forceImage || isLikelyDirectImageStream(streamUrl) || isFreeway;
+  const caption = isFreeway
+    ? formatFreewayCameraCaption(camera)
+    : `交叉路口：${roadA} × ${roadB}`;
 
   const mediaHtml = useImage
-    ? `<img src="${streamUrl}" alt="${camera.id} 即時影像" loading="eager" referrerpolicy="no-referrer-when-downgrade" />`
-    : `<iframe class="camera-frame" src="${streamUrl}" title="${camera.id} 即時影像" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    ? `<img src="${streamUrl}" alt="${caption}" loading="eager" referrerpolicy="${
+        isFreeway ? "origin" : "no-referrer-when-downgrade"
+      }" />`
+    : `<iframe class="camera-frame" src="${streamUrl}" title="${caption}" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
 
   card.innerHTML = `
     ${mediaHtml}
     <div class="camera-body">
-      <p data-cross-roads>交叉路口：${roadA} × ${roadB}</p>
+      <p data-cross-roads>${caption}</p>
       <div class="camera-links">
         <a href="${streamUrl}" target="_blank" rel="noopener noreferrer">即時影像</a>
       </div>
@@ -2690,7 +2736,9 @@ function createCameraCard(camera, _scopeLabel, { forceImage = false } = {}) {
   };
 
   const img = card.querySelector("img");
-  if (img) {
+  if (img && isFreeway) {
+    img.addEventListener("error", () => hideDeadCard("img-error"));
+  } else if (img) {
     img.addEventListener("error", () => hideDeadCard("img-error"));
     img.addEventListener("load", () => {
       window.setTimeout(() => {
@@ -2735,7 +2783,9 @@ function createCameraCard(camera, _scopeLabel, { forceImage = false } = {}) {
     }, 6000);
   }
 
-  scheduleCameraCrossRoadEnrichment(card, camera);
+  if (!isFreeway) {
+    scheduleCameraCrossRoadEnrichment(card, camera);
+  }
   return card;
 }
 
@@ -3080,8 +3130,9 @@ function updateFreewayCameraMetaText() {
     ? formatDateTime(freewayCameraDataset.fetchedAt)
     : "未提供";
   const region = getSelectedFreewayRegion();
-  const scopeLabel = getCameraCityScopeMetaLabel(freewayCitySelect);
-  freewayCameraMeta.textContent = `${region.label}｜${scopeLabel}｜預設最近最多 ${FREEWAY_CCTV_PREVIEW_LIMIT} 組｜快照：${freewayFetchedAt}`;
+  const nearest = getFilteredSortedFreewayCameras()[0];
+  const segment = getFreewayEntranceExitLabel(nearest);
+  freewayCameraMeta.textContent = `${region.label}｜(${segment})快照：${freewayFetchedAt}`;
 }
 
 async function renderFreewayCameraList() {
@@ -3095,67 +3146,22 @@ async function renderFreewayCameraList() {
     freewayCameraList.innerHTML = `<p class="status-warn">目前無法載入國道監控資料。</p>`;
     return;
   }
-  const rows = dedupeCamerasByIdentity(getFilteredSortedFreewayCameras()).slice(0, CCTV_VERIFY_POOL_SIZE);
+  const rows = dedupeCamerasByIdentity(getFilteredSortedFreewayCameras()).slice(0, FREEWAY_CCTV_PREVIEW_LIMIT);
   updateFreewayCameraMetaText();
-  const selectedCity = getSelectedFreewayCityName();
-  const region = getSelectedFreewayRegion();
-  const interchangeName = getSelectedFreewayInterchangeName();
-  const scopeLabel = interchangeName
-    ? `${region.label}｜${interchangeName}`
-    : selectedCity
-      ? `${region.label}｜${selectedCity}（最近最多 ${FREEWAY_CCTV_PREVIEW_LIMIT} 組）`
-      : `公路局即時｜${region.label}`;
   if (!rows.length) {
     freewayCameraList.innerHTML = `<p class="status-warn">目前範圍查無國道監控點，請更換國道路段、縣市或交流道。</p>`;
     return;
   }
 
-  const loading = document.createElement("p");
-  loading.className = "timestamp camera-switching";
-  loading.dataset.cameraLoading = "1";
-  loading.innerHTML = `正在偵測國道監控：${scopeLabel}｜正在讀取畫面中 <strong data-cctv-progress>0%</strong>`;
-  freewayCameraList.append(loading);
-
-  const liveCameras = await collectVerifiedLiveCameras(rows, {
-    isCurrent,
-    limit: FREEWAY_CCTV_PREVIEW_LIMIT,
-    onProgress: ({ pct }) => {
-      if (!isCurrent()) {
-        return;
-      }
-      const progressEl = freewayCameraList.querySelector("[data-cctv-progress]");
-      if (progressEl) {
-        progressEl.textContent = `${pct}%`;
-      }
-    }
-  });
-  if (!isCurrent()) {
-    return;
-  }
-
-  freewayCameraList.querySelector("[data-camera-loading]")?.remove();
-  if (!liveCameras.length) {
-    freewayCameraList.innerHTML = `<p class="status-warn">附近國道監控目前多為維修／無畫面，暫無正常顯示影像。</p>`;
-    updateFreewayCameraMetaText();
-    return;
-  }
-
-  for (const camera of liveCameras) {
+  for (const camera of rows) {
     if (!isCurrent()) {
       return;
     }
-    const card = createCameraCard(camera, scopeLabel, {
-      forceImage: isLikelyDirectImageStream(camera.html)
+    const card = createCameraCard(camera, "", {
+      forceImage: true,
+      variant: "freeway"
     });
     freewayCameraList.append(card);
-    await waitForCameraCardDecision(card, 8000);
-  }
-  if (!isCurrent()) {
-    return;
-  }
-  updateFreewayCameraMetaText();
-  if (!freewayCameraList.querySelector(".camera-item-live")) {
-    freewayCameraList.innerHTML = `<p class="status-warn">附近國道監控目前多為維修／無畫面，暫無正常顯示影像。</p>`;
   }
 }
 

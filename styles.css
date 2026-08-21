@@ -1900,6 +1900,11 @@ input[type="checkbox"] {
   color: var(--primary);
 }
 
+.msn-weather-card .rain-row-time,
+.msn-weather-card .rain-row-probability {
+  color: #2f2f2f;
+}
+
 .weekly-forecast-details {
   margin-top: 14px;
   padding: 12px 14px;
@@ -2385,9 +2390,25 @@ input[type="checkbox"] {
   color: var(--primary);
 }
 
+.rain-row-time,
+.rain-row-probability,
+.rain-row span.rain-row-time,
+.rain-row strong.rain-row-probability,
+.msn-weather-card .rain-row-time,
+.msn-weather-card .rain-row-probability,
+.msn-weather-card .rain-row span.rain-row-time,
+.msn-weather-card .rain-row strong.rain-row-probability {
+  color: #2f2f2f;
+}
+
 .msn-weather-card .rain-row span,
 .msn-weather-card .rain-row strong {
   color: var(--primary);
+}
+
+.msn-weather-card .rain-row-time,
+.msn-weather-card .rain-row-probability {
+  color: #2f2f2f;
 }
 
 .rain-empty {
@@ -2489,6 +2510,11 @@ input[type="checkbox"] {
 
 .camera-item-live {
   display: grid;
+}
+
+.camera-item-freeway img {
+  object-fit: contain;
+  background: #111;
 }
 
 .camera-item img,
