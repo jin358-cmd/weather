@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v42-hero-title-match-heading";
+const SW_VERSION = "jin-v43-center-narrow-fields";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

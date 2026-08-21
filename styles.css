@@ -213,6 +213,7 @@ body {
 }
 
 .app {
+  --field-col-width: min(86%, 32rem);
   width: 100%;
   max-width: min(1240px, 100%);
   margin: 24px auto 48px;
@@ -229,6 +230,82 @@ body {
 .app > * {
   min-width: 0;
   max-width: 100%;
+}
+
+.app .control-grid,
+.app .auto-refresh-row,
+.app .camera-controls,
+.app .subscription-form,
+.app .metrics,
+.app .weekly-forecast-details,
+.app .rain-forecast-inline,
+.app .air-details,
+.app .closure-list,
+.app .closure-meta,
+.app .earthquake-list,
+.app .earthquake-head,
+.app .earthquake-summary,
+.app .earthquake-meta,
+.app .analysis-list,
+.app .notice-details,
+.app .map-legend,
+.app .map-category-filters,
+.app .camera-card > .timestamp,
+.app .freeway-details > .timestamp {
+  width: var(--field-col-width);
+  max-width: 32rem;
+  margin-inline: auto;
+  justify-self: center;
+  box-sizing: border-box;
+}
+
+.app .air-details .metrics,
+.app .weekly-forecast-details .weekly-forecast-list,
+.app .rain-forecast-inline .rain-timeline {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.app .control-grid > div,
+.app .camera-controls-grid > div,
+.app .auto-refresh-controls {
+  text-align: center;
+}
+
+.app .control-grid label,
+.app .camera-controls label,
+.app .subscription-form > label[for] {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.app .metrics,
+.app .metrics dt,
+.app .metrics dd,
+.app .closure-meta,
+.app .earthquake-head,
+.app .earthquake-summary,
+.app .earthquake-meta,
+.app .camera-card > .timestamp,
+.app .freeway-details > .timestamp,
+.app .rain-forecast-inline .weather-subheading,
+.app .rain-forecast-inline .timestamp {
+  text-align: center;
+}
+
+.app .map-category-filters,
+.app .map-legend-below .legend-list {
+  justify-content: center;
+}
+
+.app .control-grid select,
+.app .camera-controls select,
+.app .camera-controls input,
+.app .auto-refresh-controls select,
+.app .subscription-form input[type="email"] {
+  text-align: left;
 }
 
 .visual-break {
