@@ -1226,11 +1226,12 @@ function fillFreewayInterchangeSelect(preferred = "") {
   }
   const previous = preferred || freewayInterchangeSelect.value || "all";
   const options = getFreewayInterchangeOptions();
+  const nationwide = isFreewayCityManuallyScoped();
   freewayInterchangeSelect.innerHTML = "";
 
   const allOption = document.createElement("option");
   allOption.value = "all";
-  allOption.textContent = "全部路段";
+  allOption.textContent = nationwide ? "全台監控點" : "全部路段";
   freewayInterchangeSelect.append(allOption);
 
   options.forEach((item) => {
@@ -1264,9 +1265,10 @@ function getFreewayInterchangeOptions() {
     return [];
   }
   const region = getSelectedFreewayRegion();
+  const nationwide = isFreewayCityManuallyScoped();
   const selectedCity = getSelectedFreewayCityName();
   const routeCameras = (freewayCameraDataset?.cameras || []).filter((camera) =>
-    cameraMatchesFreewayRoute(camera, region)
+    nationwide || cameraMatchesFreewayRoute(camera, region)
   );
   const namesOnRoute = new Set();
   routeCameras.forEach((camera) => {
@@ -1275,8 +1277,18 @@ function getFreewayInterchangeOptions() {
 
   return freewayInterchangeIndex.all
     .filter((item) => namesOnRoute.has(item.name))
-    .filter((item) => !selectedCity || item.city === selectedCity)
-    .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+    .filter((item) => item.name && !item.name.startsWith("--"))
+    .filter((item) => nationwide || !selectedCity || item.city === selectedCity)
+    .sort((a, b) => {
+      if (nationwide && selectedCity) {
+        const aLocal = a.city === selectedCity ? 0 : 1;
+        const bLocal = b.city === selectedCity ? 0 : 1;
+        if (aLocal !== bLocal) {
+          return aLocal - bLocal;
+        }
+      }
+      return a.name.localeCompare(b.name, "zh-Hant");
+    });
 }
 
 function getSelectedCameraCityNameFrom(selectElement) {
@@ -1298,6 +1310,29 @@ function getSelectedCameraCityName() {
 
 function getSelectedFreewayCityName() {
   return getSelectedCameraCityNameFrom(freewayCitySelect);
+}
+
+function isFreewayCityManuallyScoped() {
+  const value = String(freewayCitySelect?.value || "");
+  return Boolean(value) && value !== "follow";
+}
+
+function getFreewayBrowseFocus() {
+  const interchangeName = getSelectedFreewayInterchangeName();
+  if (interchangeName && freewayInterchangeIndex?.all?.length) {
+    const hit = freewayInterchangeIndex.all.find((item) => item.name === interchangeName);
+    if (hit && Number.isFinite(hit.lat) && Number.isFinite(hit.lon)) {
+      return { lat: hit.lat, lon: hit.lon, label: hit.name };
+    }
+  }
+  if (isFreewayCityManuallyScoped()) {
+    const cityName = getSelectedFreewayCityName();
+    const city = CITY_LOCATIONS.find((item) => item.name === cityName);
+    if (city) {
+      return { lat: city.lat, lon: city.lon, label: city.name };
+    }
+  }
+  return getCctvLocationFocus();
 }
 
 function findNearestTownship(lat, lon) {
@@ -1621,7 +1656,7 @@ function getCityCameraFocusPoint() {
 }
 
 function getFreewayCameraFocusPoint() {
-  return getCameraFocusPoint(getSelectedFreewayRegion(), getSelectedFreewayCityName() || citySelect.value);
+  return getFreewayBrowseFocus();
 }
 
 function isFreewayCameraStream(url = "") {
@@ -2143,7 +2178,7 @@ function getFilteredSortedFreewayCameras() {
     }
     return item.name === interchangeName;
   });
-  const weatherFocus = getCctvLocationFocus();
+  const weatherFocus = getFreewayBrowseFocus();
   const radiusKm = interchangeName
     ? 8
     : selectedCity
@@ -8380,7 +8415,10 @@ freewayRegionSelect?.addEventListener("change", () => {
 });
 
 freewayCitySelect?.addEventListener("change", () => {
-  fillFreewayInterchangeSelect();
+  if (isFreewayCityManuallyScoped() && freewayRegionSelect) {
+    freewayRegionSelect.value = "all-freeway";
+  }
+  fillFreewayInterchangeSelect("all");
   renderFreewayCameraList();
 });
 
