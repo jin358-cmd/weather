@@ -263,7 +263,7 @@ body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-pct {
 
 .theme-elegant .topic-option,
 .theme-elegant .topic-option-text {
-  color: var(--heading) !important;
+  color: #7ec8ff !important;
   font-family: var(--font-body) !important;
   font-size: clamp(1.15rem, 4.4vw, 1.42rem) !important;
   font-weight: 700;
@@ -271,6 +271,17 @@ body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-pct {
   letter-spacing: 0;
   white-space: normal;
   overflow: visible;
+}
+
+.theme-elegant #subscriptionStatus.timestamp,
+.theme-elegant .subscription-status-box {
+  color: #1d4ed8 !important;
+}
+
+.theme-elegant .in-page-alert:not(.in-page-alert-locate-done),
+.theme-elegant .in-page-alert:not(.in-page-alert-locate-done) .in-page-alert-title,
+.theme-elegant .in-page-alert:not(.in-page-alert-locate-done) .in-page-alert-line {
+  color: #1d4ed8 !important;
 }
 
 .theme-elegant .topic-option input {
