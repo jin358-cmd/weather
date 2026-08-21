@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v48-closure-empty-center";
+const SW_VERSION = "jin-v49-weather-icon-lighter-cloudy";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

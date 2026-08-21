@@ -732,6 +732,7 @@ const appState = {
   subscription: null,
   lastNotifiedAt: 0,
   lastWeatherCode: null,
+  lastCloudCover: null,
   weeklyForecast: [],
   verifiedCityCameras: []
 };
@@ -3711,10 +3712,10 @@ function formatEarthquakeMagnitudeLabel(magnitude) {
   return `${value.toFixed(1)}(級)`;
 }
 
-function getKawaiiWeatherIconSvg(code) {
-  const weatherCode = Number(code);
+function getKawaiiWeatherIconSvg(code, cloudCover) {
+  const category = getWeatherCategory(code, cloudCover);
   // Kawaii eyes: oversized sparkly eyes, blush, soft smile.
-  if ([95, 96, 99].includes(weatherCode)) {
+  if (category === "thunder") {
     return `
       <svg viewBox="0 0 96 96" role="img" aria-label="雷雨">
         <ellipse class="cloud-body" cx="48" cy="40" rx="30" ry="17" fill="#dce6fb"/>
@@ -3734,7 +3735,7 @@ function getKawaiiWeatherIconSvg(code) {
         <path class="rain-drop" d="M38 64 q3 8 0 13" fill="none" stroke="#60a5fa" stroke-width="3.4" stroke-linecap="round"/>
       </svg>`;
   }
-  if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) {
+  if (category === "snow") {
     return `
       <svg viewBox="0 0 96 96" role="img" aria-label="下雪">
         <ellipse class="cloud-body" cx="48" cy="36" rx="28" ry="15" fill="#eef4ff"/>
@@ -3756,7 +3757,7 @@ function getKawaiiWeatherIconSvg(code) {
         </g>
       </svg>`;
   }
-  if ([61, 63, 65, 80, 81, 82, 51, 53, 55, 56, 57, 66, 67].includes(weatherCode)) {
+  if (category === "rain") {
     return `
       <svg viewBox="0 0 96 96" role="img" aria-label="雨天">
         <circle class="sun-core" cx="72" cy="20" r="11" fill="#ffd56a"/>
@@ -3777,7 +3778,7 @@ function getKawaiiWeatherIconSvg(code) {
         <path class="rain-drop" d="M58 58 q3.4 9 0 15" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
       </svg>`;
   }
-  if ([45, 48, 3].includes(weatherCode)) {
+  if (category === "overcast") {
     return `
       <svg viewBox="0 0 96 96" role="img" aria-label="陰天">
         <ellipse class="cloud-body" cx="48" cy="48" rx="30" ry="17" fill="#cdd7e8"/>
@@ -3794,7 +3795,7 @@ function getKawaiiWeatherIconSvg(code) {
         <circle cx="72" cy="58" r="4" fill="#fda4af"/>
       </svg>`;
   }
-  if ([1, 2].includes(weatherCode)) {
+  if (category === "partly") {
     return `
       <svg viewBox="0 0 96 96" role="img" aria-label="多雲">
         <g class="sun-core">
@@ -3858,7 +3859,9 @@ const WEATHER_ICON_THEMES = {
   vivid: { label: "鮮明動態", className: "weather-icon-theme-vivid" }
 };
 
-function getWeatherCategory(code) {
+const CLOUDY_OVERRIDE_CLOUD_COVER = 60;
+
+function getWeatherCategory(code, cloudCover) {
   const weatherCode = Number(code);
   if ([95, 96, 99].includes(weatherCode)) {
     return "thunder";
@@ -3867,6 +3870,10 @@ function getWeatherCategory(code) {
     return "snow";
   }
   if ([61, 63, 65, 80, 81, 82, 51, 53, 55, 56, 57, 66, 67].includes(weatherCode)) {
+    const clouds = Number(cloudCover);
+    if (Number.isFinite(clouds) && clouds >= CLOUDY_OVERRIDE_CLOUD_COVER) {
+      return "partly";
+    }
     return "rain";
   }
   if ([45, 48, 3].includes(weatherCode)) {
@@ -3880,17 +3887,17 @@ function getWeatherCategory(code) {
 
 const FLAT_WEATHER_ICONS = {
   clear:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="18" fill="#c2410c"/><g stroke="#9a3412" stroke-width="3" stroke-linecap="round"><path d="M48 12v8"/><path d="M48 76v8"/><path d="M12 48h8"/><path d="M76 48h8"/></g></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="18" fill="#fde68a"/><g stroke="#fbbf24" stroke-width="3" stroke-linecap="round"><path d="M48 12v8"/><path d="M48 76v8"/><path d="M12 48h8"/><path d="M76 48h8"/></g></svg>',
   partly:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="12" fill="#c2410c"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="#4b6178"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#334155"/><ellipse cx="56" cy="62" rx="12" ry="9" fill="#64748b"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="12" fill="#fde68a"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="#f1f5f9"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#e2e8f0"/><ellipse cx="56" cy="62" rx="12" ry="9" fill="#f8fafc"/></svg>',
   overcast:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#334155"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#1e293b"/><ellipse cx="68" cy="54" rx="14" ry="10" fill="#475569"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#e2e8f0"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#cbd5e1"/><ellipse cx="68" cy="54" rx="14" ry="10" fill="#f1f5f9"/></svg>',
   rain:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#334155"/><path class="rain-drop" d="M30 58 v14" stroke="#075985" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v14" stroke="#075985" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v14" stroke="#075985" stroke-width="4" stroke-linecap="round"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#e2e8f0"/><path class="rain-drop" d="M30 58 v14" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v14" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v14" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/></svg>',
   snow:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#475569"/><circle cx="34" cy="62" r="4" fill="#0369a1"/><circle cx="48" cy="68" r="4" fill="#0284c7"/><circle cx="62" cy="62" r="4" fill="#0369a1"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#f1f5f9"/><circle cx="34" cy="62" r="4" fill="#bae6fd"/><circle cx="48" cy="68" r="4" fill="#e0f2fe"/><circle cx="62" cy="62" r="4" fill="#bae6fd"/></svg>',
   thunder:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#1e293b"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#b45309"/><path class="rain-drop" d="M28 62 v12" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round"/></svg>'
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#cbd5e1"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#fde68a"/><path class="rain-drop" d="M28 62 v12" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round"/></svg>'
 };
 
 const LINE_WEATHER_ICONS = {
@@ -3938,20 +3945,20 @@ const VIVID_WEATHER_ICONS = {
     '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="36" rx="28" ry="15" fill="#334155"/><path class="bolt" d="M52 46 L42 62 H51 L44 80 L68 56 H56 L62 46 Z" fill="#ffd60a"/><path class="rain-drop" d="M26 58 v14" stroke="#0096c7" stroke-width="3.6" stroke-linecap="round"/><path class="rain-drop" d="M36 60 v14" stroke="#00b4d8" stroke-width="3.6" stroke-linecap="round"/></svg>'
 };
 
-function getFlatWeatherIconSvg(code) {
-  return FLAT_WEATHER_ICONS[getWeatherCategory(code)] || FLAT_WEATHER_ICONS.clear;
+function getFlatWeatherIconSvg(code, cloudCover) {
+  return FLAT_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || FLAT_WEATHER_ICONS.clear;
 }
 
-function getLineWeatherIconSvg(code) {
-  return LINE_WEATHER_ICONS[getWeatherCategory(code)] || LINE_WEATHER_ICONS.clear;
+function getLineWeatherIconSvg(code, cloudCover) {
+  return LINE_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || LINE_WEATHER_ICONS.clear;
 }
 
-function getGlassWeatherIconSvg(code) {
-  return GLASS_WEATHER_ICONS[getWeatherCategory(code)] || GLASS_WEATHER_ICONS.clear;
+function getGlassWeatherIconSvg(code, cloudCover) {
+  return GLASS_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || GLASS_WEATHER_ICONS.clear;
 }
 
-function getVividWeatherIconSvg(code) {
-  return VIVID_WEATHER_ICONS[getWeatherCategory(code)] || VIVID_WEATHER_ICONS.clear;
+function getVividWeatherIconSvg(code, cloudCover) {
+  return VIVID_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || VIVID_WEATHER_ICONS.clear;
 }
 
 function getWeatherIconTheme() {
@@ -3973,22 +3980,22 @@ function setWeatherIconTheme(themeKey) {
   });
   const currentCode = appState.lastWeatherCode;
   if (Number.isFinite(currentCode)) {
-    renderWeatherIcon(currentCode);
+    renderWeatherIcon(currentCode, appState.lastCloudCover);
   }
 }
 
-function getWeatherIconSvg(code, theme = getWeatherIconTheme()) {
+function getWeatherIconSvg(code, theme = getWeatherIconTheme(), cloudCover) {
   switch (theme) {
     case "flat":
-      return getFlatWeatherIconSvg(code);
+      return getFlatWeatherIconSvg(code, cloudCover);
     case "line":
-      return getLineWeatherIconSvg(code);
+      return getLineWeatherIconSvg(code, cloudCover);
     case "glass":
-      return getGlassWeatherIconSvg(code);
+      return getGlassWeatherIconSvg(code, cloudCover);
     case "vivid":
-      return getVividWeatherIconSvg(code);
+      return getVividWeatherIconSvg(code, cloudCover);
     default:
-      return getKawaiiWeatherIconSvg(code);
+      return getKawaiiWeatherIconSvg(code, cloudCover);
   }
 }
 
@@ -3999,12 +4006,19 @@ function initWeatherIconThemePicker() {
   setWeatherIconTheme("flat");
 }
 
-function renderWeatherIcon(weatherCode) {
+function renderWeatherIcon(weatherCode, cloudCover) {
   if (!weatherIcon) {
     return;
   }
   appState.lastWeatherCode = Number(weatherCode);
-  weatherIcon.innerHTML = getWeatherIconSvg(weatherCode);
+  if (cloudCover !== undefined) {
+    appState.lastCloudCover = cloudCover;
+  }
+  weatherIcon.innerHTML = getWeatherIconSvg(
+    weatherCode,
+    getWeatherIconTheme(),
+    cloudCover ?? appState.lastCloudCover
+  );
 }
 
 function findNearestTimeIndex(times, nowIso) {
@@ -4131,7 +4145,8 @@ function buildWeeklyForecastDays(daily = {}) {
       tempMax: Number(daily.temperature_2m_max?.[index]),
       tempMin: Number(daily.temperature_2m_min?.[index]),
       rainSum: Number(daily.precipitation_sum?.[index] ?? 0),
-      rainProb: Number(daily.precipitation_probability_max?.[index] ?? 0)
+      rainProb: Number(daily.precipitation_probability_max?.[index] ?? 0),
+      cloudCover: Number(daily.cloud_cover_mean?.[index])
     };
   });
 }
@@ -4167,7 +4182,7 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
         <strong>${index === 0 ? "今天" : day.weekday}</strong>
         <span>${day.monthDay}</span>
       </div>
-      <div class="weekly-forecast-icon ${WEATHER_ICON_THEMES[getWeatherIconTheme()].className}" aria-hidden="true">${getWeatherIconSvg(day.weatherCode)}</div>
+      <div class="weekly-forecast-icon ${WEATHER_ICON_THEMES[getWeatherIconTheme()].className}" aria-hidden="true">${getWeatherIconSvg(day.weatherCode, getWeatherIconTheme(), day.cloudCover)}</div>
       <div class="weekly-forecast-side">
         <span class="weekly-forecast-label">${day.label}</span>
         <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
@@ -4194,7 +4209,7 @@ async function fetchWeather() {
   endpoint.searchParams.set("hourly", "precipitation_probability,precipitation");
   endpoint.searchParams.set(
     "daily",
-    "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max"
+    "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,cloud_cover_mean"
   );
   endpoint.searchParams.set("timezone", "Asia/Taipei");
   endpoint.searchParams.set("forecast_days", "7");
@@ -4231,7 +4246,7 @@ async function fetchWeather() {
   weatherSummary.textContent = WEATHER_CODE_LABEL[current.weather_code] ?? "天氣狀態更新中";
   tempValue.textContent = `${Math.round(current.temperature_2m)}°`;
   feelValue.textContent = `${Math.round(current.apparent_temperature)}°`;
-  renderWeatherIcon(current.weather_code);
+  renderWeatherIcon(current.weather_code, current.cloud_cover);
   humidityValue.textContent = `${Math.round(current.relative_humidity_2m)}%`;
   windValue.textContent = `${Math.round(current.wind_speed_10m)} km/h`;
   rainValue.textContent = `${current.precipitation.toFixed(1)} mm`;
