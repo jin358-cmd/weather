@@ -107,7 +107,7 @@
   color: var(--hero-text);
   border: 1px solid var(--hero-border);
   border-radius: 12px;
-  padding: 28px 24px;
+  padding: 20px 8px 16px;
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero {
@@ -170,12 +170,15 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   color: var(--hero-title);
   font-family: var(--font-display);
   font-weight: 900;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   text-shadow: 0 2px 14px rgba(18, 24, 33, 0.78);
-  white-space: normal;
-  overflow: visible;
-  line-height: 1.22;
-  font-size: clamp(2rem, 7vw, 3.55rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1.12;
+  width: 100%;
+  max-width: 100%;
+  font-size: clamp(16px, 7.2vw, 96px);
 }
 
 .theme-elegant .refresh-btn {
@@ -655,16 +658,21 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
 }
 
 @media (max-width: 860px) {
+  .theme-elegant .hero,
+  body.theme-elegant[data-legacy-theme="dusk"] .hero {
+    padding: 14px 6px 12px;
+  }
+
   .theme-elegant .hero h1,
   body.theme-elegant[data-legacy-theme="dusk"] .hero h1 {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: clip;
     letter-spacing: 0;
-    line-height: 1.15;
+    line-height: 1.12;
     width: 100%;
     max-width: 100%;
-    font-size: clamp(13px, 6.2vw, 42px);
+    font-size: clamp(15px, 8vw, 64px);
   }
 
   .theme-elegant .topic-option,

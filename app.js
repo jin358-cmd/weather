@@ -8532,7 +8532,7 @@ function syncNoticeDetailsOpen() {
   noticeDetails.open = window.matchMedia("(min-width: 861px)").matches;
 }
 
-function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1, fillLine = false } = {}) {
+function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1, fillLine = false, availablePx } = {}) {
   if (!element) {
     return;
   }
@@ -8548,7 +8548,10 @@ function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1, fillLine = fa
   element.style.letterSpacing = "";
   const parentWidth = Math.floor(parent.getBoundingClientRect().width);
   const selfWidth = Math.floor(element.getBoundingClientRect().width);
-  const fullWidth = Math.max(0, selfWidth || parentWidth);
+  const fullWidth =
+    Number.isFinite(availablePx) && availablePx > 0
+      ? Math.floor(availablePx)
+      : Math.max(0, selfWidth || parentWidth);
   if (!fullWidth) {
     return;
   }
@@ -8626,19 +8629,26 @@ function fitHeroTexts() {
   const subtitle = document.querySelector(".hero .subtitle.hero-fit-text");
   const riskBadge = document.querySelector("#typhoonRiskBadge.hero-fit-text");
   const content = document.querySelector(".hero-content");
+  const hero = document.querySelector(".hero");
   const width = Math.floor(content?.getBoundingClientRect().width || document.documentElement.clientWidth || 0);
-  const isCompactHero = window.matchMedia("(max-width: 860px)").matches;
   if (title) {
-    if (isCompactHero) {
-      fitSingleLineText(title, {
-        maxPx: Math.min(56, Math.max(18, Math.floor(width * 0.16))),
-        minPx: 11,
-        fillRatio: 1,
-        fillLine: true
-      });
-    } else {
-      clearFittedTextStyles(title);
-    }
+    const available = Math.max(
+      160,
+      Math.floor(
+        title.getBoundingClientRect().width ||
+          hero?.clientWidth ||
+          window.visualViewport?.width ||
+          document.documentElement.clientWidth ||
+          0
+      )
+    );
+    fitSingleLineText(title, {
+      maxPx: Math.max(28, Math.floor(available / 6)),
+      minPx: 13,
+      fillRatio: 1,
+      fillLine: true,
+      availablePx: available
+    });
   }
   fitSingleLineText(subtitle, {
     maxPx: Math.min(18, Math.floor(width * 0.038)),
