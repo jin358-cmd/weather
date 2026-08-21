@@ -1784,9 +1784,13 @@ input[type="checkbox"] {
 .weather-feel-line {
   margin: 0;
   font-size: clamp(1.15rem, 4.6vw, 1.45rem);
-  color: #1d4f7c;
+  color: #f5e14a;
   font-weight: 800;
   line-height: 1.35;
+}
+
+#feelValue {
+  color: #f5e14a;
 }
 
 .weather-place-line {
@@ -1879,13 +1883,21 @@ input[type="checkbox"] {
   font-weight: 800;
 }
 
+.rain-forecast-inline .weather-subheading,
+.rain-forecast-inline #rainProjection,
+.rain-forecast-inline .timestamp,
+.msn-weather-card .rain-forecast-inline .weather-subheading,
+.msn-weather-card .rain-forecast-inline .timestamp {
+  color: var(--primary);
+}
+
 .msn-weather-card .rain-timeline {
-  color: #0b2f55;
+  color: var(--primary);
 }
 
 .msn-weather-card .rain-row span,
 .msn-weather-card .rain-row strong {
-  color: #0b2f55;
+  color: var(--primary);
 }
 
 .weekly-forecast-details {
@@ -1934,10 +1946,10 @@ input[type="checkbox"] {
 
 .weekly-forecast-row {
   display: grid;
-  grid-template-columns: minmax(78px, auto) minmax(64px, 1fr) minmax(0, 1.2fr);
-  gap: 10px 12px;
+  grid-template-columns: minmax(78px, auto) 68px minmax(0, 1fr);
+  gap: 10px 8px;
   align-items: center;
-  padding: 12px 14px;
+  padding: 12px 14px 12px 10px;
   border-radius: 12px;
   background: rgba(238, 244, 255, 0.85);
   border: 1px solid #c7daf8;
@@ -1989,8 +2001,8 @@ input[type="checkbox"] {
   display: grid;
   gap: 4px;
   min-width: 0;
-  justify-items: end;
-  text-align: right;
+  justify-items: start;
+  text-align: left;
 }
 
 .weekly-forecast-label {
@@ -2259,8 +2271,8 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-row {
-    grid-template-columns: minmax(70px, auto) minmax(56px, 0.8fr) minmax(0, 1.2fr);
-    gap: 8px 10px;
+    grid-template-columns: minmax(70px, auto) 60px minmax(0, 1fr);
+    gap: 8px 8px;
   }
 
   .weekly-forecast-icon {
@@ -2275,8 +2287,8 @@ input[type="checkbox"] {
 
   .weekly-forecast-side {
     gap: 2px;
-    justify-items: end;
-    text-align: right;
+    justify-items: start;
+    text-align: left;
   }
 
   .weekly-forecast-rain {
@@ -2370,12 +2382,12 @@ input[type="checkbox"] {
 .rain-row strong {
   font-size: 17px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--primary);
 }
 
 .msn-weather-card .rain-row span,
 .msn-weather-card .rain-row strong {
-  color: #0b2f55;
+  color: var(--primary);
 }
 
 .rain-empty {
@@ -2963,23 +2975,28 @@ input[type="checkbox"] {
 
 .earthquake-summary {
   margin: 0;
-  color: #9a3412;
-  font-size: clamp(11px, 2.6vw, 16px);
+  color: #111;
+  font-size: clamp(10px, 2.1vw, 14px);
   line-height: 1.35;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f4efe6;
 }
 
-.earthquake-summary.intensity-4-plus {
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 2px solid #fca5a5;
-  background: #fef2f2;
-  color: #991b1b;
+.earthquake-summary.intensity-below-3,
+.earthquake-summary.intensity-below-3 .earthquake-place-label {
+  color: #111;
+}
+
+.earthquake-summary.intensity-3-plus,
+.earthquake-summary.intensity-3-plus .earthquake-place-label {
+  color: #dc2626;
   font-weight: 800;
 }
 
-.earthquake-summary.intensity-4-plus .earthquake-place-label {
-  color: #b91c1c;
-  font-weight: 600;
+.earthquake-summary.intensity-3-plus {
+  background: #fef2f2;
 }
 
 .earthquake-place-label {
@@ -3314,24 +3331,25 @@ body.eq-sheet-open {
   background: #fef2f2;
 }
 
-.earthquake-list li.earthquake-item.intensity-4-plus {
+.earthquake-list li.earthquake-item.intensity-3-plus {
   border: 2px solid #fca5a5;
   background: #fef2f2;
-  color: #7f1d1d;
-  box-shadow: none;
 }
 
-.earthquake-item.intensity-4-plus .earthquake-body strong {
-  color: #7f1d1d;
+.earthquake-item.intensity-below-3 .earthquake-body strong,
+.earthquake-item.intensity-below-3 .earthquake-body small,
+.earthquake-item.intensity-below-3 .earthquake-place-label {
+  color: #111;
 }
 
-.earthquake-item.intensity-4-plus .earthquake-body small,
-.earthquake-item.intensity-4-plus .earthquake-place-label {
-  color: #7f1d1d;
+.earthquake-item.intensity-3-plus .earthquake-body strong,
+.earthquake-item.intensity-3-plus .earthquake-body small,
+.earthquake-item.intensity-3-plus .earthquake-place-label {
+  color: #dc2626;
 }
 
-.earthquake-item.intensity-4-plus .earthquake-links a {
-  color: #7f1d1d;
+.earthquake-item.intensity-3-plus .earthquake-links a {
+  color: #b91c1c;
   font-weight: 700;
 }
 
@@ -3360,7 +3378,7 @@ body.eq-sheet-open {
 }
 
 .earthquake-item.alert-red .earthquake-mag,
-.earthquake-item.intensity-4-plus .earthquake-mag {
+.earthquake-item.intensity-3-plus .earthquake-mag {
   background: #7f1d1d;
 }
 
@@ -4349,9 +4367,9 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-row {
-    grid-template-columns: minmax(68px, auto) minmax(56px, 0.9fr) minmax(0, 1.2fr);
-    gap: 8px 10px;
-    padding: 10px 12px;
+    grid-template-columns: minmax(68px, auto) 58px minmax(0, 1fr);
+    gap: 8px 8px;
+    padding: 10px 12px 10px 8px;
   }
 
   .weekly-forecast-icon {

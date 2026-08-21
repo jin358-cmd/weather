@@ -245,8 +245,28 @@
   color: var(--heading);
 }
 
-.theme-elegant .earthquake-summary {
-  color: var(--warn) !important;
+.theme-elegant .earthquake-summary,
+.theme-elegant .earthquake-summary.intensity-below-3,
+.theme-elegant .earthquake-summary.intensity-below-3 .earthquake-place-label {
+  color: #111 !important;
+}
+
+.theme-elegant .earthquake-summary.intensity-3-plus,
+.theme-elegant .earthquake-summary.intensity-3-plus .earthquake-place-label {
+  color: #dc2626 !important;
+}
+
+.theme-elegant .weather-feel-line,
+.theme-elegant #feelValue {
+  color: #f5e14a !important;
+}
+
+.theme-elegant .rain-forecast-inline .weather-subheading,
+.theme-elegant .rain-forecast-inline #rainProjection,
+.theme-elegant .rain-forecast-inline .timestamp,
+.theme-elegant .rain-forecast-inline .rain-row span,
+.theme-elegant .rain-forecast-inline .rain-row strong {
+  color: var(--primary) !important;
 }
 
 .theme-elegant .layer-panel,
