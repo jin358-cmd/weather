@@ -8184,7 +8184,6 @@ function applyAutoRefreshIntervalSelection() {
 }
 
 autoRefreshIntervalSelect?.addEventListener("change", applyAutoRefreshIntervalSelection);
-autoRefreshIntervalSelect?.addEventListener("input", applyAutoRefreshIntervalSelection);
 
 function syncNoticeDetailsOpen() {
   const noticeDetails = document.querySelector("#noticeDetails");
