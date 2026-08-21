@@ -193,6 +193,31 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   color: var(--btn-text);
 }
 
+.theme-elegant .refresh-progress {
+  --refresh-pie-fill: var(--primary);
+  --refresh-pie-track: color-mix(in srgb, var(--heading) 16%, transparent);
+  --refresh-pie-hole: var(--card-solid, var(--card));
+}
+
+.theme-elegant .refresh-progress-pct {
+  color: var(--heading);
+  font-family: var(--font-body);
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress {
+  --refresh-pie-fill: #c2a36b;
+  --refresh-pie-track: rgba(244, 239, 230, 0.14);
+  --refresh-pie-hole: #1f2834;
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-host {
+  background: rgba(16, 22, 30, 0.46);
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .refresh-progress-pct {
+  color: #f4efe6;
+}
+
 .theme-elegant .card {
   background: var(--card);
   border: 1px solid var(--border);

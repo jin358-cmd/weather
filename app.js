@@ -466,6 +466,13 @@ function setLocateCompleteMeta(city, town) {
   regionMemoryMeta.textContent = `區域偏好：定位完成：${cityName}${townName}｜路口／國道監控跟隨 ${cityName}，並背景預載全市串流`;
 }
 const refreshBtn = document.querySelector("#refreshBtn");
+const refreshBtnLabel = refreshBtn?.querySelector(".refresh-btn-label");
+const refreshProgressHost = document.querySelector("#refreshProgressHost");
+const refreshProgress = document.querySelector("#refreshProgress");
+const refreshProgressPie = document.querySelector("#refreshProgressPie");
+const refreshProgressPct = document.querySelector("#refreshProgressPct");
+let refreshProgressToken = 0;
+let refreshProgressHideTimer = 0;
 const lastUpdated = document.querySelector("#lastUpdated");
 const weatherSummary = document.querySelector("#weatherSummary");
 const weatherPlace = document.querySelector("#weatherPlace");
@@ -7904,9 +7911,85 @@ function setDualLabelText(element, fullText, shortText = fullText) {
   element.textContent = fullText;
 }
 
+function setRefreshProgress(pct) {
+  const value = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+  if (refreshProgressPie) {
+    refreshProgressPie.style.setProperty("--pct", String(value));
+  }
+  if (refreshProgressPct) {
+    refreshProgressPct.textContent = `${value}%`;
+  }
+  if (refreshProgress) {
+    refreshProgress.setAttribute("aria-valuenow", String(value));
+  }
+}
+
+function showRefreshProgress() {
+  window.clearTimeout(refreshProgressHideTimer);
+  refreshProgressToken += 1;
+  setRefreshProgress(4);
+  if (refreshProgressHost) {
+    refreshProgressHost.hidden = false;
+    refreshProgressHost.setAttribute("aria-busy", "true");
+  }
+}
+
 function setRefreshButtonLoading(isLoading) {
-  refreshBtn.disabled = isLoading;
-  refreshBtn.textContent = isLoading ? "更新中..." : "立即更新資料";
+  if (!refreshBtn) {
+    return;
+  }
+  refreshBtn.classList.toggle("is-refreshing", isLoading);
+  const labelText = isLoading ? "更新中..." : "立即更新資料";
+  if (refreshBtnLabel) {
+    refreshBtnLabel.textContent = labelText;
+  } else {
+    refreshBtn.textContent = labelText;
+  }
+  if (isLoading) {
+    refreshBtn.disabled = true;
+    showRefreshProgress();
+    return;
+  }
+  hideRefreshProgress();
+}
+
+function hideRefreshProgress() {
+  const token = refreshProgressToken;
+  setRefreshProgress(100);
+  window.clearTimeout(refreshProgressHideTimer);
+  refreshProgressHideTimer = window.setTimeout(() => {
+    if (token !== refreshProgressToken) {
+      return;
+    }
+    if (refreshProgressHost) {
+      refreshProgressHost.hidden = true;
+      refreshProgressHost.setAttribute("aria-busy", "false");
+    }
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove("is-refreshing");
+    }
+    setRefreshProgress(0);
+  }, 320);
+}
+
+async function runJobsWithRefreshProgress(jobs, { showProgress = false } = {}) {
+  if (!showProgress) {
+    await Promise.all(jobs.map((job) => job()));
+    return;
+  }
+  let done = 0;
+  const total = Math.max(1, jobs.length);
+  await Promise.all(
+    jobs.map(async (job) => {
+      try {
+        await job();
+      } finally {
+        done += 1;
+        setRefreshProgress(Math.round((done / total) * 86) + 8);
+      }
+    })
+  );
 }
 
 function getAutoRefreshIntervalMs() {
@@ -8006,42 +8089,57 @@ function startAutoRefreshTimers() {
 }
 
 async function performFullRefresh(triggerSource) {
-  if (triggerSource === "manual") {
+  const showProgress = triggerSource === "manual";
+  if (showProgress) {
     setRefreshButtonLoading(true);
   }
   try {
-    await Promise.all([
-      fetchWeather(),
-      fetchClosureNotices(),
-      fetchAirQuality(),
-      fetchTyphoonOfficial().catch(() => {
-        appState.typhoonOfficial = null;
-      }),
-      fetchLiveFloodData().catch((error) => {
-        appState.floodMetaText = `即時淹水資料暫時無法更新：${error.message}`;
-      }),
-      fetchPowerOutageData().catch((error) => {
-        appState.powerOutageMetaText = `停電區域資料暫時無法更新：${error.message}`;
-        if (powerOutageMeta) {
-          powerOutageMeta.textContent = appState.powerOutageMetaText;
-        }
-      }),
-      fetchWaterOutageData().catch(() => {
-        appState.waterOutageItems = appState.waterOutageItems || [];
-      }),
-      fetchEarthquakeData().catch((error) => {
-        appState.earthquakeMetaText = `地震資料暫時無法更新：${error.message}`;
-        if (earthquakeMeta) {
-          earthquakeMeta.textContent = appState.earthquakeMetaText;
-        }
-      })
-    ]);
+    await runJobsWithRefreshProgress(
+      [
+        () => fetchWeather(),
+        () => fetchClosureNotices(),
+        () => fetchAirQuality(),
+        () =>
+          fetchTyphoonOfficial().catch(() => {
+            appState.typhoonOfficial = null;
+          }),
+        () =>
+          fetchLiveFloodData().catch((error) => {
+            appState.floodMetaText = `即時淹水資料暫時無法更新：${error.message}`;
+          }),
+        () =>
+          fetchPowerOutageData().catch((error) => {
+            appState.powerOutageMetaText = `停電區域資料暫時無法更新：${error.message}`;
+            if (powerOutageMeta) {
+              powerOutageMeta.textContent = appState.powerOutageMetaText;
+            }
+          }),
+        () =>
+          fetchWaterOutageData().catch(() => {
+            appState.waterOutageItems = appState.waterOutageItems || [];
+          }),
+        () =>
+          fetchEarthquakeData().catch((error) => {
+            appState.earthquakeMetaText = `地震資料暫時無法更新：${error.message}`;
+            if (earthquakeMeta) {
+              earthquakeMeta.textContent = appState.earthquakeMetaText;
+            }
+          })
+      ],
+      { showProgress }
+    );
+    if (showProgress) {
+      setRefreshProgress(92);
+    }
     renderTyphoonAnalysis();
     renderAiAlerts();
     updateMapForCityChange();
     const recoveryMessages = updateRecoveryTrackingState();
     await flushPendingUtilityAlerts();
     await maybeNotifySubscribers(triggerSource, recoveryMessages);
+    if (showProgress) {
+      setRefreshProgress(100);
+    }
     lastUpdated.textContent = `資料更新時間：${formatDateTime(Date.now())}${triggerSource === "auto" ? "（自動）" : ""}`;
     if (shouldRescheduleAutoRefresh()) {
       scheduleNextAutoRefresh();
@@ -8050,7 +8148,7 @@ async function performFullRefresh(triggerSource) {
   } catch (error) {
     lastUpdated.textContent = `更新失敗：${error.message}`;
   } finally {
-    if (triggerSource === "manual") {
+    if (showProgress) {
       setRefreshButtonLoading(false);
     }
   }
