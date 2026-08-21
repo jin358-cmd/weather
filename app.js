@@ -3303,7 +3303,7 @@ async function renderFreewayCameraList() {
   const firstUrl = String(first.html || "");
   monitor.innerHTML = `
     <div class="freeway-monitor-bezel">
-      <p class="freeway-monitor-label">即時檢查畫面</p>
+      <p class="freeway-monitor-label">即時畫面</p>
       <div class="freeway-monitor-screen">
         <img class="freeway-monitor-feed" alt="${escapeMapLegendHtml(firstCaption)}" referrerpolicy="origin" />
       </div>
