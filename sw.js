@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v32-subscription-notify-desktop-type";
+const SW_VERSION = "jin-v33-city-cctv-load-pie";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

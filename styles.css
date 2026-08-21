@@ -1553,12 +1553,14 @@ label {
   color: #039855 !important;
 }
 
-.freeway-list-wrap {
+.freeway-list-wrap,
+.camera-list-wrap {
   position: relative;
   min-height: 220px;
 }
 
-.freeway-load-progress-host {
+.freeway-load-progress-host,
+.camera-load-progress-host {
   position: absolute;
   inset: 0;
   z-index: 5;
@@ -1573,16 +1575,19 @@ label {
   -webkit-backdrop-filter: blur(3px);
 }
 
-.freeway-load-progress-host[hidden] {
+.freeway-load-progress-host[hidden],
+.camera-load-progress-host[hidden] {
   display: none !important;
 }
 
-.freeway-load-progress {
+.freeway-load-progress,
+.camera-load-progress {
   width: 96px;
   height: 96px;
 }
 
-.freeway-load-progress-label {
+.freeway-load-progress-label,
+.camera-load-progress-label {
   margin: 0;
   color: #f4efe6;
   font-size: 14px;

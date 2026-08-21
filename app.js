@@ -510,6 +510,12 @@ const freewayLoadProgressPie = document.querySelector("#freewayLoadProgressPie")
 const freewayLoadProgressPct = document.querySelector("#freewayLoadProgressPct");
 let freewayLoadProgressToken = 0;
 let freewayLoadProgressHideTimer = 0;
+const cityCameraLoadProgressHost = document.querySelector("#cityCameraLoadProgressHost");
+const cityCameraLoadProgress = document.querySelector("#cityCameraLoadProgress");
+const cityCameraLoadProgressPie = document.querySelector("#cityCameraLoadProgressPie");
+const cityCameraLoadProgressPct = document.querySelector("#cityCameraLoadProgressPct");
+let cityCameraLoadProgressToken = 0;
+let cityCameraLoadProgressHideTimer = 0;
 const mapLayerList = document.querySelector("#mapLayerList");
 const airSummary = document.querySelector("#airSummary");
 const aqiMetric = document.querySelector("#aqiMetric");
@@ -3311,6 +3317,7 @@ function syncCityCameraMorePanel(extraCount) {
 async function renderCameraList() {
   const token = ++cityCameraRenderToken;
   const isCurrent = () => token === cityCameraRenderToken;
+  showCityCameraLoadProgress();
   resetCityCameraLists();
   setVerifiedCityCameras([]);
 
@@ -3318,10 +3325,12 @@ async function renderCameraList() {
     if (cameraList) {
       cameraList.innerHTML = `<p class="status-warn">目前無法載入各縣市市區路口監控資料。</p>`;
     }
+    hideCityCameraLoadProgress();
     return;
   }
 
   updateCameraMetaText();
+  setCityCameraLoadProgress(12);
   const rows = getFilteredSortedCityCameras().slice(0, CCTV_VERIFY_POOL_SIZE);
   const district = getSelectedCameraDistrict();
   const keyword = getCameraKeywordQuery();
@@ -3337,6 +3346,7 @@ async function renderCameraList() {
         : `<p class="status-warn">定位點 ${CITY_CCTV_RADIUS_KM} 公里內查無市區路口監控點，請改用關鍵字或調整縣市範圍。</p>`;
     }
     setVerifiedCityCameras([]);
+    hideCityCameraLoadProgress();
     return;
   }
 
@@ -3361,6 +3371,7 @@ async function renderCameraList() {
       if (progressEl) {
         progressEl.textContent = `${pct}%（已確認 ${found}/${CITY_CCTV_PREVIEW_LIMIT}）`;
       }
+      setCityCameraLoadProgress(12 + Math.round(Math.max(0, Math.min(100, pct)) * 0.5));
     }
   });
   if (!isCurrent()) {
@@ -3377,13 +3388,16 @@ async function renderCameraList() {
     syncCityCameraMorePanel(0);
     updateCameraMetaText();
     setVerifiedCityCameras([]);
+    hideCityCameraLoadProgress();
     return;
   }
 
   const previewCameras = liveCameras.slice(0, CITY_CCTV_PREVIEW_LIMIT);
   const confirmedLive = [];
+  const totalCards = Math.max(1, previewCameras.length);
 
-  for (const camera of previewCameras) {
+  for (let index = 0; index < previewCameras.length; index += 1) {
+    const camera = previewCameras[index];
     if (!isCurrent()) {
       return;
     }
@@ -3395,6 +3409,9 @@ async function renderCameraList() {
     if (ok) {
       confirmedLive.push(camera);
       setVerifiedCityCameras(confirmedLive);
+    }
+    if (isCurrent()) {
+      setCityCameraLoadProgress(62 + Math.round(((index + 1) / totalCards) * 36));
     }
   }
   if (!isCurrent()) {
@@ -3409,6 +3426,7 @@ async function renderCameraList() {
     cameraList.innerHTML = `<p class="status-warn">附近監控目前多為維修／無畫面，暫無可檢視的最近路口影像。</p>`;
     setVerifiedCityCameras([]);
   }
+  hideCityCameraLoadProgress();
 }
 
 function updateFreewayCameraMetaText(directionGroups = []) {
@@ -3533,6 +3551,45 @@ function hideFreewayLoadProgress() {
       freewayLoadProgressHost.setAttribute("aria-busy", "false");
     }
     setFreewayLoadProgress(0);
+  }, 280);
+}
+
+function setCityCameraLoadProgress(pct) {
+  const value = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+  if (cityCameraLoadProgressPie) {
+    cityCameraLoadProgressPie.style.setProperty("--pct", String(value));
+  }
+  if (cityCameraLoadProgressPct) {
+    cityCameraLoadProgressPct.textContent = `${value}%`;
+  }
+  if (cityCameraLoadProgress) {
+    cityCameraLoadProgress.setAttribute("aria-valuenow", String(value));
+  }
+}
+
+function showCityCameraLoadProgress() {
+  window.clearTimeout(cityCameraLoadProgressHideTimer);
+  cityCameraLoadProgressToken += 1;
+  setCityCameraLoadProgress(6);
+  if (cityCameraLoadProgressHost) {
+    cityCameraLoadProgressHost.hidden = false;
+    cityCameraLoadProgressHost.setAttribute("aria-busy", "true");
+  }
+}
+
+function hideCityCameraLoadProgress() {
+  const token = cityCameraLoadProgressToken;
+  setCityCameraLoadProgress(100);
+  window.clearTimeout(cityCameraLoadProgressHideTimer);
+  cityCameraLoadProgressHideTimer = window.setTimeout(() => {
+    if (token !== cityCameraLoadProgressToken) {
+      return;
+    }
+    if (cityCameraLoadProgressHost) {
+      cityCameraLoadProgressHost.hidden = true;
+      cityCameraLoadProgressHost.setAttribute("aria-busy", "false");
+    }
+    setCityCameraLoadProgress(0);
   }, 280);
 }
 
