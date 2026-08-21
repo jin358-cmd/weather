@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v57-closure-empty-title-cap";
+const SW_VERSION = "jin-v58-closure-meta-2x";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

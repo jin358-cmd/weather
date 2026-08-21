@@ -4434,9 +4434,9 @@ function fitClosureMetaLine() {
   }
   clearFittedTextStyles(closureMeta);
   const sample = regionMemoryMeta;
-  const sampleSize = sample ? window.getComputedStyle(sample).fontSize : "";
-  if (sampleSize) {
-    closureMeta.style.fontSize = sampleSize;
+  const samplePx = sample ? Number.parseFloat(window.getComputedStyle(sample).fontSize) : 14;
+  if (Number.isFinite(samplePx) && samplePx > 0) {
+    closureMeta.style.fontSize = `${samplePx * 2}px`;
   }
 }
 
