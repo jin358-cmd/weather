@@ -108,57 +108,75 @@
   color: var(--hero-text);
   border: 1px solid var(--hero-border);
   border-radius: 12px;
-  padding: 22px 20px;
+  padding: 28px 24px;
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero {
   isolation: isolate;
   overflow: hidden;
+  min-height: 168px;
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-layer {
-  mix-blend-mode: lighten;
+  mix-blend-mode: normal;
+}
+
+body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-ribbon {
+  opacity: 0.92;
+  background: linear-gradient(
+    108deg,
+    #101820 0%,
+    #1a2d46 14%,
+    #c2a36b 30%,
+    #24364e 46%,
+    #d4ba86 62%,
+    #2f425c 78%,
+    #101820 100%
+  );
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-a {
+  opacity: 0.55;
   background:
-    radial-gradient(ellipse 52% 42% at 12% 38%, rgba(194, 163, 107, 0.42), transparent 58%),
-    linear-gradient(120deg, rgba(194, 163, 107, 0.2), transparent 40%, rgba(88, 140, 190, 0.28) 70%, transparent 92%);
+    radial-gradient(ellipse 52% 42% at 12% 38%, rgba(194, 163, 107, 0.55), transparent 58%),
+    linear-gradient(120deg, rgba(194, 163, 107, 0.28), transparent 40%, rgba(88, 140, 190, 0.38) 70%, transparent 92%);
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-b {
+  opacity: 0.5;
   background:
-    radial-gradient(ellipse 46% 36% at 88% 28%, rgba(90, 150, 210, 0.32), transparent 60%),
-    linear-gradient(250deg, transparent 18%, rgba(244, 239, 230, 0.12) 50%, transparent 78%);
+    radial-gradient(ellipse 46% 36% at 88% 28%, rgba(90, 150, 210, 0.42), transparent 60%),
+    linear-gradient(250deg, transparent 18%, rgba(244, 239, 230, 0.18) 50%, transparent 78%);
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
+  opacity: 0.4;
   background:
-    radial-gradient(ellipse 40% 28% at 48% 90%, rgba(194, 163, 107, 0.22), transparent 64%),
-    repeating-linear-gradient(108deg, transparent 0 52px, rgba(244, 239, 230, 0.05) 52px 54px);
+    radial-gradient(ellipse 40% 28% at 48% 90%, rgba(194, 163, 107, 0.3), transparent 64%),
+    repeating-linear-gradient(108deg, transparent 0 52px, rgba(244, 239, 230, 0.08) 52px 54px);
 }
 
 .theme-elegant .hero .eyebrow {
   color: var(--hero-eyebrow);
   font-family: var(--font-body);
-  letter-spacing: 0.12em;
-  font-weight: 700;
-  text-shadow: none;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+  text-shadow: 0 2px 10px rgba(18, 24, 33, 0.72);
   white-space: normal;
   overflow: visible;
-  font-size: clamp(1.15rem, 3.8vw, 1.95rem);
+  font-size: clamp(1.5rem, 5.4vw, 2.5rem);
 }
 
 .theme-elegant .hero h1 {
   color: var(--hero-title);
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.01em;
-  text-shadow: none;
+  text-shadow: 0 2px 14px rgba(18, 24, 33, 0.78);
   white-space: normal;
   overflow: visible;
-  line-height: 1.25;
-  font-size: clamp(1.55rem, 5.2vw, 2.85rem);
+  line-height: 1.22;
+  font-size: clamp(2rem, 7vw, 3.55rem);
 }
 
 .theme-elegant .refresh-btn {

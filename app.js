@@ -8227,22 +8227,10 @@ function fitSubscriptionTopicTexts() {
 }
 
 function fitHeroTexts() {
-  const eyebrow = document.querySelector(".hero .eyebrow.hero-fit-text");
-  const title = document.querySelector(".hero h1.hero-fit-text");
   const subtitle = document.querySelector(".hero .subtitle.hero-fit-text");
   const riskBadge = document.querySelector("#typhoonRiskBadge.hero-fit-text");
   const content = document.querySelector(".hero-content");
   const width = Math.floor(content?.getBoundingClientRect().width || document.documentElement.clientWidth || 0);
-  // English eyebrow: auto-fit one line to full hero width with a larger type size.
-  fitSingleLineText(eyebrow, {
-    maxPx: Math.min(64, Math.max(18, Math.floor(width * 0.1))),
-    minPx: 12,
-    fillRatio: 1
-  });
-  fitSingleLineText(title, {
-    maxPx: Math.min(72, Math.floor(width * 0.128)),
-    minPx: 16
-  });
   fitSingleLineText(subtitle, {
     maxPx: Math.min(18, Math.floor(width * 0.038)),
     minPx: 9
