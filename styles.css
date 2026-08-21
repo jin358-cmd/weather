@@ -4523,7 +4523,7 @@ body.eq-sheet-open {
     align-items: stretch;
     text-align: left;
     gap: 10px;
-    padding: 14px 6px 12px;
+    padding: 14px 4px 12px;
     border-radius: 12px;
   }
 
@@ -4539,17 +4539,17 @@ body.eq-sheet-open {
 
   .hero h1 {
     margin-bottom: 6px;
-    font-size: clamp(45px, 24vw, 192px);
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
+    font-size: clamp(18px, 7.2vw, 42px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
     letter-spacing: 0;
-    line-height: 1.15;
+    line-height: 1.12;
     width: 100%;
     max-width: 100%;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    line-break: anywhere;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    line-break: auto;
   }
 
   .hero .subtitle {
@@ -5190,12 +5190,13 @@ body.eq-sheet-open {
 
   .hero h1 {
     max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    line-break: anywhere;
-    white-space: normal;
-    overflow: visible;
-    font-size: clamp(45px, 24vw, 192px);
+    overflow-wrap: normal;
+    word-break: keep-all;
+    line-break: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    font-size: clamp(18px, 7.2vw, 42px);
   }
 
   .hero-fit-text {

@@ -666,22 +666,22 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
 @media (max-width: 860px) {
   .theme-elegant .hero,
   body.theme-elegant[data-legacy-theme="dusk"] .hero {
-    padding: 14px 6px 12px;
+    padding: 14px 4px 12px;
   }
 
   .theme-elegant .hero h1,
   body.theme-elegant[data-legacy-theme="dusk"] .hero h1 {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
     letter-spacing: 0;
-    line-height: 1.15;
+    line-height: 1.12;
     width: 100%;
     max-width: 100%;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    line-break: anywhere;
-    font-size: clamp(45px, 24vw, 192px);
+    word-break: keep-all;
+    overflow-wrap: normal;
+    line-break: auto;
+    font-size: clamp(18px, 7.2vw, 42px);
   }
 
   .theme-elegant .topic-option,

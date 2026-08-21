@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v38-cctv-progress-text-white";
+const SW_VERSION = "jin-v39-hero-title-oneline-mobile";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
