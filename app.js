@@ -718,8 +718,11 @@ const appState = {
   floodMetaText: "",
   powerOutagePoints: [],
   powerOutageMetaText: "",
+  powerOutageDataOk: true,
   waterOutageItems: [],
   waterOutageMetaText: "",
+  waterOutageDataOk: true,
+  lastRecoveryMessages: [],
   earthquakes: [],
   earthquakeMetaText: "",
   typhoon: null,
@@ -973,9 +976,15 @@ async function fetchPowerOutageData() {
     fetchPlannedOutagePoints()
   ]);
 
-  const disasterPoints = disasterResult.status === "fulfilled" ? disasterResult.value : [];
-  const plannedPoints = plannedResult.status === "fulfilled" ? plannedResult.value : [];
+  const prevPoints = appState.powerOutagePoints || [];
+  const prevDisaster = prevPoints.filter((point) => point.type === "disaster");
+  const prevPlanned = prevPoints.filter((point) => point.type !== "disaster");
+  const disasterFailed = disasterResult.status !== "fulfilled";
+  const plannedFailed = plannedResult.status !== "fulfilled";
+  const disasterPoints = disasterFailed ? prevDisaster : disasterResult.value;
+  const plannedPoints = plannedFailed ? prevPlanned : plannedResult.value;
   appState.powerOutagePoints = [...disasterPoints, ...plannedPoints];
+  appState.powerOutageDataOk = !(disasterFailed && plannedFailed);
 
   const disasterCount = disasterPoints.length;
   const plannedCount = plannedPoints.length;
@@ -3730,9 +3739,12 @@ function getKawaiiWeatherIconSvg(code, cloudCover) {
         <path d="M40 50 Q48 57 56 50" fill="none" stroke="#64748b" stroke-width="2.6" stroke-linecap="round"/>
         <circle cx="24" cy="50" r="3.8" fill="#fda4af"/>
         <circle cx="72" cy="50" r="3.8" fill="#fda4af"/>
-        <path class="bolt kawaii-sparkle" d="M52 52 L43 67 H51 L45 82 L66 60 H56 L62 52 Z" fill="#ffe066" stroke="#f59e0b" stroke-width="1.2"/>
-        <path class="rain-drop" d="M28 62 q3 8 0 13" fill="none" stroke="#60a5fa" stroke-width="3.4" stroke-linecap="round"/>
-        <path class="rain-drop" d="M38 64 q3 8 0 13" fill="none" stroke="#60a5fa" stroke-width="3.4" stroke-linecap="round"/>
+        <path class="bolt kawaii-sparkle" d="M52 52 L43 67 H51 L45 82 L66 60 H56 L62 52 Z" fill="#ffe066" stroke="#b45309" stroke-width="1.6"/>
+        <path class="rain-drop" d="M18 58 q3 8 0 14" fill="none" stroke="#0284c7" stroke-width="3.2" stroke-linecap="round"/>
+        <path class="rain-drop" d="M26 61 q3 8 0 14" fill="none" stroke="#60a5fa" stroke-width="3.4" stroke-linecap="round"/>
+        <path class="rain-drop" d="M34 59 q3 8 0 14" fill="none" stroke="#0284c7" stroke-width="3.2" stroke-linecap="round"/>
+        <path class="rain-drop" d="M70 58 q3 8 0 14" fill="none" stroke="#60a5fa" stroke-width="3.4" stroke-linecap="round"/>
+        <path class="rain-drop" d="M78 61 q3 8 0 14" fill="none" stroke="#0284c7" stroke-width="3.2" stroke-linecap="round"/>
       </svg>`;
   }
   if (category === "snow") {
@@ -3887,17 +3899,17 @@ function getWeatherCategory(code, cloudCover) {
 
 const FLAT_WEATHER_ICONS = {
   clear:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="18" fill="#fde68a"/><g stroke="#fbbf24" stroke-width="3" stroke-linecap="round"><path d="M48 12v8"/><path d="M48 76v8"/><path d="M12 48h8"/><path d="M76 48h8"/></g></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="晴朗"><circle class="sun-core" cx="48" cy="48" r="18" fill="#fde68a" stroke="#92400e" stroke-width="2.6"/><g stroke="#b45309" stroke-width="3.4" stroke-linecap="round"><path d="M48 12v8"/><path d="M48 76v8"/><path d="M12 48h8"/><path d="M76 48h8"/></g></svg>',
   partly:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="12" fill="#fde68a"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="#f1f5f9"/><ellipse cx="24" cy="62" rx="13" ry="9" fill="#e2e8f0"/><ellipse cx="56" cy="62" rx="12" ry="9" fill="#f8fafc"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="多雲"><circle class="sun-core" cx="72" cy="28" r="12" fill="#fde68a" stroke="#92400e" stroke-width="2.4"/><ellipse class="cloud-body" cx="40" cy="58" rx="24" ry="13" fill="#f1f5f9" stroke="#334155" stroke-width="2.3"/><ellipse class="cloud-body" cx="24" cy="62" rx="13" ry="9" fill="#e2e8f0" stroke="#334155" stroke-width="2.1"/><ellipse class="cloud-body" cx="56" cy="62" rx="12" ry="9" fill="#f8fafc" stroke="#475569" stroke-width="2.1"/></svg>',
   overcast:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#e2e8f0"/><ellipse cx="28" cy="54" rx="15" ry="10" fill="#cbd5e1"/><ellipse cx="68" cy="54" rx="14" ry="10" fill="#f1f5f9"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="陰天"><ellipse class="cloud-body" cx="48" cy="50" rx="30" ry="16" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.4"/><ellipse class="cloud-body" cx="28" cy="54" rx="15" ry="10" fill="#cbd5e1" stroke="#334155" stroke-width="2.1"/><ellipse class="cloud-body" cx="68" cy="54" rx="14" ry="10" fill="#f1f5f9" stroke="#475569" stroke-width="2.1"/></svg>',
   rain:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#e2e8f0"/><path class="rain-drop" d="M30 58 v14" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v14" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v14" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雨天"><ellipse class="cloud-body" cx="44" cy="40" rx="26" ry="14" fill="#e2e8f0" stroke="#1e293b" stroke-width="2.3"/><path class="rain-drop" d="M30 58 v14" stroke="#0369a1" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M44 60 v14" stroke="#0284c7" stroke-width="4" stroke-linecap="round"/><path class="rain-drop" d="M58 58 v14" stroke="#0369a1" stroke-width="4" stroke-linecap="round"/></svg>',
   snow:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#f1f5f9"/><circle cx="34" cy="62" r="4" fill="#bae6fd"/><circle cx="48" cy="68" r="4" fill="#e0f2fe"/><circle cx="62" cy="62" r="4" fill="#bae6fd"/></svg>',
+    '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="38" rx="26" ry="14" fill="#f1f5f9" stroke="#334155" stroke-width="2.3"/><circle cx="34" cy="62" r="4" fill="#bae6fd" stroke="#0369a1" stroke-width="1.6"/><circle cx="48" cy="68" r="4" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.6"/><circle cx="62" cy="62" r="4" fill="#bae6fd" stroke="#0369a1" stroke-width="1.6"/></svg>',
   thunder:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="40" rx="28" ry="15" fill="#cbd5e1"/><path class="bolt" d="M52 48 L43 62 H51 L45 78 L66 56 H56 L62 48 Z" fill="#fde68a"/><path class="rain-drop" d="M28 62 v12" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round"/></svg>'
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="36" rx="28" ry="15" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.5"/><path class="bolt" d="M54 46 L45 60 H53 L47 76 L69 54 H58 L64 46 Z" fill="#fde68a" stroke="#92400e" stroke-width="2"/><path class="rain-drop" d="M18 54 v16" stroke="#0369a1" stroke-width="3.4" stroke-linecap="round"/><path class="rain-drop" d="M26 57 v16" stroke="#0284c7" stroke-width="3.4" stroke-linecap="round"/><path class="rain-drop" d="M34 55 v15" stroke="#0369a1" stroke-width="3.4" stroke-linecap="round"/><path class="rain-drop" d="M72 54 v16" stroke="#0284c7" stroke-width="3.4" stroke-linecap="round"/><path class="rain-drop" d="M80 57 v16" stroke="#0369a1" stroke-width="3.4" stroke-linecap="round"/></svg>'
 };
 
 const LINE_WEATHER_ICONS = {
@@ -3942,7 +3954,7 @@ const VIVID_WEATHER_ICONS = {
   snow:
     '<svg viewBox="0 0 96 96" role="img" aria-label="下雪"><ellipse class="cloud-body" cx="48" cy="34" rx="26" ry="14" fill="#cbd5e1"/><circle class="snow-flake" cx="32" cy="62" r="4.5" fill="#48cae4"/><circle class="snow-flake" cx="48" cy="72" r="4.5" fill="#90e0ef"/><circle class="snow-flake" cx="64" cy="62" r="4.5" fill="#48cae4"/></svg>',
   thunder:
-    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="36" rx="28" ry="15" fill="#334155"/><path class="bolt" d="M52 46 L42 62 H51 L44 80 L68 56 H56 L62 46 Z" fill="#ffd60a"/><path class="rain-drop" d="M26 58 v14" stroke="#0096c7" stroke-width="3.6" stroke-linecap="round"/><path class="rain-drop" d="M36 60 v14" stroke="#00b4d8" stroke-width="3.6" stroke-linecap="round"/></svg>'
+    '<svg viewBox="0 0 96 96" role="img" aria-label="雷雨"><ellipse class="cloud-body" cx="48" cy="36" rx="28" ry="15" fill="#334155" stroke="#020617" stroke-width="2.4"/><path class="bolt" d="M54 46 L44 60 H52 L46 78 L68 54 H57 L63 46 Z" fill="#ffd60a" stroke="#92400e" stroke-width="1.8"/><path class="rain-drop" d="M18 54 v16" stroke="#0077b6" stroke-width="3.6" stroke-linecap="round"/><path class="rain-drop" d="M26 57 v16" stroke="#00b4d8" stroke-width="3.6" stroke-linecap="round"/><path class="rain-drop" d="M34 55 v15" stroke="#0077b6" stroke-width="3.6" stroke-linecap="round"/><path class="rain-drop" d="M72 54 v16" stroke="#00b4d8" stroke-width="3.6" stroke-linecap="round"/><path class="rain-drop" d="M80 57 v16" stroke="#0077b6" stroke-width="3.6" stroke-linecap="round"/></svg>'
 };
 
 function getFlatWeatherIconSvg(code, cloudCover) {
@@ -5296,69 +5308,80 @@ function updateRecoveryTrackingState() {
     };
   });
 
-  if (isSubscribed && topics.has("power-outage")) {
-    Object.entries(prev.powerOutages).forEach(([key, point]) => {
-      if (currentOutages[key]) {
-        return;
-      }
-      const typeLabel = point.type === "disaster" ? "災害性停電" : "計畫性停電";
-      const place = point.label || point.area || "未提供區域";
-      messages.push({
-        kind: "power-recovery",
-        text: `【電力回復】${place}（${typeLabel}）已恢復供電，${locationLabel} 半徑 ${POWER_OUTAGE_NOTIFY_RADIUS_KM} 公里內距離約 ${Number(point.distanceKm).toFixed(1)} km。`
+  if (appState.powerOutageDataOk === false) {
+    next.powerOutages = prev.powerOutages || {};
+  } else {
+    const wantsPowerRecovery = topics.has("power-outage") || isForecastNotifyArmedByLocate();
+    if (wantsPowerRecovery) {
+      Object.entries(prev.powerOutages).forEach(([key, point]) => {
+        if (currentOutages[key]) {
+          return;
+        }
+        const typeLabel = point.type === "disaster" ? "災害性停電" : "計畫性停電";
+        const place = point.label || point.area || "未提供區域";
+        messages.push({
+          kind: "power-recovery",
+          text: `【停電解除】${place}（${typeLabel}）已恢復供電，${locationLabel} 半徑 ${POWER_OUTAGE_NOTIFY_RADIUS_KM} 公里內距離約 ${Number(point.distanceKm).toFixed(1)} km。`
+        });
       });
-    });
-    Object.entries(currentOutages).forEach(([key, point]) => {
-      if (prev.powerOutages[key]) {
-        return;
-      }
-      const typeLabel = point.type === "disaster" ? "災害性停電" : "計畫性停電";
-      const place = point.label || point.area || "未提供區域";
-      messages.push({
-        kind: "power-alert",
-        text: `【停電警戒】${place}（${typeLabel}）距離約 ${Number(point.distanceKm).toFixed(1)} km，請留意供電狀況。`
+    }
+    if (isSubscribed && topics.has("power-outage")) {
+      Object.entries(currentOutages).forEach(([key, point]) => {
+        if (prev.powerOutages[key]) {
+          return;
+        }
+        const typeLabel = point.type === "disaster" ? "災害性停電" : "計畫性停電";
+        const place = point.label || point.area || "未提供區域";
+        messages.push({
+          kind: "power-alert",
+          text: `【停電警戒】${place}（${typeLabel}）距離約 ${Number(point.distanceKm).toFixed(1)} km，請留意供電狀況。`
+        });
       });
-    });
+    }
+    next.powerOutages = currentOutages;
   }
-  next.powerOutages = currentOutages;
 
   const currentWater = {};
   (appState.waterOutageItems || []).forEach((item) => {
     currentWater[item.id] = item;
   });
-  if (isSubscribed && topics.has("water-outage")) {
-    const { townshipName } = getActiveWaterOutageScope();
+  const { townshipName } = getActiveWaterOutageScope();
+  if (!townshipName || appState.waterOutageDataOk === false) {
+    next.waterOutages = prev.waterOutages || {};
+  } else {
+    const wantsWaterRecovery = topics.has("water-outage") || isForecastNotifyArmedByLocate();
     const prevLocalWater = Object.fromEntries(
       Object.entries(prev.waterOutages || {}).filter(([, item]) => {
-        if (!townshipName) {
-          return false;
-        }
         if (item?.township && item.township === townshipName) {
           return true;
         }
         return areaMentionsTownship(`${item?.area || ""} ${item?.summary || ""}`, townshipName);
       })
     );
-    Object.entries(prevLocalWater).forEach(([id, item]) => {
-      if (currentWater[id]) {
-        return;
-      }
-      messages.push({
-        kind: "water-recovery",
-        text: `【停水解除】${item.area || item.summary || "本鄉鎮停水案件"} 已恢復供水／降壓解除，請確認用水恢復正常。`
+    if (wantsWaterRecovery) {
+      Object.entries(prevLocalWater).forEach(([id, item]) => {
+        if (currentWater[id]) {
+          return;
+        }
+        messages.push({
+          kind: "water-recovery",
+          text: `【停水解除】${item.area || item.summary || "本鄉鎮停水案件"} 已恢復供水／降壓解除，請確認用水恢復正常。`
+        });
       });
-    });
-    Object.entries(currentWater).forEach(([id, item]) => {
-      if (prevLocalWater[id] || prev.waterOutages?.[id]) {
-        return;
-      }
-      messages.push({
-        kind: "water-alert",
-        text: `【停水警戒】${item.township ? `${item.city || ""}${item.township}` : item.area || "本鄉鎮"}：${item.summary || "有停水／降壓公告"}（${item.period || "期間詳見台水公告"}）。`
+    }
+    if (isSubscribed && topics.has("water-outage")) {
+      Object.entries(currentWater).forEach(([id, item]) => {
+        if (prevLocalWater[id] || prev.waterOutages?.[id]) {
+          return;
+        }
+        messages.push({
+          kind: "water-alert",
+          text: `【停水警戒】${item.township ? `${item.city || ""}${item.township}` : item.area || "本鄉鎮"}：${item.summary || "有停水／降壓公告"}（${item.period || "期間詳見台水公告"}）。`
+        });
       });
-    });
+    }
+    next.waterOutages = currentWater;
   }
-  next.waterOutages = currentWater;
 
   const currentEarthquakes = {};
   (appState.earthquakes || []).forEach((quake) => {
@@ -5442,7 +5465,7 @@ function parseAiAlertPresentation(text) {
     tone = "air";
   } else if (tag.includes("停班停課")) {
     tone = "closure";
-  } else if (tag.includes("一般") || tag.includes("解除") || tag.includes("消退")) {
+  } else if (tag.includes("一般") || tag.includes("解除") || tag.includes("消退") || tag.includes("回復")) {
     tone = "general";
   } else if (floodLevel >= 1) {
     tone = `flood-${floodLevel}`;
@@ -5778,7 +5801,7 @@ function renderEarthquakeSourceMeta(updatedAt = Date.now()) {
   }
   earthquakeMeta.innerHTML = `來源：<a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>｜更新 ${formatDateTime(
     updatedAt
-  )}｜<a href="${EARTHQUAKE_SCWEB_PAGE}" target="_blank" rel="noopener noreferrer">測報中心</a>`;
+  )}`;
 }
 
 function createEarthquakeListItem(quake) {
@@ -5904,7 +5927,6 @@ function buildEarthquakePopupHtml(quake) {
     ? ""
     : `<div class="eq-popup-links">
         <a href="${quake.pwsUrl || quake.url}" target="_blank" rel="noopener noreferrer">開啟國家緊急訊息（公眾警示）</a>
-        <a href="${quake.url}" target="_blank" rel="noopener noreferrer">測報中心詳情</a>
         <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>
       </div>`;
   return `
@@ -6093,7 +6115,7 @@ async function fetchEarthquakeData() {
         earthquakeSummary.textContent = "地震資料讀取失敗";
       }
       if (earthquakeList) {
-        earthquakeList.innerHTML = `<li class="status-warn">請稍後重試，或改看 <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>／<a href="${EARTHQUAKE_SCWEB_PAGE}" target="_blank" rel="noopener noreferrer">測報中心</a>。</li>`;
+        earthquakeList.innerHTML = `<li class="status-warn">請稍後重試，或改看 <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>。</li>`;
       }
       updateEarthquakeMapLayer();
       return [];
@@ -6537,11 +6559,18 @@ async function notifyAutoRefreshComplete() {
 }
 
 function getSubscriptionUpdateLines() {
+  const recoveryLines = (appState.lastRecoveryMessages || [])
+    .map((item) => (typeof item === "string" ? item : item?.text))
+    .map((text) => String(text || "").trim())
+    .filter(Boolean);
   if (appState.subscription?.email && getSelectedSubscriptionTopics().length) {
     const messages = buildSubscriptionNotificationMessages();
-    if (messages.length) {
-      return messages;
+    if (recoveryLines.length || messages.length) {
+      return [...recoveryLines, ...messages];
     }
+  }
+  if (recoveryLines.length) {
+    return recoveryLines;
   }
   const alerts = (appState.aiAlerts || []).map((item) => String(item || "").trim()).filter(Boolean);
   if (alerts.length) {
@@ -7089,7 +7118,7 @@ async function sendRecoveryNotifications(messages) {
   const normalized = (messages || [])
     .map((item) => (typeof item === "string" ? { kind: "generic", text: item } : item))
     .filter((item) => item?.text);
-  if (!normalized.length || !appState.subscription?.email) {
+  if (!normalized.length) {
     return false;
   }
   const permissionMode = await ensureNotificationPermission();
@@ -7170,9 +7199,14 @@ async function flushPendingUtilityAlerts() {
     if (item.sent || item.dueAt > now) {
       continue;
     }
-    await showAppNotification("公用事業警戒通報", `${item.text}\n（自動通報）`, {
-      tag: item.id
-    });
+    const isRecovery = String(item.kind || "").includes("recovery");
+    await showAppNotification(
+      isRecovery ? "公用事業狀態解除" : "公用事業警戒通報",
+      `${item.text}\n（自動通報）`,
+      {
+        tag: item.id
+      }
+    );
     item.sent = true;
     changed = true;
     await sleep(500);
@@ -7196,11 +7230,13 @@ async function fetchWaterOutageData() {
   const { cityName, townshipName } = getActiveWaterOutageScope();
   if (!cityName) {
     appState.waterOutageItems = [];
+    appState.waterOutageDataOk = true;
     appState.waterOutageMetaText = "";
     return [];
   }
   if (!townshipName) {
     appState.waterOutageItems = [];
+    appState.waterOutageDataOk = true;
     appState.waterOutageMetaText = `${cityName}：請選定鄉鎮市區後顯示當區停水（不發全縣市通知）`;
     return [];
   }
@@ -7237,12 +7273,13 @@ async function fetchWaterOutageData() {
     }
     const localItems = filterWaterOutagesForTownship(items, cityName, townshipName);
     appState.waterOutageItems = localItems;
+    appState.waterOutageDataOk = true;
     appState.waterOutageMetaText = `${cityName}${townshipName} 停水公告 ${localItems.length} 筆（僅本鄉鎮｜全市抓取 ${items.length} 筆）`;
     return localItems;
   } catch (error) {
-    appState.waterOutageItems = [];
+    appState.waterOutageDataOk = false;
     appState.waterOutageMetaText = `停水資料暫時無法更新：${error.message}`;
-    return [];
+    return appState.waterOutageItems || [];
   }
 }
 
@@ -7314,6 +7351,9 @@ async function sendSubscriptionNotification({ force = false, inPage = true } = {
 }
 
 async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
+  if (recoveryMessages.length) {
+    await sendRecoveryNotifications(recoveryMessages);
+  }
   if (!appState.subscription?.email) {
     return;
   }
@@ -7326,13 +7366,9 @@ async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
   } catch (error) {
     console.warn("每日天氣預報 Email 發送失敗：", error);
   }
-  const shouldNotify =
-    triggerSource === "auto" || (triggerSource === "manual" && document.hidden) || recoveryMessages.length > 0;
+  const shouldNotify = triggerSource === "auto" || (triggerSource === "manual" && document.hidden);
   if (!shouldNotify) {
     return;
-  }
-  if (recoveryMessages.length) {
-    await sendRecoveryNotifications(recoveryMessages);
   }
   if (triggerSource === "auto" || document.hidden) {
     await sendSubscriptionNotification({ inPage: triggerSource !== "auto" });
@@ -8570,6 +8606,7 @@ async function performFullRefresh(triggerSource) {
     renderAiAlerts();
     updateMapForCityChange();
     const recoveryMessages = updateRecoveryTrackingState();
+    appState.lastRecoveryMessages = recoveryMessages;
     await flushPendingUtilityAlerts();
     await maybeNotifySubscribers(triggerSource, recoveryMessages);
     if (showProgress) {
