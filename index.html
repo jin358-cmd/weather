@@ -404,9 +404,19 @@
       <section class="card map-card map-card-responsive" aria-label="災害警示圖">
         <div class="map-layout">
           <div class="map-pane-wrap">
-            <div class="map-legend map-legend-on-map" aria-label="地圖圖例對照">
+            <div id="warningMap" class="warning-map map-pane" aria-label="災害警示圖"></div>
+            <button
+              id="mapFloodCountBtn"
+              type="button"
+              class="map-live-count-btn is-empty"
+              aria-label="即時感測點數量，點選檢視細節"
+            >
+              即時感測點 <strong id="mapFloodCountValue">0</strong>
+            </button>
+          </div>
+          <div class="map-legend map-legend-below" aria-label="地圖圖例對照">
               <h4>圖例對照</h4>
-              <p class="map-legend-hint">各選項已標示於地圖，並註記所在位置</p>
+              <p class="map-legend-hint">地圖上已標示各選項的所有點位</p>
               <ul class="legend-list">
                 <li>
                   <button type="button" class="legend-item-btn" data-legend-key="flood-4">
@@ -482,16 +492,6 @@
                 </li>
               </ul>
             </div>
-            <div id="warningMap" class="warning-map map-pane" aria-label="災害警示圖"></div>
-            <button
-              id="mapFloodCountBtn"
-              type="button"
-              class="map-live-count-btn is-empty"
-              aria-label="即時感測點數量，點選檢視細節"
-            >
-              即時感測點 <strong id="mapFloodCountValue">0</strong>
-            </button>
-          </div>
           <aside class="layer-panel">
             <ul id="mapLayerList" class="layer-list" hidden></ul>
             <p id="powerOutageMeta" class="timestamp">停電區域資料讀取中...</p>
