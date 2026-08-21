@@ -7901,16 +7901,23 @@ function scheduleNextAutoRefresh() {
   appState.nextAutoRefreshAt = Date.now() + getAutoRefreshIntervalMs();
 }
 
+function shouldRescheduleAutoRefresh() {
+  return appState.autoRefreshEnabled && Date.now() >= Number(appState.nextAutoRefreshAt || 0) - 500;
+}
+
+function beginAutoRefreshCountdown() {
+  appState.autoRefreshEnabled = true;
+  scheduleNextAutoRefresh();
+  updateAutoRefreshMeta();
+  startAutoRefreshTick();
+}
+
 function updateAutoRefreshMeta() {
   if (!autoRefreshMeta) {
     return;
   }
   if (!appState.autoRefreshEnabled) {
     autoRefreshMeta.textContent = "更新倒數：已暫停";
-    return;
-  }
-  if (appState.autoRefreshRunning) {
-    autoRefreshMeta.textContent = "更新倒數：更新中…";
     return;
   }
   const remainingMs = Math.max(0, appState.nextAutoRefreshAt - Date.now());
@@ -7931,7 +7938,7 @@ async function tickAutoRefreshCountdown() {
     await performFullRefresh("auto");
   } finally {
     appState.autoRefreshRunning = false;
-    if (appState.autoRefreshEnabled) {
+    if (shouldRescheduleAutoRefresh()) {
       scheduleNextAutoRefresh();
     }
     updateAutoRefreshMeta();
@@ -7949,8 +7956,7 @@ function startAutoRefreshTick() {
 }
 
 function restartAutoRefreshTimers() {
-  scheduleNextAutoRefresh();
-  startAutoRefreshTick();
+  beginAutoRefreshCountdown();
 }
 
 function startAutoRefreshTimers() {
@@ -7996,7 +8002,7 @@ async function performFullRefresh(triggerSource) {
     await flushPendingUtilityAlerts();
     await maybeNotifySubscribers(triggerSource, recoveryMessages);
     lastUpdated.textContent = `資料更新時間：${formatDateTime(Date.now())}${triggerSource === "auto" ? "（自動）" : ""}`;
-    if (appState.autoRefreshEnabled) {
+    if (shouldRescheduleAutoRefresh()) {
       scheduleNextAutoRefresh();
     }
     updateAutoRefreshMeta();
@@ -8164,15 +8170,20 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-autoRefreshIntervalSelect?.addEventListener("change", () => {
+function applyAutoRefreshIntervalSelection() {
+  if (!autoRefreshIntervalSelect) {
+    return;
+  }
   const minutes = Number(autoRefreshIntervalSelect.value);
   if (!AUTO_REFRESH_OPTIONS[minutes]) {
     return;
   }
   appState.autoRefreshIntervalMinutes = minutes;
   localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(minutes));
-  restartAutoRefreshTimers();
-});
+  beginAutoRefreshCountdown();
+}
+
+autoRefreshIntervalSelect?.addEventListener("change", applyAutoRefreshIntervalSelection);
 
 function syncNoticeDetailsOpen() {
   const noticeDetails = document.querySelector("#noticeDetails");
