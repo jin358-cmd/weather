@@ -266,6 +266,13 @@ body {
   margin-inline: 0;
 }
 
+.app .closure-list.is-empty {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  justify-self: center;
+}
+
 .app .control-grid > div,
 .app .camera-controls-grid > div,
 .app .auto-refresh-controls {
@@ -1943,6 +1950,28 @@ label {
   display: grid;
   gap: 4px;
   margin-top: 6px;
+}
+
+.closure-list.is-empty {
+  width: 100%;
+  max-width: 100%;
+  min-height: 4.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+}
+
+.closure-list > .status-ok,
+.closure-empty-msg {
+  margin: 8px auto;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  font-size: clamp(2rem, 7vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.35;
+  justify-self: center;
 }
 
 .auto-refresh-row {
@@ -4581,14 +4610,6 @@ body.eq-sheet-open {
 
 .status-ok {
   color: var(--ok);
-}
-
-.closure-list > .status-ok {
-  margin: 8px auto;
-  text-align: center;
-  font-size: clamp(1.5rem, 4.8vw, 2.25rem);
-  font-weight: 800;
-  line-height: 1.35;
 }
 
 .status-warn {

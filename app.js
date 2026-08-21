@@ -4407,6 +4407,7 @@ function renderClosureMeta(updateAt, sourceLabel, { cacheSuffix = false } = {}) 
 
 function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
   closureList.innerHTML = "";
+  closureList.classList.remove("is-empty");
   const sorted = [...(data.rows || [])].sort((a, b) => {
     const aStop = Number(a.message.includes("停止上班") || a.message.includes("停止上課"));
     const bStop = Number(b.message.includes("停止上班") || b.message.includes("停止上課"));
@@ -4417,7 +4418,8 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
     const okText = data.noClosure
       ? "目前全台無停班停課訊息。"
       : "目前未讀取到停班停課區域，請點擊最上方按鍵「立即更新資料」重試。";
-    closureList.innerHTML = `<p class="status-ok">${okText}</p>`;
+    closureList.classList.add("is-empty");
+    closureList.innerHTML = `<p class="status-ok closure-empty-msg">${okText}</p>`;
     appState.closureRows = [];
     renderClosureMeta(data.updateAt, sourceLabel, { cacheSuffix });
     return;
@@ -4486,6 +4488,7 @@ async function fetchClosureNotices() {
     }
     closureMeta.textContent = `停班停課資料暫時無法更新：${error.message}`;
     appState.closureRows = [];
+    closureList.classList.remove("is-empty");
     closureList.innerHTML = `
       <p class="status-warn">
         系統目前無法讀取公告，請改用
