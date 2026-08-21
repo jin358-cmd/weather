@@ -4937,6 +4937,17 @@ body.eq-sheet-open {
     margin-top: 4px;
   }
 
+  .closure-list.is-empty .closure-empty-msg,
+  .closure-list.is-empty > .status-ok {
+    margin: 6px 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: visible;
+    line-height: 1.2;
+  }
+
   .closure-item {
     padding: 3px 6px;
   }

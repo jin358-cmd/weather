@@ -4397,6 +4397,29 @@ function readClosureCache() {
   }
 }
 
+function fitClosureEmptyMessage() {
+  const msg = closureList?.querySelector(".closure-empty-msg");
+  if (!msg) {
+    return;
+  }
+  if (!window.matchMedia("(max-width: 860px)").matches) {
+    clearFittedTextStyles(msg);
+    return;
+  }
+  const availablePx = Math.floor(
+    (closureList.getBoundingClientRect().width ||
+      msg.parentElement?.getBoundingClientRect().width ||
+      0)
+  );
+  fitSingleLineText(msg, {
+    maxPx: Math.min(32, Math.max(13, Math.floor(availablePx / 12))),
+    minPx: 11,
+    fillRatio: 0.98,
+    fillLine: true,
+    availablePx
+  });
+}
+
 function fitClosureMetaLine() {
   if (!closureMeta) {
     return;
@@ -4448,6 +4471,9 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
     closureList.innerHTML = `<p class="status-ok closure-empty-msg">${okText}</p>`;
     appState.closureRows = [];
     renderClosureMeta(data.updateAt, sourceLabel, { cacheSuffix });
+    window.requestAnimationFrame(() => {
+      fitClosureEmptyMessage();
+    });
     return;
   }
 
@@ -8931,6 +8957,7 @@ function fitHeroTexts() {
   });
   fitSubscriptionTopicTexts();
   fitClosureMetaLine();
+  fitClosureEmptyMessage();
 }
 
 let heroFitRaf = 0;

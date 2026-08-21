@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v52-closure-source-official-link";
+const SW_VERSION = "jin-v53-closure-empty-oneline-mobile";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
