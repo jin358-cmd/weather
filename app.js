@@ -8242,7 +8242,7 @@ function fitSubscriptionTopicTexts() {
     element.style.width = `${available}px`;
     element.style.maxWidth = `${available}px`;
     fitSingleLineText(element, {
-      maxPx: 11,
+      maxPx: 10,
       minPx: 8,
       fillRatio: 1
     });
