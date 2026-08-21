@@ -4434,10 +4434,10 @@ function fitClosureMetaLine() {
     return;
   }
   clearFittedTextStyles(closureMeta);
-  const sample = regionMemoryMeta;
+  const sample = earthquakeMeta;
   const samplePx = sample ? Number.parseFloat(window.getComputedStyle(sample).fontSize) : 14;
   if (Number.isFinite(samplePx) && samplePx > 0) {
-    closureMeta.style.fontSize = `${samplePx * 2}px`;
+    closureMeta.style.fontSize = `${samplePx}px`;
   }
 }
 
