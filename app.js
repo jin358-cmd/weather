@@ -5308,7 +5308,8 @@ function buildCwaEarthquakeReportContent(quake) {
   const serialText = serial === "小區域" ? "小區域有感" : serial;
   const when = formatDateTime(quake.timeMs);
   const intensity = formatIntensityLabel(quake.intensityValue);
-  return `【地震通報】${serialText}地震報告：${when} 左右，${quake.place}發生規模 ${quake.magnitude.toFixed(
+  const placeText = extractEarthquakeRegionName(quake.place) || String(quake.place || "").replace(/[（(][^)）]*[)）]/g, "").trim() || "位置未提供";
+  return `【地震通報】${serialText}地震報告：${when} 左右，${placeText}發生規模 ${quake.magnitude.toFixed(
     1
   )} 地震，最大震度 ${intensity}。請就近掩護、遠離危險物，並留意官方後續指示與餘震。`;
 }
@@ -5484,77 +5485,19 @@ async function enrichCwaEarthquakeDetails(quakes) {
   return quakes;
 }
 
-const COMPASS_DIRECTIONS = ["北方", "東北方", "東方", "東南方", "南方", "西南方", "西方", "西北方"];
-
-function getBearingDegrees(fromLat, fromLon, toLat, toLon) {
-  const φ1 = (fromLat * Math.PI) / 180;
-  const φ2 = (toLat * Math.PI) / 180;
-  const Δλ = ((toLon - fromLon) * Math.PI) / 180;
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-  const bearing = (Math.atan2(y, x) * 180) / Math.PI;
-  return (bearing + 360) % 360;
-}
-
-function getCompassDirectionLabel(bearingDeg) {
-  const index = Math.round(bearingDeg / 45) % 8;
-  return COMPASS_DIRECTIONS[index];
-}
-
-function findNearestCountyGovernment(lat, lon) {
-  let nearest = null;
-  let minDist = Infinity;
-  CITY_LOCATIONS.forEach((city) => {
-    const dist = getDistanceKm(lat, lon, city.lat, city.lon);
-    if (dist < minDist) {
-      minDist = dist;
-      nearest = city;
-    }
-  });
-  return nearest;
-}
-
 function extractEarthquakeRegionName(place) {
   const text = String(place || "").trim();
   const withoutLocated = text.replace(/^位於\s*/, "");
-  const regionName = withoutLocated.replace(/[（(][^)）]+[)）]/g, "").trim();
-  return regionName || text;
-}
-
-function parseEarthquakeDirectionFromPlace(place) {
-  const match = String(place || "").match(/[（(]([^)）]+(?:政府)[^)）]*)[)）]/);
-  return match?.[1]?.trim() || "";
-}
-
-function getEarthquakeCountyDirectionLabel(quake) {
-  const parsed = parseEarthquakeDirectionFromPlace(quake?.place);
-  if (parsed) {
-    return parsed;
-  }
-  if (!Number.isFinite(quake?.lat) || !Number.isFinite(quake?.lon)) {
-    return "";
-  }
-  const county = findNearestCountyGovernment(quake.lat, quake.lon);
-  if (!county) {
-    return "";
-  }
-  const bearing = getBearingDegrees(county.lat, county.lon, quake.lat, quake.lon);
-  return `${county.name}政府${getCompassDirectionLabel(bearing)}`;
+  return withoutLocated.replace(/[（(][^)）]*[)）]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function getEarthquakeLocatedLabel(place, quake = null) {
   const source = quake?.place || place;
   const regionName = extractEarthquakeRegionName(source);
-  const directionLabel = quake ? getEarthquakeCountyDirectionLabel(quake) : parseEarthquakeDirectionFromPlace(source);
-  if (directionLabel && regionName) {
-    return `位於(${directionLabel})${regionName}`;
+  if (regionName) {
+    return `位於${regionName}`;
   }
-  const text = String(source || "").trim();
-  const match = text.match(/位於\s*(.+)/);
-  if (match?.[1]) {
-    return `位於${match[1].trim()}`;
-  }
-  return text || "位置未提供";
+  return "位置未提供";
 }
 
 function renderEarthquakeSourceMeta(updatedAt = Date.now()) {
@@ -5777,7 +5720,7 @@ function updateEarthquakeMapLayer() {
         openEarthquakeDetailSheet(quake);
       }
     });
-    marker._legendPlace = String(quake.place || "").trim();
+    marker._legendPlace = extractEarthquakeRegionName(quake.place) || String(quake.place || "").trim();
     mapLegendMarkers.earthquake.push(marker);
     if (isMapCategoryVisible("earthquake")) {
       mapEarthquakeLayer.addLayer(marker);
