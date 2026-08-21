@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v39-hero-title-oneline-mobile";
+const SW_VERSION = "jin-v40-restore-dusk-gold";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
