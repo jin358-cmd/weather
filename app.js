@@ -1227,8 +1227,49 @@ function initFreewayRegionSelect() {
 
 function initFreewayCitySelect() {
   fillCameraCitySelectOptions(freewayCitySelect, "follow");
+  reorderSelectCitiesSouthToNorth(freewayCitySelect);
   if (freewayCitySelect) {
     freewayCitySelect.value = "follow";
+  }
+}
+
+function getTaiwanCitySouthToNorthRank(cityName) {
+  const city = CITY_LOCATIONS.find((item) => item.name === cityName);
+  return Number.isFinite(city?.lat) ? city.lat : Number.POSITIVE_INFINITY;
+}
+
+function compareFreewayItemsSouthToNorth(a, b) {
+  const cityDiff = getTaiwanCitySouthToNorthRank(a.city) - getTaiwanCitySouthToNorthRank(b.city);
+  if (cityDiff !== 0) {
+    return cityDiff;
+  }
+  const latDiff = (Number(a.lat) || Number.POSITIVE_INFINITY) - (Number(b.lat) || Number.POSITIVE_INFINITY);
+  if (latDiff !== 0) {
+    return latDiff;
+  }
+  return String(a.name || "").localeCompare(String(b.name || ""), "zh-Hant");
+}
+
+function reorderSelectCitiesSouthToNorth(selectElement) {
+  if (!selectElement) {
+    return;
+  }
+  const current = selectElement.value;
+  const pinned = [];
+  const cities = [];
+  [...selectElement.options].forEach((option) => {
+    if (option.value === "all" || option.value === "follow") {
+      pinned.push(option);
+    } else {
+      cities.push(option);
+    }
+  });
+  cities.sort(
+    (a, b) => getTaiwanCitySouthToNorthRank(a.value) - getTaiwanCitySouthToNorthRank(b.value)
+  );
+  selectElement.replaceChildren(...pinned, ...cities);
+  if ([...selectElement.options].some((option) => option.value === current)) {
+    selectElement.value = current;
   }
 }
 
@@ -1299,7 +1340,7 @@ function getFreewayInterchangeOptions() {
           return aLocal - bLocal;
         }
       }
-      return a.name.localeCompare(b.name, "zh-Hant");
+      return compareFreewayItemsSouthToNorth(a, b);
     });
 }
 
