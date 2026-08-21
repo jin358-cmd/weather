@@ -2377,9 +2377,13 @@ input[type="checkbox"] {
   line-height: 1.4;
 }
 
+.alert-block .subscription-form > label[for="subscriberEmail"] {
+  font-size: 13px;
+}
+
 .alert-block .topic-option,
-.alert-block .subscription-form > label {
-  font-size: 10px;
+.alert-block .topic-option-text {
+  font-size: clamp(1.15rem, 4.4vw, 1.42rem);
 }
 
 .alert-block .subscription-status-box {
@@ -2401,10 +2405,11 @@ input[type="checkbox"] {
 .topic-option-text {
   flex: 1 1 auto;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  line-height: 1.2;
-  font-size: 10px;
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.45;
+  font-size: clamp(1.15rem, 4.4vw, 1.42rem);
+  font-weight: 700;
 }
 
 #notificationHint.subscription-status-box {
@@ -4082,25 +4087,30 @@ body.eq-sheet-open {
 
 .topic-option {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-start;
+  gap: 8px;
   color: #2d3856;
   min-width: 0;
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .topic-option input {
   flex: 0 0 auto;
+  width: 1.2em;
+  height: 1.2em;
+  margin-top: 0.22em;
+  accent-color: var(--primary, #c2a36b);
 }
 
 .topic-option-text {
   flex: 1 1 auto;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  line-height: 1.2;
-  font-size: 10px;
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.45;
+  font-size: clamp(1.15rem, 4.4vw, 1.42rem);
+  font-weight: 700;
 }
 
 .closure-group {
@@ -4494,8 +4504,8 @@ body.eq-sheet-open {
   }
 
   .alert-block .topic-option,
-  .alert-block .subscription-form > label {
-    font-size: 10px;
+  .alert-block .topic-option-text {
+    font-size: clamp(1.12rem, 4.6vw, 1.32rem);
   }
 
   .alert-block .ai-alert-item,
@@ -4774,7 +4784,7 @@ body.eq-sheet-open {
   }
 
   .topic-option {
-    font-size: 10px;
+    font-size: clamp(1.12rem, 4.6vw, 1.32rem);
   }
 
   .weekly-forecast-details > summary {
