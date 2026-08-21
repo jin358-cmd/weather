@@ -1584,11 +1584,9 @@ label {
   flex-direction: row;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 8px 4px;
   border-radius: 12px;
-  background: rgba(16, 22, 30, 0.72);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background: transparent;
 }
 
 .freeway-load-progress-host[hidden],
@@ -1615,10 +1613,17 @@ label {
   font-size: 1.05rem;
 }
 
-.freeway-load-progress-label,
-.camera-load-progress-label {
+.freeway-load-progress-label {
   margin: 0;
   color: #f4efe6;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.camera-load-progress-label {
+  margin: 0;
+  color: var(--heading, #c2a36b);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.04em;
