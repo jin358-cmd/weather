@@ -4424,12 +4424,12 @@ function fitClosureMetaLine() {
   if (!closureMeta) {
     return;
   }
-  fitSingleLineText(closureMeta, {
-    maxPx: 14,
-    minPx: 10,
-    fillRatio: 0.98
-  });
-  closureMeta.style.letterSpacing = "";
+  clearFittedTextStyles(closureMeta);
+  const sample = regionMemoryMeta;
+  const sampleSize = sample ? window.getComputedStyle(sample).fontSize : "";
+  if (sampleSize) {
+    closureMeta.style.fontSize = sampleSize;
+  }
 }
 
 function renderClosureMeta(updateAt, sourceLabel, { cacheSuffix = false } = {}) {

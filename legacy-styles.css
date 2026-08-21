@@ -1366,10 +1366,6 @@ label {
   overflow: hidden;
 }
 
-.timestamp.closure-meta {
-  font-size: clamp(10px, 2.9vw, 14px);
-}
-
 .closure-meta-primary,
 .closure-meta-source {
   display: inline;
@@ -1384,7 +1380,9 @@ label {
 
 .closure-meta-link {
   color: var(--primary, #c2a36b);
-  font-weight: 700;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
   text-decoration: underline;
   text-underline-offset: 0.15em;
   white-space: nowrap;
@@ -4062,10 +4060,6 @@ body.eq-sheet-open {
   .timestamp {
     font-size: 12px;
     line-height: 1.3;
-  }
-
-  .timestamp.closure-meta {
-    font-size: clamp(10px, 2.85vw, 12px);
   }
 
   .auto-refresh-row {
