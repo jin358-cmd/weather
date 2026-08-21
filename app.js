@@ -4418,8 +4418,7 @@ function renderClosureMeta(updateAt, sourceLabel, { cacheSuffix = false } = {}) 
     sourceLabel === "本機快取" ? "行政院人事行政總處" : sourceLabel || "行政院人事行政總處";
   closureMeta.innerHTML = `
     <span class="closure-meta-primary">公告更新時間：${timeText}</span>
-    <span class="closure-meta-source">（來源：${sourceLabelText}）</span>
-    <a href="${CLOSURE_OFFICIAL_URL}" target="_blank" rel="noopener noreferrer" class="closure-meta-link">更新連結</a>
+    <span class="closure-meta-source">（來源：<a href="${CLOSURE_OFFICIAL_URL}" target="_blank" rel="noopener noreferrer" class="closure-meta-link">${sourceLabelText}</a>）</span>
   `;
   if (cacheSuffix) {
     const cacheNote = document.createElement("span");
