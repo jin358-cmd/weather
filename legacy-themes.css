@@ -121,38 +121,38 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-layer {
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-ribbon {
-  opacity: 0.92;
+  opacity: 0.94;
   background: linear-gradient(
     108deg,
-    #101820 0%,
-    #1a2d46 14%,
-    #c2a36b 30%,
-    #24364e 46%,
-    #d4ba86 62%,
-    #2f425c 78%,
-    #101820 100%
+    #0b1218 0%,
+    #12303a 14%,
+    #2ec8d4 30%,
+    #1a2d46 46%,
+    #7af0f8 62%,
+    #16444c 78%,
+    #0b1218 100%
   );
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-a {
-  opacity: 0.55;
+  opacity: 0.58;
   background:
-    radial-gradient(ellipse 52% 42% at 12% 38%, rgba(194, 163, 107, 0.55), transparent 58%),
-    linear-gradient(120deg, rgba(194, 163, 107, 0.28), transparent 40%, rgba(88, 140, 190, 0.38) 70%, transparent 92%);
+    radial-gradient(ellipse 52% 42% at 12% 38%, rgba(46, 200, 212, 0.62), transparent 58%),
+    linear-gradient(120deg, rgba(46, 200, 212, 0.32), transparent 40%, rgba(122, 240, 248, 0.36) 70%, transparent 92%);
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-b {
   opacity: 0.5;
   background:
-    radial-gradient(ellipse 46% 36% at 88% 28%, rgba(90, 150, 210, 0.42), transparent 60%),
-    linear-gradient(250deg, transparent 18%, rgba(244, 239, 230, 0.18) 50%, transparent 78%);
+    radial-gradient(ellipse 46% 36% at 88% 28%, rgba(26, 90, 102, 0.55), transparent 60%),
+    linear-gradient(250deg, transparent 18%, rgba(122, 240, 248, 0.22) 50%, transparent 78%);
 }
 
 body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
-  opacity: 0.4;
+  opacity: 0.42;
   background:
-    radial-gradient(ellipse 40% 28% at 48% 90%, rgba(194, 163, 107, 0.3), transparent 64%),
-    repeating-linear-gradient(108deg, transparent 0 52px, rgba(244, 239, 230, 0.08) 52px 54px);
+    radial-gradient(ellipse 40% 28% at 48% 90%, rgba(46, 200, 212, 0.36), transparent 64%),
+    repeating-linear-gradient(108deg, transparent 0 52px, rgba(122, 240, 248, 0.12) 52px 54px);
 }
 
 .theme-elegant .hero .eyebrow {
