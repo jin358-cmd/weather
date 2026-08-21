@@ -1551,6 +1551,33 @@ function syncCityCameraScopeToLocator() {
   syncCameraRegionToLocatorArea();
 }
 
+function getCameraKeywordQuery() {
+  return String(cameraKeyword?.value || "").trim();
+}
+
+function syncCameraScopeToLocatorCityForKeyword() {
+  const keyword = getCameraKeywordQuery();
+  if (!keyword) {
+    syncCityCameraScopeToLocator();
+    return;
+  }
+  const locatorCity = String(citySelect?.value || "").trim();
+  const cityChanged = Boolean(cameraCitySelect && cameraCitySelect.value !== "follow");
+  if (cameraCitySelect) {
+    syncSelectValue(cameraCitySelect, "follow");
+  }
+  const allCityLabel = [...(cameraRegionSelect?.options || [])].find(
+    (option) => option.value === CAMERA_DISTRICT_ALL_CITY
+  )?.textContent || "";
+  const districtCityMismatch = Boolean(locatorCity) && allCityLabel && !allCityLabel.includes(locatorCity);
+  if (cityChanged || !cameraRegionSelect?.options?.length || districtCityMismatch) {
+    fillCameraDistrictSelect("");
+  }
+  if (cameraRegionSelect) {
+    cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
+  }
+}
+
 function syncFreewayCameraScopeToLocator() {
   if (freewayCitySelect) {
     syncSelectValue(freewayCitySelect, "follow");
@@ -1857,7 +1884,7 @@ function getFilteredSortedCityCameras({ forMap = false } = {}) {
   }
   const selectedCity = getSelectedCameraCityName();
   const district = getSelectedCameraDistrict();
-  const keyword = cameraKeyword.value.trim().toLowerCase();
+  const keyword = getCameraKeywordQuery().toLowerCase();
   const normalize = (text) => text.toLowerCase().replaceAll("臺", "台");
   const focusPoint = getCityCameraFocusPoint();
   const focusLabel = getCctvLocationFocus().label;
@@ -1868,7 +1895,7 @@ function getFilteredSortedCityCameras({ forMap = false } = {}) {
   };
   const locatorCity = selectedCity || citySelect?.value || "";
   const radiusKm = CITY_CCTV_RADIUS_KM;
-  const useLocateRadius = Boolean(cctvLocateFocus) || Boolean(locatorCity);
+  const useLocateRadius = !keyword && (Boolean(cctvLocateFocus) || Boolean(locatorCity));
 
   const scored = dedupeCamerasByIdentity(
     cityCameraDataset.cameras
@@ -1906,6 +1933,10 @@ function getFilteredSortedCityCameras({ forMap = false } = {}) {
         };
       })
       .filter((camera) => {
+        // Keyword search covers the locator city; ignore town partition and 1km ring.
+        if (keyword) {
+          return true;
+        }
         // When device locate is active, prefer radius around the GPS point (ignore town partition).
         if (cctvLocateFocus) {
           return true;
@@ -3140,10 +3171,17 @@ async function renderCameraList() {
   updateCameraMetaText();
   const rows = getFilteredSortedCityCameras().slice(0, CCTV_VERIFY_POOL_SIZE);
   const district = getSelectedCameraDistrict();
-  const scopeLabel = getCctvLocationFocus().label || district?.label || "所選位置";
+  const keyword = getCameraKeywordQuery();
+  const cityName = getSelectedCameraCityName() || citySelect?.value || "";
+  const cityScopeLabel = cityName ? `${cityName}全部` : "本縣市全部";
+  const scopeLabel = keyword
+    ? cityScopeLabel
+    : getCctvLocationFocus().label || district?.label || "所選位置";
   if (!rows.length) {
     if (cameraList) {
-      cameraList.innerHTML = `<p class="status-warn">定位點 ${CITY_CCTV_RADIUS_KM} 公里內查無市區路口監控點，請改用關鍵字或調整縣市範圍。</p>`;
+      cameraList.innerHTML = keyword
+        ? `<p class="status-warn">${escapeMapLegendHtml(cityScopeLabel)}查無符合「${escapeMapLegendHtml(keyword)}」的市區路口監控點。</p>`
+        : `<p class="status-warn">定位點 ${CITY_CCTV_RADIUS_KM} 公里內查無市區路口監控點，請改用關鍵字或調整縣市範圍。</p>`;
     }
     setVerifiedCityCameras([]);
     return;
@@ -3153,7 +3191,9 @@ async function renderCameraList() {
     const loading = document.createElement("p");
     loading.className = "timestamp camera-switching";
     loading.dataset.cameraLoading = "1";
-    loading.innerHTML = `正在檢查最近 ${CITY_CCTV_PREVIEW_LIMIT} 組路口監控連線：${scopeLabel}（${CITY_CCTV_RADIUS_KM} 公里）｜進度 <strong data-cctv-progress>0%</strong>`;
+    loading.innerHTML = keyword
+      ? `正在檢查關鍵字相符的路口監控：${escapeMapLegendHtml(cityScopeLabel)}｜進度 <strong data-cctv-progress>0%</strong>`
+      : `正在檢查最近 ${CITY_CCTV_PREVIEW_LIMIT} 組路口監控連線：${escapeMapLegendHtml(scopeLabel)}（${CITY_CCTV_RADIUS_KM} 公里）｜進度 <strong data-cctv-progress>0%</strong>`;
     cameraList.append(loading);
   }
 
@@ -3177,7 +3217,9 @@ async function renderCameraList() {
   cameraList?.querySelector("[data-camera-loading]")?.remove();
   if (!liveCameras.length) {
     if (cameraList) {
-      cameraList.innerHTML = `<p class="status-warn">附近監控目前多為維修／無畫面，暫無可檢視的最近路口影像。</p>`;
+      cameraList.innerHTML = keyword
+        ? `<p class="status-warn">${escapeMapLegendHtml(cityScopeLabel)}符合「${escapeMapLegendHtml(keyword)}」的監控目前多為維修／無畫面。</p>`
+        : `<p class="status-warn">附近監控目前多為維修／無畫面，暫無可檢視的最近路口影像。</p>`;
     }
     syncCityCameraMorePanel(0);
     updateCameraMetaText();
@@ -8068,7 +8110,10 @@ refreshBtn.addEventListener("click", () => {
 });
 
 cameraKeyword.addEventListener("input", () => {
+  syncCameraScopeToLocatorCityForKeyword();
+  updateCameraMetaText();
   renderAllCameraLists();
+  updateCameraMapLayer();
 });
 
 cameraRegionSelect.addEventListener("change", () => {
