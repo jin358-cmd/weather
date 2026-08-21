@@ -8249,11 +8249,36 @@ function fitSubscriptionTopicTexts() {
   });
 }
 
+function clearFittedTextStyles(element) {
+  if (!element) {
+    return;
+  }
+  element.style.fontSize = "";
+  element.style.letterSpacing = "";
+  element.style.whiteSpace = "";
+  element.style.width = "";
+  element.style.maxWidth = "";
+  element.style.minWidth = "";
+}
+
 function fitHeroTexts() {
+  const title = document.querySelector(".hero h1");
   const subtitle = document.querySelector(".hero .subtitle.hero-fit-text");
   const riskBadge = document.querySelector("#typhoonRiskBadge.hero-fit-text");
   const content = document.querySelector(".hero-content");
   const width = Math.floor(content?.getBoundingClientRect().width || document.documentElement.clientWidth || 0);
+  const isCompactHero = window.matchMedia("(max-width: 860px)").matches;
+  if (title) {
+    if (isCompactHero) {
+      fitSingleLineText(title, {
+        maxPx: Math.min(22, Math.max(13, Math.floor(width * 0.068))),
+        minPx: 11,
+        fillRatio: 1
+      });
+    } else {
+      clearFittedTextStyles(title);
+    }
+  }
   fitSingleLineText(subtitle, {
     maxPx: Math.min(18, Math.floor(width * 0.038)),
     minPx: 9

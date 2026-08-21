@@ -4160,7 +4160,12 @@ body.eq-sheet-open {
 
   .hero h1 {
     margin-bottom: 6px;
-    font-size: clamp(1.7rem, 7.4vw, 2.6rem);
+    font-size: clamp(13px, 4.15vw, 20px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    letter-spacing: 0;
+    line-height: 1.2;
   }
 
   .hero .subtitle {
@@ -4797,7 +4802,13 @@ body.eq-sheet-open {
     max-width: 100%;
   }
 
-  .hero h1,
+  .hero h1 {
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: keep-all;
+    white-space: nowrap;
+  }
+
   .hero-fit-text {
     max-width: 100%;
     overflow-wrap: anywhere;
