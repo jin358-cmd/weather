@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v31-weather-icon-deeper";
+const SW_VERSION = "jin-v32-subscription-notify-desktop-type";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

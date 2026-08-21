@@ -6157,7 +6157,11 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
   if (!inPageAlertHost) {
     return false;
   }
-  const isReadableTip = variant === "subscribe-tip" || variant === "not-open" || variant === "refresh-done";
+  const isReadableTip =
+    variant === "subscribe-tip" ||
+    variant === "not-open" ||
+    variant === "refresh-done" ||
+    variant === "subscription";
   const alert = document.createElement("article");
   alert.className = [
     "in-page-alert",
@@ -6166,7 +6170,8 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     isReadableTip ? "in-page-alert-readable-tip" : "",
     variant === "subscribe-tip" ? "in-page-alert-subscribe-tip" : "",
     variant === "refresh-done" ? "in-page-alert-refresh-done" : "",
-    variant === "not-open" ? "in-page-alert-not-open" : ""
+    variant === "not-open" ? "in-page-alert-not-open" : "",
+    variant === "subscription" ? "in-page-alert-subscription" : ""
   ]
     .filter(Boolean)
     .join(" ");
@@ -6428,7 +6433,7 @@ function armSystemNotificationPermission() {
   document.addEventListener("pointerdown", onGesture, true);
 }
 
-async function showAppNotification(title, body, { tag, data, skipInPage = false } = {}) {
+async function showAppNotification(title, body, { tag, data, skipInPage = false, variant = "" } = {}) {
   const payload = {
     body,
     tag: tag || `jin-${Date.now()}`,
@@ -6469,7 +6474,8 @@ async function showAppNotification(title, body, { tag, data, skipInPage = false 
   if (!skipInPage) {
     showInPageAlert(title, body, {
       timeoutMs: systemShown ? 8000 : 15000,
-      fullscreen: true
+      fullscreen: true,
+      variant: variant || (title === "預報訂閱通知" ? "subscription" : "")
     });
   }
   return true;
@@ -7160,7 +7166,8 @@ async function sendSubscriptionNotification({ force = false, inPage = true } = {
     const suffix = repeatCount > 1 ? `\n（第 ${repeat + 1}/${repeatCount} 次提醒）` : "";
     await showAppNotification("預報訂閱通知", `${body}${suffix}`, {
       tag: `subscription-alert-${repeat}-${Date.now()}`,
-      skipInPage: !inPage
+      skipInPage: !inPage,
+      variant: "subscription"
     });
     if (repeat < repeatCount - 1) {
       await sleep(1800);

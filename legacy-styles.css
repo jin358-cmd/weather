@@ -3199,6 +3199,86 @@ body.eq-sheet-open {
   font-weight: 400;
 }
 
+@media (min-width: 861px) {
+  .subscription-card .topic-option,
+  .subscription-card .topic-option-text,
+  .alert-block .topic-option,
+  .alert-block .topic-option-text {
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .subscription-card .subscription-status-box,
+  .alert-block .subscription-status-box {
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+
+  .subscription-card .subscription-email-note,
+  .subscription-card .notification-hint,
+  .alert-block .subscription-email-note,
+  .alert-block .notification-hint {
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+
+  .in-page-alert-host.is-fullscreen-mode:has(.in-page-alert-subscription) {
+    width: min(560px, 90vw);
+    height: auto;
+    max-height: min(88dvh, 820px);
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription {
+    height: auto;
+    max-height: min(88dvh, 820px);
+    gap: 8px;
+    padding: 16px 18px;
+    overflow: auto;
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-title {
+    font-size: 16px;
+    line-height: 1.3;
+    font-weight: 800;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-body {
+    flex: 0 1 auto;
+    align-content: start;
+    overflow: visible;
+    gap: 4px;
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-line {
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 600;
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-close {
+    min-height: 40px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
 .earthquake-list li.earthquake-item {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
