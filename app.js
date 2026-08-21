@@ -7263,6 +7263,15 @@ function formatTownshipPlace(lat, lon) {
   return `${township.city}${township.town}`;
 }
 
+function getLegendMarkerPlace(marker) {
+  const metaPlace = String(marker?._legendPlace || "").trim();
+  if (metaPlace) {
+    return metaPlace;
+  }
+  const latlng = getLeafletLatLng(marker);
+  return latlng ? formatTownshipPlace(latlng.lat, latlng.lng) : "位置未定";
+}
+
 function getLegendMarkersCentroid(markers) {
   const points = (markers || []).map(getLeafletLatLng).filter(Boolean);
   if (!points.length) {
@@ -7273,31 +7282,12 @@ function getLegendMarkersCentroid(markers) {
   return L.latLng(lat, lng);
 }
 
-function getLegendAnchorLatLng(markers) {
-  const points = (markers || []).map(getLeafletLatLng).filter(Boolean);
-  if (!points.length) {
-    return null;
-  }
-  const focus = getActiveWeatherLocation();
-  if (focus && Number.isFinite(focus.lat) && Number.isFinite(focus.lon)) {
-    points.sort(
-      (a, b) =>
-        getDistanceKm(a.lat, a.lng, focus.lat, focus.lon) -
-        getDistanceKm(b.lat, b.lng, focus.lat, focus.lon)
-    );
-    return points[0];
-  }
-  return getLegendMarkersCentroid(markers);
-}
-
 function describeLegendMarkerPlaces(markers) {
   const places = [];
   const seen = new Set();
   (markers || []).forEach((marker) => {
-    const metaPlace = String(marker?._legendPlace || "").trim();
-    const latlng = getLeafletLatLng(marker);
-    const place = metaPlace || (latlng ? formatTownshipPlace(latlng.lat, latlng.lng) : "");
-    if (!place || seen.has(place)) {
+    const place = getLegendMarkerPlace(marker);
+    if (!place || place === "位置未定" || seen.has(place)) {
       return;
     }
     seen.add(place);
@@ -7333,6 +7323,19 @@ function ensureMapLegendLabelLayer() {
   return mapLegendLabelLayer;
 }
 
+function openLegendSourceMarker(sourceMarker) {
+  if (!warningMap || !sourceMarker) {
+    return;
+  }
+  const latlng = getLeafletLatLng(sourceMarker);
+  if (latlng) {
+    warningMap.setView(latlng, Math.max(warningMap.getZoom(), 13), { animate: true });
+  }
+  window.setTimeout(() => {
+    sourceMarker.openPopup?.();
+  }, 220);
+}
+
 function updateMapLegendLocationPins() {
   const layer = ensureMapLegendLabelLayer();
   if (!layer) {
@@ -7345,22 +7348,18 @@ function updateMapLegendLocationPins() {
     if (config.layer && mapLayerVisibility[config.layer] === false) {
       return;
     }
-    const markers = mapLegendMarkers[key] || [];
-    if (!markers.length) {
-      return;
-    }
-    const center = getLegendAnchorLatLng(markers);
-    if (!center) {
-      return;
-    }
-    const nearestPlace = formatTownshipPlace(center.lat, center.lng);
-    const allPlaces = describeLegendMarkerPlaces(markers);
-    pins.push({
-      key,
-      config,
-      center,
-      count: markers.length,
-      place: allPlaces.includes(nearestPlace) ? allPlaces : `${nearestPlace}｜${allPlaces}`
+    (mapLegendMarkers[key] || []).forEach((sourceMarker) => {
+      const center = getLeafletLatLng(sourceMarker);
+      if (!center) {
+        return;
+      }
+      pins.push({
+        key,
+        config,
+        center,
+        sourceMarker,
+        place: getLegendMarkerPlace(sourceMarker)
+      });
     });
   });
   pins.sort((a, b) => b.center.lat - a.center.lat || a.center.lng - b.center.lng);
@@ -7368,25 +7367,25 @@ function updateMapLegendLocationPins() {
     pin.slot = 0;
     for (let i = 0; i < index; i += 1) {
       const other = pins[i];
-      if (getDistanceKm(pin.center.lat, pin.center.lng, other.center.lat, other.center.lng) < 12) {
+      if (getDistanceKm(pin.center.lat, pin.center.lng, other.center.lat, other.center.lng) < 0.4) {
         pin.slot = Math.max(pin.slot, other.slot + 1);
       }
     }
   });
   pins.forEach((pin) => {
+    const stack = pin.slot % 8;
     const html = `
       <span class="map-legend-callout-dot" style="background:${pin.config.color}"></span>
-      <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; transform: translateY(${pin.slot * 30}px)">
+      <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; transform: translateY(${stack * 22}px)">
         <strong>${escapeMapLegendHtml(pin.config.title)}</strong>
         <span class="map-legend-callout-place">${escapeMapLegendHtml(pin.place)}</span>
-        <em>${pin.count} 處</em>
       </span>
     `;
     const marker = L.marker(pin.center, {
       pane: "legendLabelPane",
       interactive: true,
       keyboard: false,
-      zIndexOffset: 800 + pin.slot,
+      zIndexOffset: 700 + stack,
       title: `${pin.config.title}｜${pin.place}`,
       icon: L.divIcon({
         className: "map-legend-callout",
@@ -7395,7 +7394,7 @@ function updateMapLegendLocationPins() {
         iconAnchor: [0, 0]
       })
     });
-    marker.on("click", () => focusMapLegendMarkers(pin.key));
+    marker.on("click", () => openLegendSourceMarker(pin.sourceMarker));
     layer.addLayer(marker);
   });
 }
