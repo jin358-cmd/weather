@@ -665,14 +665,17 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
 
   .theme-elegant .hero h1,
   body.theme-elegant[data-legacy-theme="dusk"] .hero h1 {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
     letter-spacing: 0;
-    line-height: 1.12;
+    line-height: 1.15;
     width: 100%;
     max-width: 100%;
-    font-size: clamp(15px, 8vw, 64px);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-break: anywhere;
+    font-size: clamp(45px, 24vw, 192px);
   }
 
   .theme-elegant .topic-option,
