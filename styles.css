@@ -1386,12 +1386,23 @@ label {
   color: #1d4ed8;
   white-space: normal;
   overflow: visible;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
+
+.in-page-alert-refresh-done .in-page-alert-title {
   font-size: 18px;
   font-weight: 800;
   line-height: 1.3;
-  white-space: normal;
-  overflow: visible;
+}
+
+.in-page-alert-refresh-done .in-page-alert-line {
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.in-page-alert-host:has(.in-page-alert-refresh-done) {
+  width: min(94%, 560px);
 }
 
 .in-page-alert-subscribe-tip .in-page-alert-line {

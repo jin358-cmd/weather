@@ -6048,7 +6048,7 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
   if (!inPageAlertHost) {
     return false;
   }
-  const isReadableTip = variant === "subscribe-tip" || variant === "not-open";
+  const isReadableTip = variant === "subscribe-tip" || variant === "not-open" || variant === "refresh-done";
   const alert = document.createElement("article");
   alert.className = [
     "in-page-alert",
@@ -6283,9 +6283,29 @@ async function notifyAutoRefreshComplete() {
   const timeText = formatDateTime(Date.now());
   const intervalLabel = getAutoRefreshIntervalLabel();
   const title = "資料已更新";
-  const body = `已完成每 ${intervalLabel} 自動更新。更新時間：${timeText}`;
-  showInPageAlert(title, body, { timeoutMs: 9000, fullscreen: false, variant: "refresh-done" });
+  const intro = `已完成每 ${intervalLabel} 自動更新。更新時間：${timeText}`;
+  const updates = getSubscriptionUpdateLines();
+  const body = [intro, "訂閱更新：", ...updates].join("\n");
+  showInPageAlert(title, body, {
+    timeoutMs: Math.min(20000, 9000 + updates.length * 1200),
+    fullscreen: false,
+    variant: "refresh-done"
+  });
   await showWindowsSystemNotification(title, body, { tag: "jin-auto-refresh" });
+}
+
+function getSubscriptionUpdateLines() {
+  if (appState.subscription?.email && getSelectedSubscriptionTopics().length) {
+    const messages = buildSubscriptionNotificationMessages();
+    if (messages.length) {
+      return messages;
+    }
+  }
+  const alerts = (appState.aiAlerts || []).map((item) => String(item || "").trim()).filter(Boolean);
+  if (alerts.length) {
+    return alerts;
+  }
+  return ["目前未觸發重大災害提醒。"];
 }
 
 function armSystemNotificationPermission() {
@@ -6299,7 +6319,7 @@ function armSystemNotificationPermission() {
   document.addEventListener("pointerdown", onGesture, true);
 }
 
-async function showAppNotification(title, body, { tag, data } = {}) {
+async function showAppNotification(title, body, { tag, data, skipInPage = false } = {}) {
   const payload = {
     body,
     tag: tag || `jin-${Date.now()}`,
@@ -6337,11 +6357,12 @@ async function showAppNotification(title, body, { tag, data } = {}) {
     systemShown = false;
   }
 
-  // Always keep an in-page reminder so alerts still work when system notifications are blocked/unavailable.
-  showInPageAlert(title, body, {
-    timeoutMs: systemShown ? 8000 : 15000,
-    fullscreen: true
-  });
+  if (!skipInPage) {
+    showInPageAlert(title, body, {
+      timeoutMs: systemShown ? 8000 : 15000,
+      fullscreen: true
+    });
+  }
   return true;
 }
 
@@ -6996,7 +7017,7 @@ function getSubscriptionWaterOutageMessage() {
   return `【停水公告】${locationLabel}：${top.summary || top.area || "有停水案件"}（${top.period || "期間詳見台水"}）。`;
 }
 
-async function sendSubscriptionNotification({ force = false } = {}) {
+async function sendSubscriptionNotification({ force = false, inPage = true } = {}) {
   if (!appState.subscription?.email) {
     renderSubscriptionStatus("請先輸入 Email 並儲存訂閱。");
     return false;
@@ -7029,7 +7050,8 @@ async function sendSubscriptionNotification({ force = false } = {}) {
   for (let repeat = 0; repeat < repeatCount; repeat += 1) {
     const suffix = repeatCount > 1 ? `\n（第 ${repeat + 1}/${repeatCount} 次提醒）` : "";
     await showAppNotification("預報訂閱通知", `${body}${suffix}`, {
-      tag: `subscription-alert-${repeat}-${Date.now()}`
+      tag: `subscription-alert-${repeat}-${Date.now()}`,
+      skipInPage: !inPage
     });
     if (repeat < repeatCount - 1) {
       await sleep(1800);
@@ -7069,7 +7091,7 @@ async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
     await sendRecoveryNotifications(recoveryMessages);
   }
   if (triggerSource === "auto" || document.hidden) {
-    await sendSubscriptionNotification();
+    await sendSubscriptionNotification({ inPage: triggerSource !== "auto" });
   }
 }
 
