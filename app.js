@@ -2619,16 +2619,7 @@ async function prefetchCityMonitorStreams(cityName, { label = "" } = {}) {
   });
   let done = 0;
   let index = 0;
-  const updatePrefetchMeta = () => {
-    if (!cameraMeta || token !== cameraPrefetchToken) {
-      return;
-    }
-    const base = cameraMeta.dataset.baseText || cameraMeta.textContent || "";
-    if (!cameraMeta.dataset.baseText) {
-      cameraMeta.dataset.baseText = base;
-    }
-    cameraMeta.textContent = `${cameraMeta.dataset.baseText}｜背景預載 ${label || city} 監控 ${done}/${unique.length}`;
-  };
+  const updatePrefetchMeta = () => {};
   updatePrefetchMeta();
 
   const worker = async () => {
@@ -2661,20 +2652,10 @@ async function prefetchCityMonitorStreams(cityName, { label = "" } = {}) {
   await Promise.all(
     Array.from({ length: Math.min(CAMERA_PREFETCH_CONCURRENCY, Math.max(1, unique.length)) }, () => worker())
   );
-  if (token === cameraPrefetchToken && cameraMeta) {
-    const base = cameraMeta.dataset.baseText || cameraMeta.textContent || "";
-    cameraMeta.textContent = `${base}｜${label || city} 監控已背景預載 ${done}/${unique.length}`;
-    window.setTimeout(() => {
-      if (token === cameraPrefetchToken && cameraMeta?.dataset.baseText) {
-        cameraMeta.textContent = cameraMeta.dataset.baseText;
-        delete cameraMeta.dataset.baseText;
-      }
-    }, 5000);
-  }
   return { city, total: unique.length, done };
 }
 
-function createCameraCard(camera, scopeLabel, { forceImage = false } = {}) {
+function createCameraCard(camera, _scopeLabel, { forceImage = false } = {}) {
   const card = document.createElement("article");
   card.className = "camera-item camera-item-pending";
   card.hidden = true;
@@ -2682,12 +2663,6 @@ function createCameraCard(camera, scopeLabel, { forceImage = false } = {}) {
   const streamUrl = camera.html;
   const [roadA, roadB] = getCameraIntersectionRoads(camera);
   const useImage = forceImage || isLikelyDirectImageStream(streamUrl);
-  const lat = Number(camera.gisy);
-  const lon = Number(camera.gisx);
-  const mapsUrl =
-    Number.isFinite(lat) && Number.isFinite(lon)
-      ? `https://www.google.com/maps?q=${lat},${lon}&z=18`
-      : "";
 
   const mediaHtml = useImage
     ? `<img src="${streamUrl}" alt="${camera.id} 即時影像" loading="eager" referrerpolicy="no-referrer-when-downgrade" />`
@@ -2696,16 +2671,9 @@ function createCameraCard(camera, scopeLabel, { forceImage = false } = {}) {
   card.innerHTML = `
     ${mediaHtml}
     <div class="camera-body">
-      <h3>${camera.id}</h3>
       <p data-cross-roads>交叉路口：${roadA} × ${roadB}</p>
-      <p>定位點：${scopeLabel}</p>
       <div class="camera-links">
         <a href="${streamUrl}" target="_blank" rel="noopener noreferrer">即時影像</a>
-        ${
-          mapsUrl
-            ? `<a class="camera-maps-link" href="${mapsUrl}" target="_blank" rel="noopener noreferrer">地圖位置</a>`
-            : ""
-        }
       </div>
     </div>
   `;
@@ -2972,14 +2940,7 @@ function updateCameraMetaText() {
   const cityFetchedAt = cityCameraDataset.fetchedAt ? formatDateTime(cityCameraDataset.fetchedAt) : "未提供";
   const focus = getCctvLocationFocus();
   const focusLabel = focus.label || "所選位置";
-  const scopeLabel = getCameraCityScopeMetaLabel(cameraCitySelect);
-  const filtered = getFilteredSortedCityCameras();
-  const nearbyCount = filtered.filter((camera) => camera.withinLocateRadius).length;
-  const fallback = filtered.some((camera) => camera.locateFallback);
-  const radiusText = fallback
-    ? `${CITY_CCTV_RADIUS_KM} 公里內無鏡頭，改顯示最近路口`
-    : `半徑 ${CITY_CCTV_RADIUS_KM} 公里｜符合 ${nearbyCount || filtered.length} 組`;
-  cameraMeta.textContent = `定位中心點區域CCTV｜範圍：${scopeLabel}｜定位點：${focusLabel}｜${radiusText}｜顯示最近可檢視 ${CITY_CCTV_PREVIEW_LIMIT} 組｜快照：${cityFetchedAt}`;
+  cameraMeta.textContent = `定位點：${focusLabel}｜快照：${cityFetchedAt}`;
 }
 
 function resetCityCameraLists() {
@@ -4996,6 +4957,31 @@ function formatIntensityLabel(value) {
   return "--";
 }
 
+function formatEarthquakeSerialLabel(quake) {
+  const serial = String(quake?.serial || "").trim();
+  if (/^\d+$/.test(serial)) {
+    return `第${serial}號`;
+  }
+  if (serial === "小區域") {
+    return "小區域";
+  }
+  const eventId = String(quake?.eventId || "")
+    .replace(/^(cwa-|usgs-)/i, "")
+    .trim();
+  const rawId = String(quake?.id || "")
+    .replace(/^(cwa-|usgs-)/i, "")
+    .trim();
+  const number = eventId || rawId;
+  if (number) {
+    return `第${number}號`;
+  }
+  return serial ? `第${serial}號` : "小區域";
+}
+
+function isIntensityThreePlus(quake) {
+  return (Number(quake?.intensityValue) || 0) >= 3;
+}
+
 function getCwaEarthquakeAlertColor(magnitude, intensityValue) {
   const mag = Number(magnitude) || 0;
   const intensity = Number(intensityValue) || 0;
@@ -5021,10 +5007,11 @@ function isNationalEarthquakeAlert(quake) {
 }
 
 function buildCwaEarthquakeReportContent(quake) {
-  const serial = quake.serial && quake.serial !== "小區域" ? `第${quake.serial}號` : "小區域有感";
+  const serial = formatEarthquakeSerialLabel(quake);
+  const serialText = serial === "小區域" ? "小區域有感" : serial;
   const when = formatDateTime(quake.timeMs);
   const intensity = formatIntensityLabel(quake.intensityValue);
-  return `【地震通報】${serial}地震報告：${when} 左右，${quake.place}發生規模 ${quake.magnitude.toFixed(
+  return `【地震通報】${serialText}地震報告：${when} 左右，${quake.place}發生規模 ${quake.magnitude.toFixed(
     1
   )} 地震，最大震度 ${intensity}。請就近掩護、遠離危險物，並留意官方後續指示與餘震。`;
 }
@@ -5285,14 +5272,14 @@ function renderEarthquakeSourceMeta(updatedAt = Date.now()) {
 function createEarthquakeListItem(quake) {
   const item = document.createElement("li");
   const colorKey = quake.alertColor || "gray";
-  const intensityHigh = (quake.intensityValue || 0) >= 4;
+  const intensityHigh = isIntensityThreePlus(quake);
   item.className = `earthquake-item alert-${colorKey}${
     isNationalEarthquakeAlert(quake) ? " is-national" : ""
-  }${intensityHigh ? " intensity-4-plus" : ""}`;
+  }${intensityHigh ? " intensity-3-plus" : " intensity-below-3"}`;
   const distanceText = Number.isFinite(quake.distanceKm)
     ? `｜約 ${quake.distanceKm.toFixed(0)} 公里`
     : "";
-  const serialText = quake.serial && quake.serial !== "小區域" ? `第${quake.serial}號` : "小區域";
+  const serialText = formatEarthquakeSerialLabel(quake);
   item.innerHTML = `
     <span class="earthquake-mag">${formatEarthquakeMagnitudeLabel(quake.magnitude)}</span>
     <span class="earthquake-body">
@@ -5323,7 +5310,7 @@ function renderEarthquakePanel() {
   if (!quakes.length) {
     if (earthquakeSummary) {
       earthquakeSummary.textContent = "目前中央氣象署無近期台灣地區有感地震";
-      earthquakeSummary.classList.remove("intensity-4-plus");
+      earthquakeSummary.classList.remove("intensity-3-plus", "intensity-below-3");
     }
     renderEarthquakeSourceMeta(Date.now());
     earthquakeList.innerHTML = "<li>目前無符合條件的地震事件。</li>";
@@ -5336,7 +5323,8 @@ function renderEarthquakePanel() {
     earthquakeSummary.innerHTML = `最新：規模 ${latest.magnitude.toFixed(1)}｜最大震度 ${formatIntensityLabel(
       latest.intensityValue
     )}<span class="earthquake-place-label">${placeLabel}</span>`;
-    earthquakeSummary.classList.toggle("intensity-4-plus", (latest.intensityValue || 0) >= 4);
+    earthquakeSummary.classList.toggle("intensity-3-plus", isIntensityThreePlus(latest));
+    earthquakeSummary.classList.toggle("intensity-below-3", !isIntensityThreePlus(latest));
   }
   renderEarthquakeSourceMeta(Date.now());
 
@@ -5522,8 +5510,8 @@ async function fetchEarthquakeDataFromUsgsFallback() {
       }
       return {
         id: String(feature.id || props.code || `${timeMs}-${magnitude}`),
-        eventId: String(props.code || ""),
-        serial: "備援",
+        eventId: String(props.code || feature.id || ""),
+        serial: String(props.code || feature.id || "").replace(/^us/i, "") || String(feature.id || ""),
         source: "usgs",
         place: String(props.place || "台灣鄰近地震")
           .replace(/,\s*Taiwan$/i, "")
@@ -7562,10 +7550,14 @@ function addDisasterMapBaseTiles(map) {
 }
 
 function initWarningMap() {
-  if (typeof L === "undefined") {
-    if (mapLayerList) {
-      mapLayerList.innerHTML = `<li class="status-warn">地圖套件載入失敗，請檢查網路連線後重試。</li>`;
-    }
+  const mapEl = document.querySelector("#warningMap");
+  if (!mapEl || typeof L === "undefined") {
+    loadFloodStations()
+      .then(() => fetchLiveFloodData())
+      .then(() => renderAiAlerts())
+      .catch(() => {
+        /* flood overlay is optional when the disaster map is hidden */
+      });
     return;
   }
   warningMap = L.map("warningMap", {
