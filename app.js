@@ -4398,10 +4398,12 @@ function readClosureCache() {
   }
 }
 
-function getHeroTitleFontPx() {
-  const title = document.querySelector(".hero h1") || document.querySelector(".hero .eyebrow");
+function getClosureFieldTitleFontPx() {
+  const title =
+    document.querySelector(".visual-break-closure .visual-break-caption") ||
+    document.querySelector(".visual-break-caption");
   const px = title ? Number.parseFloat(window.getComputedStyle(title).fontSize) : NaN;
-  return Number.isFinite(px) && px > 0 ? px : 24;
+  return Number.isFinite(px) && px > 0 ? px : 28;
 }
 
 function fitClosureEmptyMessage() {
@@ -4409,7 +4411,7 @@ function fitClosureEmptyMessage() {
   if (!msg) {
     return;
   }
-  const titlePx = getHeroTitleFontPx();
+  const titlePx = getClosureFieldTitleFontPx();
   const availablePx = Math.floor(
     closureList.getBoundingClientRect().width ||
       msg.parentElement?.getBoundingClientRect().width ||

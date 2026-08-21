@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v62-locate-btn-frame";
+const SW_VERSION = "jin-v63-closure-empty-caption";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
