@@ -660,6 +660,7 @@ const EARTHQUAKE_COORD_CACHE_KEY = "cwaEarthquakeCoordCacheV1";
 const EARTHQUAKE_DETAIL_ENRICH_LIMIT = 12;
 const EARTHQUAKE_PREVIEW_LIMIT = 3;
 const EARTHQUAKE_SCWEB_PAGE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
+const EARTHQUAKE_SCWEB_MAP_BASE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/imgs";
 const SUBSCRIBE_OWNER_INBOX = "amjin358@gmail.com";
 const VAPID_PUBLIC_KEY =
   "BJXXT1l-q5eu0Obt6DDDndh1NeVqGL9jR3mS8aoH1-cB6W3Cqk_UM9jLLF9PLyc1RguSVPmki1bxbOsNcYeOVbI";
@@ -5738,6 +5739,7 @@ function parseCwaEarthquakeListMarkdown(markdown) {
       lon: estimated?.lon ?? null,
       approxCoords: Boolean(estimated?.approx),
       url: `https://scweb.cwa.gov.tw/zh-tw/earthquake/details/${eventId}`,
+      mapUrl: `https://scweb.cwa.gov.tw/zh-tw/earthquake/imgs/${eventId}`,
       pwsUrl: `https://scweb.cwa.gov.tw/zh-tw/earthquake/pws/${eventId}`,
       cwaUrl: EARTHQUAKE_CWA_PAGE,
       reportContent: ""
@@ -5837,6 +5839,19 @@ function renderEarthquakeSourceMeta(updatedAt = Date.now()) {
   )}`;
 }
 
+function getEarthquakeTaiwanMapUrl(quake) {
+  if (quake?.mapUrl) {
+    return quake.mapUrl;
+  }
+  const eventId = String(quake?.eventId || "")
+    .replace(/^(cwa-|usgs-)/i, "")
+    .trim();
+  if (/^\d{10,}$/.test(eventId)) {
+    return `${EARTHQUAKE_SCWEB_MAP_BASE}/${eventId}`;
+  }
+  return quake?.url || EARTHQUAKE_SCWEB_PAGE;
+}
+
 function createEarthquakeListItem(quake) {
   const item = document.createElement("li");
   const colorKey = quake.alertColor || "gray";
@@ -5848,20 +5863,23 @@ function createEarthquakeListItem(quake) {
     ? `｜約 ${quake.distanceKm.toFixed(0)} 公里`
     : "";
   const serialText = formatEarthquakeSerialLabel(quake);
+  const mapUrl = getEarthquakeTaiwanMapUrl(quake);
   item.innerHTML = `
-    <span class="earthquake-mag">${formatEarthquakeMagnitudeLabel(quake.magnitude)}</span>
-    <span class="earthquake-body">
-      <strong>${serialText}｜震度 ${formatIntensityLabel(quake.intensityValue)}<span class="earthquake-place-label">${getEarthquakeLocatedLabel(
-        quake.place,
-        quake
-      )}</span></strong>
-      <small>${formatDateTime(quake.timeMs)}${distanceText}｜深度 ${
-        Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"
-      }${isNationalEarthquakeAlert(quake) ? "｜國家警報同步" : ""}</small>
-    </span>
+    <a class="earthquake-item-main" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="開啟台灣地圖地震圖：${serialText}">
+      <span class="earthquake-mag">${formatEarthquakeMagnitudeLabel(quake.magnitude)}</span>
+      <span class="earthquake-body">
+        <strong>${serialText}｜震度 ${formatIntensityLabel(quake.intensityValue)}<span class="earthquake-place-label">${getEarthquakeLocatedLabel(
+          quake.place,
+          quake
+        )}</span></strong>
+        <small>${formatDateTime(quake.timeMs)}${distanceText}｜深度 ${
+          Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"
+        }${isNationalEarthquakeAlert(quake) ? "｜國家警報同步" : ""}</small>
+      </span>
+    </a>
     <span class="earthquake-links">
       <a href="${quake.pwsUrl || quake.url}" target="_blank" rel="noopener noreferrer">公眾警示</a>
-      <a href="${quake.url || EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">詳情</a>
+      <a href="${mapUrl}" target="_blank" rel="noopener noreferrer">地震圖</a>
     </span>
   `;
   return item;
@@ -5959,6 +5977,7 @@ function buildEarthquakePopupHtml(quake) {
   const linksHtml = compact
     ? ""
     : `<div class="eq-popup-links">
+        <a href="${getEarthquakeTaiwanMapUrl(quake)}" target="_blank" rel="noopener noreferrer">台灣地震圖</a>
         <a href="${quake.pwsUrl || quake.url}" target="_blank" rel="noopener noreferrer">開啟國家緊急訊息（公眾警示）</a>
         <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>
       </div>`;

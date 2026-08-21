@@ -4229,7 +4229,7 @@ body.eq-sheet-open {
 
 .earthquake-list li.earthquake-item {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   list-style: none;
@@ -4322,13 +4322,35 @@ body.eq-sheet-open {
   line-height: 1.4;
 }
 
-.earthquake-links,
-.earthquake-item a {
+.earthquake-item-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  font-size: inherit;
+  white-space: normal;
+}
+
+.earthquake-item-main:hover,
+.earthquake-item-main:focus-visible {
+  color: inherit;
+  text-decoration: none;
+}
+
+.earthquake-list li.earthquake-item:hover,
+.earthquake-list li.earthquake-item:focus-within {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary, #c2a36b) 55%, transparent);
+}
+
+.earthquake-links {
   display: grid;
   gap: 4px;
 }
 
-.earthquake-item a {
+.earthquake-links a {
   color: #1f5ae1;
   text-decoration: none;
   font-size: 13px;
@@ -5257,6 +5279,10 @@ body.eq-sheet-open {
 
   .earthquake-links {
     display: none !important;
+  }
+
+  .earthquake-list li.earthquake-item {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .eq-popup-links,

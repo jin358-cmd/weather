@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v58-closure-meta-2x";
+const SW_VERSION = "jin-v59-eq-item-taiwan-map-link";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
