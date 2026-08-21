@@ -690,6 +690,11 @@ label {
   line-height: 1.45;
 }
 
+.locate-status:empty {
+  display: none;
+  min-height: 0;
+}
+
 .locate-status-error {
   color: var(--warn);
 }
@@ -2261,7 +2266,7 @@ input[type="checkbox"] {
   border-radius: 10px;
   background: #eaf2ff;
   color: #123a7a;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.45;
   box-shadow: inset 0 0 0 1px rgba(31, 90, 225, 0.12);
@@ -2274,22 +2279,22 @@ input[type="checkbox"] {
 .subscription-email-note {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
 .alert-block .topic-option,
 .alert-block .subscription-form > label {
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .alert-block .subscription-status-box {
-  font-size: 17px;
+  font-size: 14px;
 }
 
 .alert-block .subscription-email-note,
 .alert-block .notification-hint {
-  font-size: 16px;
+  font-size: 13px;
 }
 
 /* Match 地震通報 / ai-alert-top title+body scale for all realtime alert items. */
@@ -2305,7 +2310,7 @@ input[type="checkbox"] {
   white-space: nowrap;
   overflow: hidden;
   line-height: 1.2;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 #notificationHint.subscription-status-box {
@@ -4001,7 +4006,7 @@ body.eq-sheet-open {
   white-space: nowrap;
   overflow: hidden;
   line-height: 1.2;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .closure-group {
@@ -4391,7 +4396,7 @@ body.eq-sheet-open {
 
   .alert-block .topic-option,
   .alert-block .subscription-form > label {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .alert-block .ai-alert-item,
@@ -4402,14 +4407,14 @@ body.eq-sheet-open {
 
   .alert-block .subscription-status-box,
   .subscription-status-box.timestamp {
-    font-size: 17px;
+    font-size: 14px;
   }
 
   .alert-block .subscription-email-note,
   .alert-block .notification-hint,
   .subscription-email-note.timestamp,
   .notification-hint.timestamp {
-    font-size: 16px;
+    font-size: 13px;
   }
 
   .in-page-alert-subscribe-tip .in-page-alert-title,

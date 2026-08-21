@@ -448,9 +448,6 @@ function setLocateStatus(message, { isError = false } = {}) {
     locateStatus.textContent = message || "";
     locateStatus.classList.toggle("locate-status-error", Boolean(isError && message));
   }
-  if (regionMemoryMeta && message) {
-    regionMemoryMeta.textContent = message.startsWith("區域偏好：") ? message : `區域偏好：${message}`;
-  }
 }
 const regionMemoryMeta = document.querySelector("#regionMemoryMeta");
 const refreshBtn = document.querySelector("#refreshBtn");
@@ -1395,13 +1392,11 @@ async function locateByDevice() {
     };
     updateWindyTrackEmbed({ force: true });
 
-    const message = `定位完成：${nearest.city}${nearest.town}\n路口／國道監控跟隨 ${nearest.city}，並背景預載全市串流`;
-    setLocateStatus(message.replace("\n", "｜"));
-    showInPageAlert("定位完成", message, {
-      timeoutMs: 4500,
-      fullscreen: true,
-      variant: "locate-done"
-    });
+    const message = `定位完成：${nearest.city}${nearest.town}｜路口／國道監控跟隨 ${nearest.city}，並背景預載全市串流`;
+    if (regionMemoryMeta) {
+      regionMemoryMeta.textContent = `區域偏好：${message}`;
+    }
+    setLocateStatus("");
 
     armForecastNotifyByDeviceLocate();
     if (appState.subscription?.email) {
@@ -8224,8 +8219,8 @@ function fitSubscriptionTopicTexts() {
     element.style.width = `${available}px`;
     element.style.maxWidth = `${available}px`;
     fitSingleLineText(element, {
-      maxPx: 13,
-      minPx: 9,
+      maxPx: 11,
+      minPx: 8,
       fillRatio: 1
     });
   });
