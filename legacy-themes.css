@@ -90,7 +90,6 @@
 .theme-elegant .hero,
 .theme-elegant .visual-break,
 .theme-elegant .refresh-btn,
-.theme-elegant .locate-btn,
 .theme-elegant .card {
   clip-path: none !important;
   animation: none !important;
@@ -269,11 +268,35 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   background: var(--ok) !important;
   border: 1px solid var(--ok) !important;
   color: #fff !important;
-  box-shadow: none !important;
-  animation: none !important;
   clip-path: none !important;
   font-family: var(--font-body);
   letter-spacing: 0;
+}
+
+.theme-elegant .locate-btn.locate-btn-pulse {
+  overflow: visible !important;
+  animation: locate-glow 1.8s ease-in-out infinite !important;
+  box-shadow:
+    0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent),
+    0 0 14px 2px color-mix(in srgb, var(--ok) 50%, transparent),
+    0 0 28px 6px color-mix(in srgb, var(--ok) 28%, transparent) !important;
+}
+
+.theme-elegant .locate-btn.locate-btn-pulse::before,
+.theme-elegant .locate-btn.locate-btn-pulse::after {
+  border-color: color-mix(in srgb, var(--ok) 88%, #fff);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ok) 55%, transparent);
+  animation: locate-ripple 2.2s ease-out infinite;
+}
+
+.theme-elegant .locate-btn.locate-btn-pulse::after {
+  animation-delay: 1.1s;
+}
+
+.theme-elegant .locate-btn.locate-btn-pulse:disabled,
+.theme-elegant .locate-btn:disabled {
+  animation: none !important;
+  box-shadow: none !important;
 }
 
 .theme-elegant .ghost-btn {
@@ -498,6 +521,18 @@ body.theme-elegant[data-legacy-theme="dusk"] {
 
 body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="page"] {
   color: #f4efe6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-elegant .locate-btn.locate-btn-pulse {
+    animation: none !important;
+    box-shadow: var(--shadow-card) !important;
+  }
+
+  .theme-elegant .locate-btn.locate-btn-pulse::before,
+  .theme-elegant .locate-btn.locate-btn-pulse::after {
+    display: none;
+  }
 }
 
 @media (min-width: 720px) {
