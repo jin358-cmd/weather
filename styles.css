@@ -1553,6 +1553,43 @@ label {
   color: #039855 !important;
 }
 
+.freeway-list-wrap {
+  position: relative;
+  min-height: 220px;
+}
+
+.freeway-load-progress-host {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(16, 22, 30, 0.72);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.freeway-load-progress-host[hidden] {
+  display: none !important;
+}
+
+.freeway-load-progress {
+  width: 96px;
+  height: 96px;
+}
+
+.freeway-load-progress-label {
+  margin: 0;
+  color: #f4efe6;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
 .freeway-monitor {
   display: grid;
   gap: 10px;

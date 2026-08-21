@@ -504,6 +504,12 @@ const freewayCameraList = document.querySelector("#freewayCameraList");
 const freewayCitySelect = document.querySelector("#freewayCitySelect");
 const freewayRegionSelect = document.querySelector("#freewayRegionSelect");
 const freewayInterchangeSelect = document.querySelector("#freewayInterchangeSelect");
+const freewayLoadProgressHost = document.querySelector("#freewayLoadProgressHost");
+const freewayLoadProgress = document.querySelector("#freewayLoadProgress");
+const freewayLoadProgressPie = document.querySelector("#freewayLoadProgressPie");
+const freewayLoadProgressPct = document.querySelector("#freewayLoadProgressPct");
+let freewayLoadProgressToken = 0;
+let freewayLoadProgressHideTimer = 0;
 const mapLayerList = document.querySelector("#mapLayerList");
 const airSummary = document.querySelector("#airSummary");
 const aqiMetric = document.querySelector("#aqiMetric");
@@ -1759,7 +1765,7 @@ function stopFreewayFeedRefresh(img) {
 function startFreewayFeedRefresh(img, url) {
   stopFreewayFeedRefresh(img);
   if (!img || !url) {
-    return;
+    return Promise.resolve(false);
   }
   const apply = () => {
     if (!img?.isConnected) {
@@ -1769,8 +1775,38 @@ function startFreewayFeedRefresh(img, url) {
     const joiner = String(url).includes("?") ? "&" : "?";
     img.src = `${url}${joiner}_ts=${Date.now()}`;
   };
+  const ready = waitForImageLoad(img, 8000);
   apply();
   freewayFeedTimers.set(img, window.setInterval(apply, 1600));
+  return ready;
+}
+
+function waitForImageLoad(img, timeoutMs = 8000) {
+  return new Promise((resolve) => {
+    if (!img) {
+      resolve(false);
+      return;
+    }
+    let settled = false;
+    const finish = (ok) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      img.removeEventListener("load", onLoad);
+      img.removeEventListener("error", onError);
+      window.clearTimeout(timer);
+      resolve(ok);
+    };
+    const onLoad = () => finish(img.naturalWidth > 0);
+    const onError = () => finish(false);
+    img.addEventListener("load", onLoad);
+    img.addEventListener("error", onError);
+    const timer = window.setTimeout(() => finish(img.naturalWidth > 0), timeoutMs);
+    if (img.complete && img.naturalWidth > 0) {
+      finish(true);
+    }
+  });
 }
 
 function getEarthquakeDisasterLevel(quake) {
@@ -3433,7 +3469,7 @@ function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
 
   const showCamera = (camera, button) => {
     if (!isCurrent()) {
-      return;
+      return Promise.resolve(false);
     }
     const caption = formatFreewayCameraCaption(camera);
     const url = String(camera.html || "");
@@ -3443,7 +3479,7 @@ function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
     channels.querySelectorAll(".freeway-channel-btn").forEach((item) => {
       item.classList.toggle("is-active", item === button);
     });
-    startFreewayFeedRefresh(feed, url);
+    return startFreewayFeedRefresh(feed, url);
   };
 
   cameras.forEach((camera, index) => {
@@ -3461,19 +3497,73 @@ function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
   };
 }
 
+function setFreewayLoadProgress(pct) {
+  const value = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+  if (freewayLoadProgressPie) {
+    freewayLoadProgressPie.style.setProperty("--pct", String(value));
+  }
+  if (freewayLoadProgressPct) {
+    freewayLoadProgressPct.textContent = `${value}%`;
+  }
+  if (freewayLoadProgress) {
+    freewayLoadProgress.setAttribute("aria-valuenow", String(value));
+  }
+}
+
+function showFreewayLoadProgress() {
+  window.clearTimeout(freewayLoadProgressHideTimer);
+  freewayLoadProgressToken += 1;
+  setFreewayLoadProgress(6);
+  if (freewayLoadProgressHost) {
+    freewayLoadProgressHost.hidden = false;
+    freewayLoadProgressHost.setAttribute("aria-busy", "true");
+  }
+}
+
+function hideFreewayLoadProgress() {
+  const token = freewayLoadProgressToken;
+  setFreewayLoadProgress(100);
+  window.clearTimeout(freewayLoadProgressHideTimer);
+  freewayLoadProgressHideTimer = window.setTimeout(() => {
+    if (token !== freewayLoadProgressToken) {
+      return;
+    }
+    if (freewayLoadProgressHost) {
+      freewayLoadProgressHost.hidden = true;
+      freewayLoadProgressHost.setAttribute("aria-busy", "false");
+    }
+    setFreewayLoadProgress(0);
+  }, 280);
+}
+
 async function renderFreewayCameraList() {
   if (!freewayCameraList) {
     return;
   }
   const token = ++freewayCameraRenderToken;
   const isCurrent = () => token === freewayCameraRenderToken;
+  showFreewayLoadProgress();
+  setFreewayLoadProgress(8);
+  if (freewayCameraMeta) {
+    freewayCameraMeta.textContent = "國道監控讀取中...";
+  }
+  await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+  if (!isCurrent()) {
+    return;
+  }
   stopFreewayFeedRefresh();
   freewayCameraList.innerHTML = "";
   if (!freewayCameraDataset || !Array.isArray(freewayCameraDataset.cameras)) {
     freewayCameraList.innerHTML = `<p class="status-warn">目前無法載入國道監控資料。</p>`;
+    hideFreewayLoadProgress();
     return;
   }
+  setFreewayLoadProgress(22);
   const rows = dedupeCamerasByIdentity(getFilteredSortedFreewayCameras());
+  if (!isCurrent()) {
+    return;
+  }
+  setFreewayLoadProgress(40);
   const directionGroups = groupFreewayCamerasByDirection(rows).map((group) => ({
     ...group,
     cameras: group.cameras.slice(0, FREEWAY_CCTV_PREVIEW_LIMIT)
@@ -3481,6 +3571,7 @@ async function renderFreewayCameraList() {
   updateFreewayCameraMetaText(directionGroups);
   if (!rows.length) {
     freewayCameraList.innerHTML = `<p class="status-warn">目前範圍查無國道監控點，請更換國道路段、縣市或交流道。</p>`;
+    hideFreewayLoadProgress();
     return;
   }
 
@@ -3492,7 +3583,25 @@ async function renderFreewayCameraList() {
     return panel.start;
   });
   freewayCameraList.append(pair);
-  starters.forEach((start) => start());
+  setFreewayLoadProgress(55);
+  let loaded = 0;
+  const total = Math.max(1, starters.length);
+  await Promise.all(
+    starters.map(async (start) => {
+      try {
+        await start();
+      } finally {
+        loaded += 1;
+        if (isCurrent()) {
+          setFreewayLoadProgress(55 + Math.round((loaded / total) * 40));
+        }
+      }
+    })
+  );
+  if (!isCurrent()) {
+    return;
+  }
+  hideFreewayLoadProgress();
 }
 
 async function renderAllCameraLists() {
