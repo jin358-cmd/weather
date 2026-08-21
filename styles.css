@@ -2644,10 +2644,11 @@ input[type="checkbox"] {
   text-overflow: ellipsis;
 }
 
-.leaflet-div-icon.map-legend-callout {
+.leaflet-div-icon.map-legend-callout,
+.leaflet-marker-icon.map-legend-callout {
   background: transparent;
   border: 0;
-  overflow: visible;
+  overflow: visible !important;
 }
 
 .map-legend-callout-dot {
