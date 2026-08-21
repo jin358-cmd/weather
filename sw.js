@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v43-center-narrow-fields";
+const SW_VERSION = "jin-v44-remove-live-video-link";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

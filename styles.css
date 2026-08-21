@@ -1826,21 +1826,6 @@ label {
   outline: none;
 }
 
-.freeway-monitor-actions {
-  margin: 0;
-}
-
-.freeway-monitor-live-link {
-  color: var(--primary);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.freeway-monitor-live-link:hover,
-.freeway-monitor-live-link:focus-visible {
-  text-decoration: underline;
-}
-
 .camera-more-details {
   margin-top: 10px;
 }
@@ -3158,23 +3143,11 @@ input[type="checkbox"] {
   word-break: break-word;
 }
 
-.camera-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  align-items: center;
-}
-
-.camera-links a,
 .camera-maps-link {
   color: #1f5ae1;
   text-decoration: none;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.camera-maps-link {
   font-weight: 600;
+  font-size: 13px;
 }
 
 .camera-body a {
@@ -5178,14 +5151,8 @@ body.eq-sheet-open {
     font-size: 13px;
   }
 
-  .camera-body p,
-  .camera-body a,
-  .camera-links a {
+  .camera-body p {
     font-size: 12px;
-  }
-
-  .camera-links {
-    gap: 6px 10px;
   }
 
   .subscription-form {
@@ -5415,8 +5382,7 @@ body.eq-sheet-open {
 
   .auto-refresh-controls label,
   .timestamp,
-  .camera-body p,
-  .camera-links a {
+  .camera-body p {
     font-size: 12px;
   }
 

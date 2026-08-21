@@ -3046,9 +3046,6 @@ function createCameraCard(camera, _scopeLabel, { forceImage = false, variant = "
     ${mediaHtml}
     <div class="camera-body">
       <p data-cross-roads>${caption}</p>
-      <div class="camera-links">
-        <a href="${streamUrl}" target="_blank" rel="noopener noreferrer">即時影像</a>
-      </div>
     </div>
   `;
 
@@ -3501,7 +3498,6 @@ function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
 
   const first = cameras[0];
   const firstCaption = formatFreewayCameraCaption(first);
-  const firstUrl = String(first.html || "");
   monitor.innerHTML = `
     <div class="freeway-monitor-bezel">
       <p class="freeway-monitor-label">即時畫面｜${safeLabel}</p>
@@ -3511,13 +3507,9 @@ function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
     </div>
     <p class="freeway-monitor-caption">${escapeMapLegendHtml(firstCaption)}</p>
     <div class="freeway-monitor-channels" role="list" aria-label="${safeLabel}國道監控鏡頭"></div>
-    <p class="freeway-monitor-actions">
-      <a class="freeway-monitor-live-link" href="${firstUrl}" target="_blank" rel="noopener noreferrer">開啟即時影像</a>
-    </p>
   `;
   const feed = monitor.querySelector(".freeway-monitor-feed");
   const captionEl = monitor.querySelector(".freeway-monitor-caption");
-  const liveLink = monitor.querySelector(".freeway-monitor-live-link");
   const channels = monitor.querySelector(".freeway-monitor-channels");
 
   const showCamera = (camera, button) => {
@@ -3528,7 +3520,6 @@ function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
     const url = String(camera.html || "");
     captionEl.textContent = caption;
     feed.alt = caption;
-    liveLink.href = url;
     channels.querySelectorAll(".freeway-channel-btn").forEach((item) => {
       item.classList.toggle("is-active", item === button);
     });
