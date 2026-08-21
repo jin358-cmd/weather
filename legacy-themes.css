@@ -243,6 +243,10 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   font-weight: 700;
 }
 
+.theme-elegant #regionMemoryMeta.locate-status-error {
+  color: var(--warn) !important;
+}
+
 .theme-elegant select,
 .theme-elegant input[type="text"],
 .theme-elegant input[type="email"] {

@@ -727,6 +727,10 @@ label {
   color: var(--warn);
 }
 
+.theme-elegant #regionMemoryMeta.locate-status-error {
+  color: var(--warn) !important;
+}
+
 .locate-btn:disabled,
 .locate-btn-pulse:disabled {
   animation: none;
