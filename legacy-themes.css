@@ -230,10 +230,16 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
 
 .theme-elegant label,
 .theme-elegant .timestamp,
-.theme-elegant .auto-refresh-countdown,
 .theme-elegant .locate-status {
   color: var(--muted) !important;
   font-family: var(--font-body) !important;
+  letter-spacing: 0;
+}
+
+.theme-elegant .auto-refresh-countdown {
+  color: #9fd4f5 !important;
+  font-family: var(--font-body) !important;
+  font-weight: 700;
   letter-spacing: 0;
 }
 
