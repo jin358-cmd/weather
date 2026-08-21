@@ -608,8 +608,7 @@ const mapLayerConfig = {
 const AUTO_REFRESH_OPTIONS = {
   5: { ms: 5 * 60 * 1000, label: "5 分鐘" },
   15: { ms: 15 * 60 * 1000, label: "15 分鐘" },
-  30: { ms: 30 * 60 * 1000, label: "30 分鐘" },
-  60: { ms: 60 * 60 * 1000, label: "1 小時" }
+  30: { ms: 30 * 60 * 1000, label: "30 分鐘" }
 };
 const AUTO_REFRESH_STORAGE_KEY = "autoRefreshIntervalMinutesV1";
 const WEATHER_ICON_THEME_KEY = "weatherIconThemeV2";
