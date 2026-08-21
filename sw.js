@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v40-restore-dusk-gold";
+const SW_VERSION = "jin-v41-notice-collapse-icon";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

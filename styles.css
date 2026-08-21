@@ -1178,13 +1178,17 @@ label {
   list-style: none;
   cursor: pointer;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
 .notice-details summary::-webkit-details-marker {
   display: none;
+}
+
+.notice-details summary::marker {
+  content: "";
 }
 
 .section-head-link-only {
@@ -1195,6 +1199,21 @@ label {
 .notice-summary-title {
   font-size: clamp(14px, 2vw, 16px);
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notice-summary-title::after {
+  content: "▾";
+  font-size: 0.72em;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary, #c2a36b);
+}
+
+.notice-details[open] .notice-summary-title::after {
+  content: "▴";
 }
 
 .site-footer {
