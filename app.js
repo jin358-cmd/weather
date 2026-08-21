@@ -7978,6 +7978,18 @@ function initWarningMap() {
   requestAnimationFrame(() => {
     fitMapToTaiwan(false);
   });
+  if (typeof IntersectionObserver === "function") {
+    const mapVisibility = new IntersectionObserver(
+      (entries) => {
+        if (!warningMap || !entries.some((entry) => entry.isIntersecting)) {
+          return;
+        }
+        warningMap.invalidateSize();
+      },
+      { threshold: 0.15 }
+    );
+    mapVisibility.observe(mapEl);
+  }
 }
 
 async function fetchRoadCameras() {
