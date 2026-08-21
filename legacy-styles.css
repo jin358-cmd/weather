@@ -547,8 +547,8 @@ label {
 
 .locate-btn .locate-icon svg,
 .locate-icon svg {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   fill: #ff2d95;
   filter: drop-shadow(0 0 6px rgba(255, 45, 149, 0.65));
 }
@@ -558,12 +558,12 @@ label {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 64%;
-  max-width: 64%;
+  width: 72%;
+  max-width: 72%;
   box-sizing: border-box;
-  height: 58px;
-  min-height: 58px;
-  max-height: 58px;
+  height: 64px;
+  min-height: 64px;
+  max-height: 64px;
   border: 2px solid #0b7a45;
   border-radius: 12px;
   background: #0f9d58;
@@ -3992,19 +3992,19 @@ body.eq-sheet-open {
   }
 
   .locate-btn {
-    height: 56px;
-    min-height: 56px;
-    max-height: 56px;
-    padding: 0 12px;
+    height: 62px;
+    min-height: 62px;
+    max-height: 62px;
+    padding: 0 14px;
     font-size: clamp(15px, 3.8vw, 18px);
   }
 
   .locate-wrap .locate-btn {
-    width: 68%;
-    max-width: 68%;
-    height: 56px;
-    min-height: 56px;
-    max-height: 56px;
+    width: 76%;
+    max-width: 76%;
+    height: 62px;
+    min-height: 62px;
+    max-height: 62px;
     padding: 0 12px;
     white-space: nowrap;
     overflow: hidden;
@@ -4013,8 +4013,8 @@ body.eq-sheet-open {
   }
 
   .locate-btn .locate-icon svg {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
   }
 
   .locate-btn-label {
