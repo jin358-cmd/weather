@@ -1383,12 +1383,17 @@ label {
 }
 
 .closure-meta-link {
-  color: #1f5ae1;
-  font-weight: 600;
-  text-decoration: none;
+  color: var(--primary, #c2a36b);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  margin-left: 0.45em;
+  white-space: nowrap;
 }
 
-.closure-meta-link:hover {
+.closure-meta-link:hover,
+.closure-meta-link:focus-visible {
+  color: var(--hero-eyebrow, var(--primary, #c2a36b));
   text-decoration: underline;
 }
 

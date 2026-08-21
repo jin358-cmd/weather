@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v46-closure-meta-oneline";
+const SW_VERSION = "jin-v47-closure-update-link";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
