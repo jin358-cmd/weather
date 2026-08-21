@@ -2579,14 +2579,23 @@ input[type="checkbox"] {
   color: #f4efe6;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
   pointer-events: auto;
+  max-height: min(46%, 260px);
+  overflow: auto;
 }
 
 .map-legend-on-map h4 {
-  margin: 0 0 6px;
+  margin: 0 0 2px;
   color: #f4efe6;
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.04em;
+}
+
+.map-legend-hint {
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #c2a36b;
 }
 
 .map-legend-on-map .legend-list {
@@ -2600,15 +2609,19 @@ input[type="checkbox"] {
 }
 
 .map-legend-on-map .legend-item-btn {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
   width: auto;
-  grid-template-columns: none;
-  gap: 6px;
+  min-width: 132px;
+  max-width: 220px;
+  gap: 2px 6px;
   min-height: 32px;
-  padding: 4px 8px;
+  padding: 5px 8px;
   border: 1px solid rgba(244, 239, 230, 0.18);
   background: rgba(31, 40, 52, 0.9);
   color: #f4efe6;
+  align-items: center;
 }
 
 .map-legend-on-map .legend-item-btn:hover,
@@ -2618,6 +2631,83 @@ input[type="checkbox"] {
 
 .map-legend-on-map .legend-count {
   color: #c2a36b;
+}
+
+.map-legend-on-map .legend-place {
+  grid-column: 2 / -1;
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #c2a36b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaflet-div-icon.map-legend-callout {
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+
+.map-legend-callout-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  border: 2px solid #f4efe6;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+
+.map-legend-callout-card {
+  position: absolute;
+  left: 10px;
+  top: -16px;
+  min-width: 112px;
+  max-width: 176px;
+  padding: 4px 8px 5px 10px;
+  border-left: 3px solid var(--callout-color, #c2a36b);
+  border-radius: 6px;
+  background: rgba(18, 24, 33, 0.94);
+  color: #f4efe6;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.map-legend-callout-card::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 14px;
+  width: 8px;
+  height: 2px;
+  background: var(--callout-color, #c2a36b);
+}
+
+.map-legend-callout-card strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.map-legend-callout-place {
+  display: block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  color: #c2a36b;
+}
+
+.map-legend-callout-card em {
+  display: block;
+  font-size: 10px;
+  font-style: normal;
+  color: #9aa6b5;
 }
 
 .map-legend-on-map + .warning-map {
@@ -2820,6 +2910,12 @@ input[type="checkbox"] {
   font-weight: 700;
   color: #64748b;
   text-align: right;
+}
+
+.legend-place {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
 }
 
 .legend-swatch {
