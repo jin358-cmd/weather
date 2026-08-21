@@ -1553,14 +1553,18 @@ label {
   color: #039855 !important;
 }
 
-.freeway-list-wrap,
-.camera-list-wrap {
+.freeway-list-wrap {
   position: relative;
   min-height: 220px;
 }
 
-.freeway-load-progress-host,
-.camera-load-progress-host {
+.camera-list-wrap {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.freeway-load-progress-host {
   position: absolute;
   inset: 0;
   z-index: 5;
@@ -1575,15 +1579,40 @@ label {
   -webkit-backdrop-filter: blur(3px);
 }
 
+.camera-load-progress-host {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(16, 22, 30, 0.72);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
 .freeway-load-progress-host[hidden],
 .camera-load-progress-host[hidden] {
   display: none !important;
 }
 
-.freeway-load-progress,
-.camera-load-progress {
+.freeway-load-progress {
   width: 96px;
   height: 96px;
+}
+
+.camera-load-progress {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.camera-load-progress .refresh-progress-pie::after {
+  inset: 14px;
+}
+
+.camera-load-progress .refresh-progress-pct {
+  font-size: 1.05rem;
 }
 
 .freeway-load-progress-label,
@@ -2782,15 +2811,7 @@ input[type="checkbox"] {
 }
 
 .camera-switching {
-  margin: 0;
-  font-weight: 600;
-  color: #1f5ae1;
-}
-
-.camera-switching [data-cctv-progress] {
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  color: #0b3fad;
+  display: none;
 }
 
 .metrics {

@@ -2307,15 +2307,7 @@ input[type="checkbox"] {
 }
 
 .camera-switching {
-  margin: 0;
-  font-weight: 600;
-  color: #1f5ae1;
-}
-
-.camera-switching [data-cctv-progress] {
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  color: #0b3fad;
+  display: none;
 }
 
 .metrics {

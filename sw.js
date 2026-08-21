@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v35-freeway-points-south-north";
+const SW_VERSION = "jin-v36-city-cctv-progress-row-pie";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

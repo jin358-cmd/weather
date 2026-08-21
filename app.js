@@ -3391,26 +3391,12 @@ async function renderCameraList() {
     return;
   }
 
-  if (cameraList) {
-    const loading = document.createElement("p");
-    loading.className = "timestamp camera-switching";
-    loading.dataset.cameraLoading = "1";
-    loading.innerHTML = keyword
-      ? `正在檢查關鍵字相符的路口監控：${escapeMapLegendHtml(cityScopeLabel)}｜進度 <strong data-cctv-progress>0%</strong>`
-      : `正在檢查最近 ${CITY_CCTV_PREVIEW_LIMIT} 組路口監控連線：${escapeMapLegendHtml(scopeLabel)}（${CITY_CCTV_RADIUS_KM} 公里）｜進度 <strong data-cctv-progress>0%</strong>`;
-    cameraList.append(loading);
-  }
-
   const liveCameras = await collectVerifiedLiveCameras(rows, {
     isCurrent,
     limit: CITY_CCTV_PREVIEW_LIMIT,
-    onProgress: ({ pct, found }) => {
+    onProgress: ({ pct }) => {
       if (!isCurrent()) {
         return;
-      }
-      const progressEl = cameraList?.querySelector("[data-cctv-progress]");
-      if (progressEl) {
-        progressEl.textContent = `${pct}%（已確認 ${found}/${CITY_CCTV_PREVIEW_LIMIT}）`;
       }
       setCityCameraLoadProgress(12 + Math.round(Math.max(0, Math.min(100, pct)) * 0.5));
     }
@@ -3419,7 +3405,6 @@ async function renderCameraList() {
     return;
   }
 
-  cameraList?.querySelector("[data-camera-loading]")?.remove();
   if (!liveCameras.length) {
     if (cameraList) {
       cameraList.innerHTML = keyword
