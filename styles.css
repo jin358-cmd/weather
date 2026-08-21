@@ -1527,6 +1527,19 @@ label {
 .freeway-monitor {
   display: grid;
   gap: 10px;
+  min-width: 0;
+}
+
+.freeway-monitor-pair {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .freeway-monitor-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
 }
 
 .freeway-monitor-bezel {
@@ -1551,6 +1564,16 @@ label {
   overflow: hidden;
   border-radius: 8px;
   background: #0b0f14;
+}
+
+.freeway-monitor-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 12px;
+  text-align: center;
 }
 
 .freeway-monitor-feed,

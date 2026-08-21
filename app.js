@@ -691,7 +691,7 @@ const CCTV_VISIBLE_LIMIT = 8;
 const CCTV_VERIFY_POOL_SIZE = 48;
 let cityCameraRenderToken = 0;
 let freewayCameraRenderToken = 0;
-let freewayFeedTimer = 0;
+const freewayFeedTimers = new Map();
 let jsZipModulePromise = null;
 const appState = {
   weather: null,
@@ -1647,25 +1647,95 @@ function getCameraEntranceExitLabel(camera) {
   return camera?.id || "出入口";
 }
 
-function stopFreewayFeedRefresh() {
-  if (freewayFeedTimer) {
-    window.clearInterval(freewayFeedTimer);
-    freewayFeedTimer = 0;
+function getFreewayCameraDirectionCode(camera = {}) {
+  const id = String(camera?.id || "").toUpperCase();
+  const stake = String(camera?.stakenumber || "");
+  const blob = `${id} ${stake}`;
+  if (/北上|北向/.test(blob)) {
+    return "N";
   }
+  if (/南下|南向/.test(blob)) {
+    return "S";
+  }
+  if (/東向/.test(blob)) {
+    return "E";
+  }
+  if (/西向/.test(blob)) {
+    return "W";
+  }
+  const tunnel = id.match(/^CCTV-[A-Z0-9]+-T-.*-([NSEW])(?:-\d+)?$/);
+  if (tunnel) {
+    return tunnel[1];
+  }
+  const standard = id.match(/^CCTV-[A-Z0-9]+-([NSEW])-/);
+  if (standard) {
+    return standard[1];
+  }
+  return "";
+}
+
+function getFreewayDirectionLabel(code = "") {
+  if (code === "N") {
+    return "北向";
+  }
+  if (code === "S") {
+    return "南向";
+  }
+  if (code === "E") {
+    return "東向";
+  }
+  if (code === "W") {
+    return "西向";
+  }
+  return "";
+}
+
+function groupFreewayCamerasByDirection(cameras = []) {
+  const buckets = { N: [], S: [], E: [], W: [] };
+  cameras.forEach((camera) => {
+    const code = camera.directionCode || getFreewayCameraDirectionCode(camera);
+    if (buckets[code]) {
+      buckets[code].push(camera);
+    }
+  });
+  const northSouthCount = buckets.N.length + buckets.S.length;
+  const eastWestCount = buckets.E.length + buckets.W.length;
+  const codes = northSouthCount >= eastWestCount ? ["N", "S"] : ["W", "E"];
+  return codes.map((code) => ({
+    code,
+    label: getFreewayDirectionLabel(code),
+    cameras: buckets[code]
+  }));
+}
+
+function stopFreewayFeedRefresh(img) {
+  if (img) {
+    const timer = freewayFeedTimers.get(img);
+    if (timer) {
+      window.clearInterval(timer);
+      freewayFeedTimers.delete(img);
+    }
+    return;
+  }
+  freewayFeedTimers.forEach((timer) => window.clearInterval(timer));
+  freewayFeedTimers.clear();
 }
 
 function startFreewayFeedRefresh(img, url) {
-  stopFreewayFeedRefresh();
+  stopFreewayFeedRefresh(img);
+  if (!img || !url) {
+    return;
+  }
   const apply = () => {
     if (!img?.isConnected) {
-      stopFreewayFeedRefresh();
+      stopFreewayFeedRefresh(img);
       return;
     }
     const joiner = String(url).includes("?") ? "&" : "?";
     img.src = `${url}${joiner}_ts=${Date.now()}`;
   };
   apply();
-  freewayFeedTimer = window.setInterval(apply, 1600);
+  freewayFeedTimers.set(img, window.setInterval(apply, 1600));
 }
 
 function getEarthquakeDisasterLevel(quake) {
@@ -1721,12 +1791,11 @@ function getFreewayEntranceExitLabel(camera) {
 
 function formatFreewayCameraCaption(camera) {
   const stake = String(camera?.stakenumber || "").trim();
-  if (stake) {
-    return simplifyFreewayOptionLabel(stake);
-  }
-  const segment = getFreewayEntranceExitLabel(camera);
-  const region = getSelectedFreewayRegion();
-  return `${region?.label || "國道"}（${segment}）`;
+  const segment = stake
+    ? simplifyFreewayOptionLabel(stake)
+    : `${getSelectedFreewayRegion()?.label || "國道"}（${getFreewayEntranceExitLabel(camera)}）`;
+  const direction = getFreewayDirectionLabel(camera.directionCode || getFreewayCameraDirectionCode(camera));
+  return direction ? `${segment}｜${direction}` : segment;
 }
 
 function isCameraUrlUsable(url) {
@@ -2114,6 +2183,7 @@ function getFilteredSortedFreewayCameras() {
           ...camera,
           distanceKm,
           routeCode: getCameraRouteCode(camera.id),
+          directionCode: getFreewayCameraDirectionCode(camera),
           focusLabel: interchangeName
             ? simplifyFreewayOptionLabel(interchangeName)
             : selectedCity
@@ -3270,7 +3340,7 @@ async function renderCameraList() {
   }
 }
 
-function updateFreewayCameraMetaText() {
+function updateFreewayCameraMetaText(directionGroups = []) {
   if (!freewayCameraMeta || !freewayCameraDataset) {
     return;
   }
@@ -3278,44 +3348,45 @@ function updateFreewayCameraMetaText() {
     ? formatDateTime(freewayCameraDataset.fetchedAt)
     : "未提供";
   const region = getSelectedFreewayRegion();
-  const nearest = getFilteredSortedFreewayCameras()[0];
-  const segment = getFreewayEntranceExitLabel(nearest);
-  freewayCameraMeta.textContent = `${region.label}｜(${segment})快照：${freewayFetchedAt}`;
+  const directionText = directionGroups.length
+    ? directionGroups.map((group) => group.label).join("／")
+    : "北向／南向";
+  const nearest = directionGroups
+    .flatMap((group) => group.cameras)
+    .sort((a, b) => (a.distanceKm || Infinity) - (b.distanceKm || Infinity))[0];
+  const segment = nearest ? getFreewayEntranceExitLabel(nearest) : "所選路段";
+  freewayCameraMeta.textContent = `${region.label}｜${directionText}｜(${segment})快照：${freewayFetchedAt}`;
 }
 
-async function renderFreewayCameraList() {
-  if (!freewayCameraList) {
-    return;
-  }
-  const token = ++freewayCameraRenderToken;
-  const isCurrent = () => token === freewayCameraRenderToken;
-  stopFreewayFeedRefresh();
-  freewayCameraList.innerHTML = "";
-  if (!freewayCameraDataset || !Array.isArray(freewayCameraDataset.cameras)) {
-    freewayCameraList.innerHTML = `<p class="status-warn">目前無法載入國道監控資料。</p>`;
-    return;
-  }
-  const rows = dedupeCamerasByIdentity(getFilteredSortedFreewayCameras()).slice(0, FREEWAY_CCTV_PREVIEW_LIMIT);
-  updateFreewayCameraMetaText();
-  if (!rows.length) {
-    freewayCameraList.innerHTML = `<p class="status-warn">目前範圍查無國道監控點，請更換國道路段、縣市或交流道。</p>`;
-    return;
+function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
+  const monitor = document.createElement("article");
+  monitor.className = "freeway-monitor";
+  monitor.dataset.direction = directionLabel;
+  const safeLabel = escapeMapLegendHtml(directionLabel);
+  if (!cameras.length) {
+    monitor.innerHTML = `
+      <div class="freeway-monitor-bezel">
+        <p class="freeway-monitor-label">即時畫面｜${safeLabel}</p>
+        <div class="freeway-monitor-screen">
+          <p class="status-warn freeway-monitor-empty">目前沒有${safeLabel}監控</p>
+        </div>
+      </div>
+    `;
+    return { monitor, start: () => {} };
   }
 
-  const monitor = document.createElement("div");
-  monitor.className = "freeway-monitor";
-  const first = rows[0];
+  const first = cameras[0];
   const firstCaption = formatFreewayCameraCaption(first);
   const firstUrl = String(first.html || "");
   monitor.innerHTML = `
     <div class="freeway-monitor-bezel">
-      <p class="freeway-monitor-label">即時畫面</p>
+      <p class="freeway-monitor-label">即時畫面｜${safeLabel}</p>
       <div class="freeway-monitor-screen">
         <img class="freeway-monitor-feed" alt="${escapeMapLegendHtml(firstCaption)}" referrerpolicy="origin" />
       </div>
     </div>
     <p class="freeway-monitor-caption">${escapeMapLegendHtml(firstCaption)}</p>
-    <div class="freeway-monitor-channels" role="list" aria-label="國道監控鏡頭"></div>
+    <div class="freeway-monitor-channels" role="list" aria-label="${safeLabel}國道監控鏡頭"></div>
     <p class="freeway-monitor-actions">
       <a class="freeway-monitor-live-link" href="${firstUrl}" target="_blank" rel="noopener noreferrer">開啟即時影像</a>
     </p>
@@ -3340,7 +3411,7 @@ async function renderFreewayCameraList() {
     startFreewayFeedRefresh(feed, url);
   };
 
-  rows.forEach((camera, index) => {
+  cameras.forEach((camera, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `freeway-channel-btn${index === 0 ? " is-active" : ""}`;
@@ -3349,8 +3420,44 @@ async function renderFreewayCameraList() {
     channels.append(button);
   });
 
-  freewayCameraList.append(monitor);
-  showCamera(first, channels.querySelector(".freeway-channel-btn"));
+  return {
+    monitor,
+    start: () => showCamera(first, channels.querySelector(".freeway-channel-btn"))
+  };
+}
+
+async function renderFreewayCameraList() {
+  if (!freewayCameraList) {
+    return;
+  }
+  const token = ++freewayCameraRenderToken;
+  const isCurrent = () => token === freewayCameraRenderToken;
+  stopFreewayFeedRefresh();
+  freewayCameraList.innerHTML = "";
+  if (!freewayCameraDataset || !Array.isArray(freewayCameraDataset.cameras)) {
+    freewayCameraList.innerHTML = `<p class="status-warn">目前無法載入國道監控資料。</p>`;
+    return;
+  }
+  const rows = dedupeCamerasByIdentity(getFilteredSortedFreewayCameras());
+  const directionGroups = groupFreewayCamerasByDirection(rows).map((group) => ({
+    ...group,
+    cameras: group.cameras.slice(0, FREEWAY_CCTV_PREVIEW_LIMIT)
+  }));
+  updateFreewayCameraMetaText(directionGroups);
+  if (!rows.length) {
+    freewayCameraList.innerHTML = `<p class="status-warn">目前範圍查無國道監控點，請更換國道路段、縣市或交流道。</p>`;
+    return;
+  }
+
+  const pair = document.createElement("div");
+  pair.className = "freeway-monitor-pair";
+  const starters = directionGroups.map((group) => {
+    const panel = createFreewayMonitorPanel(group.cameras, group.label, isCurrent);
+    pair.append(panel.monitor);
+    return panel.start;
+  });
+  freewayCameraList.append(pair);
+  starters.forEach((start) => start());
 }
 
 async function renderAllCameraLists() {
