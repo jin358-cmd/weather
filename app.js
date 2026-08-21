@@ -415,7 +415,8 @@ const windyLocateBtnLabel = windyLocateBtn?.querySelector(".windy-locate-btn-lab
 const LOCATE_BTN_LABEL = "依設備定位選區";
 const WINDY_LOCATE_BTN_LABEL = "定位";
 const locateBtnLabel = locateBtn?.querySelector(".locate-btn-label");
-const locateStatus = document.querySelector("#locateStatus");
+const regionMemoryMeta = document.querySelector("#regionMemoryMeta");
+let suppressRegionSelectEvents = false;
 let windyLocateFocus = null;
 let cctvLocateFocus = null;
 const cameraProbeCache = new Map();
@@ -444,12 +445,26 @@ function setLocateButtonText(text = LOCATE_BTN_LABEL) {
 }
 
 function setLocateStatus(message, { isError = false } = {}) {
-  if (locateStatus) {
-    locateStatus.textContent = message || "";
-    locateStatus.classList.toggle("locate-status-error", Boolean(isError && message));
+  if (!regionMemoryMeta) {
+    return;
   }
+  if (!message) {
+    regionMemoryMeta.classList.remove("locate-status-error");
+    return;
+  }
+  regionMemoryMeta.textContent = message;
+  regionMemoryMeta.classList.toggle("locate-status-error", Boolean(isError));
 }
-const regionMemoryMeta = document.querySelector("#regionMemoryMeta");
+
+function setLocateCompleteMeta(city, town) {
+  if (!regionMemoryMeta) {
+    return;
+  }
+  const cityName = String(city || "").trim();
+  const townName = String(town || "").trim();
+  regionMemoryMeta.classList.remove("locate-status-error");
+  regionMemoryMeta.textContent = `區域偏好：定位完成：${cityName}${townName}｜路口／國道監控跟隨 ${cityName}，並背景預載全市串流`;
+}
 const refreshBtn = document.querySelector("#refreshBtn");
 const lastUpdated = document.querySelector("#lastUpdated");
 const weatherSummary = document.querySelector("#weatherSummary");
@@ -1020,7 +1035,7 @@ function updatePowerOutageMapLayer() {
   syncMapLegendState();
 }
 
-function saveRegionPreference() {
+function saveRegionPreference({ updateMeta = true } = {}) {
   const region = getRegionForCity(citySelect.value);
   const payload = {
     region,
@@ -1029,7 +1044,10 @@ function saveRegionPreference() {
     savedAt: new Date().toISOString()
   };
   localStorage.setItem(REGION_STORAGE_KEY, JSON.stringify(payload));
-  regionMemoryMeta.textContent = `區域偏好：已記住 ${payload.region}／${payload.city}${payload.town}（下次開啟自動套用）`;
+  if (updateMeta && regionMemoryMeta) {
+    regionMemoryMeta.classList.remove("locate-status-error");
+    regionMemoryMeta.textContent = `區域偏好：已記住 ${payload.region}／${payload.city}${payload.town}（下次開啟自動套用）`;
+  }
 }
 
 function readRegionPreference() {
@@ -1073,12 +1091,17 @@ function fillTownshipSelect(cityName, preferredTown) {
   }
 }
 
-function applyRegionSelection(regionName, cityName, townName, { persist = true } = {}) {
+function applyRegionSelection(regionName, cityName, townName, { persist = true, updateMeta = true } = {}) {
   const city = cityName || "臺北市";
-  fillCitySelect(city);
-  fillTownshipSelect(citySelect.value, townName);
-  if (persist) {
-    saveRegionPreference();
+  suppressRegionSelectEvents = true;
+  try {
+    fillCitySelect(city);
+    fillTownshipSelect(citySelect.value, townName);
+    if (persist) {
+      saveRegionPreference({ updateMeta });
+    }
+  } finally {
+    suppressRegionSelectEvents = false;
   }
 }
 
@@ -1362,7 +1385,6 @@ async function locateByDevice() {
 
   setLocateButtonsDisabled(true);
   setLocateButtonText("定位中...");
-  setLocateStatus("正在強制開啟裝置定位，請在系統提示中選擇「允許」…");
 
   const applySuccess = (position) => {
     const { latitude, longitude, accuracy } = position.coords;
@@ -1375,7 +1397,10 @@ async function locateByDevice() {
       return;
     }
 
-    applyRegionSelection(getRegionForCity(nearest.city), nearest.city, nearest.town, { persist: true });
+    applyRegionSelection(getRegionForCity(nearest.city), nearest.city, nearest.town, {
+      persist: true,
+      updateMeta: false
+    });
     syncCityCameraScopeToLocator();
     syncFreewayCameraScopeToLocator();
     cctvLocateFocus = {
@@ -1392,11 +1417,7 @@ async function locateByDevice() {
     };
     updateWindyTrackEmbed({ force: true });
 
-    const message = `定位完成：${nearest.city}${nearest.town}｜路口／國道監控跟隨 ${nearest.city}，並背景預載全市串流`;
-    if (regionMemoryMeta) {
-      regionMemoryMeta.textContent = `區域偏好：${message}`;
-    }
-    setLocateStatus("");
+    setLocateCompleteMeta(nearest.city, nearest.town);
 
     armForecastNotifyByDeviceLocate();
     if (appState.subscription?.email) {
@@ -4356,7 +4377,8 @@ function locateWindyEmbed() {
     const nearest = findNearestTownship(latitude, longitude);
     if (nearest) {
       applyRegionSelection(getRegionForCity(nearest.city), nearest.city, nearest.town, {
-        persist: true
+        persist: true,
+        updateMeta: false
       });
       syncCityCameraScopeToLocator();
       syncFreewayCameraScopeToLocator();
@@ -4373,14 +4395,9 @@ function locateWindyEmbed() {
       });
     }
 
-    const message = nearest
-      ? `定位完成：${nearest.city}${nearest.town}\n路口／國道監控跟隨 ${nearest.city}，並背景預載全市串流`
-      : "定位完成：目前位置";
-    showInPageAlert("定位完成", message, {
-      timeoutMs: 4500,
-      fullscreen: true,
-      variant: "locate-done"
-    });
+    if (nearest) {
+      setLocateCompleteMeta(nearest.city, nearest.town);
+    }
     finish();
   };
 
@@ -7992,6 +8009,9 @@ async function performFullRefresh(triggerSource) {
 }
 
 citySelect.addEventListener("change", () => {
+  if (suppressRegionSelectEvents) {
+    return;
+  }
   fillTownshipSelect(citySelect.value);
   cctvLocateFocus = null;
   saveRegionPreference();
@@ -8006,6 +8026,9 @@ citySelect.addEventListener("change", () => {
 });
 
 townshipSelect.addEventListener("change", () => {
+  if (suppressRegionSelectEvents) {
+    return;
+  }
   cctvLocateFocus = null;
   saveRegionPreference();
   syncCityCameraScopeToLocator();
