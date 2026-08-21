@@ -505,3 +505,15 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 860px) {
+  .theme-elegant .hero h1,
+  body.theme-elegant[data-legacy-theme="dusk"] .hero h1 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    letter-spacing: 0;
+    line-height: 1.2;
+    font-size: clamp(13px, 4.15vw, 20px);
+  }
+}
