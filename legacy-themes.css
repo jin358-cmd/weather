@@ -661,8 +661,10 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
     overflow: hidden;
     text-overflow: clip;
     letter-spacing: 0;
-    line-height: 1.2;
-    font-size: clamp(13px, 4.15vw, 20px);
+    line-height: 1.15;
+    width: 100%;
+    max-width: 100%;
+    font-size: clamp(13px, 6.2vw, 42px);
   }
 
   .theme-elegant .topic-option,

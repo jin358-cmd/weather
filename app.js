@@ -8472,7 +8472,7 @@ function syncNoticeDetailsOpen() {
   noticeDetails.open = window.matchMedia("(min-width: 861px)").matches;
 }
 
-function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1 } = {}) {
+function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1, fillLine = false } = {}) {
   if (!element) {
     return;
   }
@@ -8510,11 +8510,31 @@ function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1 } = {}) {
   }
   element.style.fontSize = `${best}px`;
 
-  // Spread letter-spacing slightly when text still has unused width, for a fuller line.
   const used = element.scrollWidth;
   const leftover = available - used;
   const textLength = Math.max(1, (element.textContent || "").trim().length);
-  if (leftover > 4 && textLength > 8) {
+  if (leftover <= 0.5 || textLength < 2) {
+    return;
+  }
+  if (fillLine) {
+    const gaps = Math.max(1, textLength - 1);
+    let lowTrack = 0;
+    let highTrack = leftover / gaps;
+    let bestTrack = 0;
+    for (let i = 0; i < 14; i += 1) {
+      const mid = (lowTrack + highTrack) / 2;
+      element.style.letterSpacing = `${mid}px`;
+      if (element.scrollWidth <= available + 0.5) {
+        bestTrack = mid;
+        lowTrack = mid;
+      } else {
+        highTrack = mid;
+      }
+    }
+    element.style.letterSpacing = bestTrack > 0.04 ? `${bestTrack.toFixed(3)}px` : "";
+    return;
+  }
+  if (textLength > 8) {
     const tracking = Math.min(1.6, leftover / textLength);
     element.style.letterSpacing = `${tracking.toFixed(3)}px`;
     if (element.scrollWidth > available + 0.5) {
@@ -8551,9 +8571,10 @@ function fitHeroTexts() {
   if (title) {
     if (isCompactHero) {
       fitSingleLineText(title, {
-        maxPx: Math.min(22, Math.max(13, Math.floor(width * 0.068))),
+        maxPx: Math.min(56, Math.max(18, Math.floor(width * 0.16))),
         minPx: 11,
-        fillRatio: 1
+        fillRatio: 1,
+        fillLine: true
       });
     } else {
       clearFittedTextStyles(title);
