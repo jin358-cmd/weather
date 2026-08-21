@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v34-weekly-forecast-summary-center";
+const SW_VERSION = "jin-v35-freeway-points-south-north";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
