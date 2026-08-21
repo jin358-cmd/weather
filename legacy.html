@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -17,12 +17,13 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./legacy-themes.css" />
     <link rel="manifest" href="./manifest.json" />
-    <meta name="theme-color" content="#05060a" />
+    <meta name="theme-color" content="#10233f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="台灣災防" />
   </head>
-  <body class="theme-cyberpunk-2700">
+  <body class="theme-elegant" data-legacy-theme="cloud">
     <div class="ambient-bg" aria-hidden="true">
       <span class="cyber-grid"></span>
       <span class="cyber-scanlines"></span>
@@ -37,6 +38,45 @@
         <a href="./index.html">滾動預報首頁</a>
         <a href="./dashboard.html">縣市詳情</a>
       </nav>
+      <section class="theme-picker" aria-label="選擇頁面設計風格">
+        <p class="theme-picker__label">設計風格（請挑選）</p>
+        <p class="theme-picker__hint">三種素雅色系，標題對比加強。選定後會套用到本頁。</p>
+        <div class="theme-picker__options" role="group" aria-label="三種設計風格">
+          <button type="button" class="theme-option is-active" data-theme="cloud" aria-pressed="true" aria-label="套用雲白公務風格">
+            <span class="theme-option__swatches" aria-hidden="true">
+              <span style="background:#10233f"></span>
+              <span style="background:#ffffff"></span>
+              <span style="background:#c9a227"></span>
+            </span>
+            <span class="theme-option__copy">
+              <strong>雲白公務</strong>
+              <small>白底、深藍標題、金線點綴</small>
+            </span>
+          </button>
+          <button type="button" class="theme-option" data-theme="ink" aria-pressed="false" aria-label="套用松煙紙本風格">
+            <span class="theme-option__swatches" aria-hidden="true">
+              <span style="background:#1c1814"></span>
+              <span style="background:#f3eee4"></span>
+              <span style="background:#6b4f32"></span>
+            </span>
+            <span class="theme-option__copy">
+              <strong>松煙紙本</strong>
+              <small>暖紙底、墨黑標題、書冊感</small>
+            </span>
+          </button>
+          <button type="button" class="theme-option" data-theme="dusk" aria-pressed="false" aria-label="套用暮藍靜夜風格">
+            <span class="theme-option__swatches" aria-hidden="true">
+              <span style="background:#161d27"></span>
+              <span style="background:#f4efe6"></span>
+              <span style="background:#c2a36b"></span>
+            </span>
+            <span class="theme-option__copy">
+              <strong>暮藍靜夜</strong>
+              <small>沉靜深藍、象牙標題、砂金點綴</small>
+            </span>
+          </button>
+        </div>
+      </section>
       <header class="hero">
         <div class="hero-content">
           <p class="eyebrow hero-fit-text">災防網絡 · 即時警報</p>
@@ -548,5 +588,6 @@
       crossorigin=""
     ></script>
     <script src="./app.js" defer></script>
+    <script src="./legacy-theme.js" defer></script>
   </body>
 </html>
