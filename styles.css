@@ -2272,11 +2272,18 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-below > summary {
-  font-size: clamp(15px, 4vw, 18px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: clamp(17px, 4.6vw, 21px);
   font-weight: 800;
-  padding: 2px 2px;
-  line-height: 1.2;
+  padding: 6px 28px;
+  line-height: 1.3;
   min-height: 0;
+  position: relative;
 }
 
 .msn-weather-card .metrics {
@@ -2345,11 +2352,18 @@ input[type="checkbox"] {
 .weekly-forecast-details > summary {
   cursor: pointer;
   list-style: none;
-  font-size: clamp(15px, 4vw, 18px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: clamp(17px, 4.6vw, 21px);
   font-weight: 800;
   color: #072445;
-  line-height: 1.2;
-  padding: 2px 4px;
+  line-height: 1.3;
+  padding: 6px 28px;
+  position: relative;
 }
 
 .weekly-forecast-details > summary::-webkit-details-marker {
@@ -2364,6 +2378,10 @@ input[type="checkbox"] {
   content: " ▾";
   color: #1f5ae1;
   font-weight: 800;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .weekly-forecast-details[open] > summary::after {
@@ -2721,8 +2739,10 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-below > summary {
-    font-size: clamp(15px, 4.2vw, 17px);
-    padding: 1px 2px;
+    font-size: clamp(17px, 4.8vw, 20px);
+    padding: 6px 28px;
+    justify-content: center;
+    text-align: center;
   }
 
   .weekly-forecast-row {
@@ -5053,8 +5073,10 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-details > summary {
-    font-size: clamp(15px, 4.2vw, 17px);
-    padding: 1px 2px;
+    font-size: clamp(17px, 4.8vw, 20px);
+    padding: 6px 28px;
+    justify-content: center;
+    text-align: center;
   }
 
   .weekly-forecast-row {

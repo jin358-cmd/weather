@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v33-city-cctv-load-pie";
+const SW_VERSION = "jin-v34-weekly-forecast-summary-center";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
