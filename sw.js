@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v87-alert-title-larger";
+const SW_VERSION = "jin-v88-eq-center-mag-smaller";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

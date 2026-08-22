@@ -4000,8 +4000,8 @@ input[type="checkbox"] {
 .app .earthquake-card > .earthquake-list {
   width: min(90%, 34rem);
   max-width: 34rem;
-  margin-left: max(0px, calc((100% - min(90%, 34rem)) / 2 - 0.75rem));
-  margin-right: auto;
+  margin-inline: auto;
+  justify-self: center;
 }
 
 .app .earthquake-more-list {
@@ -4478,13 +4478,14 @@ body.eq-sheet-open {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 72px;
-  padding: 8px 10px;
+  min-width: 48px;
+  padding: 4px 6px;
   border-radius: 999px;
   background: #9a3412;
   color: #fff;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 11px;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
