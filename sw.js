@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v95-refresh-done-fit";
+const SW_VERSION = "jin-v96-cctv-locate-default";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
