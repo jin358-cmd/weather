@@ -2461,6 +2461,119 @@ input[type="checkbox"] {
   animation-delay: 0.7s;
 }
 
+.weather-icon-theme-motion {
+  background: linear-gradient(160deg, #fff8ec, #e8f4ff);
+  border-color: #d4b56a;
+}
+
+.weather-icon-theme-motion .sun-glow,
+.weekly-forecast-icon.weather-icon-theme-motion .sun-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sunGlow 2.6s ease-in-out infinite;
+}
+
+.weather-icon-theme-motion .sun-core,
+.weekly-forecast-icon.weather-icon-theme-motion .sun-core {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sunPulse 2.4s ease-in-out infinite;
+}
+
+.weather-icon-theme-motion .sun-rays,
+.weekly-forecast-icon.weather-icon-theme-motion .sun-rays {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sunSpin 12s linear infinite;
+}
+
+.weather-icon-theme-motion .cloud-body,
+.weekly-forecast-icon.weather-icon-theme-motion .cloud-body {
+  animation: cloudDrift 3.4s ease-in-out infinite alternate;
+}
+
+.weather-icon-theme-motion .cloud-back,
+.weekly-forecast-icon.weather-icon-theme-motion .cloud-back {
+  animation-duration: 4.2s;
+  animation-direction: alternate-reverse;
+}
+
+.weather-icon-theme-motion .rain-drop,
+.weekly-forecast-icon.weather-icon-theme-motion .rain-drop {
+  animation: rainFall 0.9s ease-in infinite;
+}
+
+.weather-icon-theme-motion .rain-drop:nth-of-type(2),
+.weekly-forecast-icon.weather-icon-theme-motion .rain-drop:nth-of-type(2) {
+  animation-delay: 0.12s;
+}
+
+.weather-icon-theme-motion .rain-drop:nth-of-type(3),
+.weekly-forecast-icon.weather-icon-theme-motion .rain-drop:nth-of-type(3) {
+  animation-delay: 0.24s;
+}
+
+.weather-icon-theme-motion .rain-drop:nth-of-type(4),
+.weekly-forecast-icon.weather-icon-theme-motion .rain-drop:nth-of-type(4) {
+  animation-delay: 0.36s;
+}
+
+.weather-icon-theme-motion .rain-drop:nth-of-type(5),
+.weekly-forecast-icon.weather-icon-theme-motion .rain-drop:nth-of-type(5) {
+  animation-delay: 0.48s;
+}
+
+.weather-icon-theme-motion .bolt,
+.weekly-forecast-icon.weather-icon-theme-motion .bolt {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: boltFlash 1.3s ease-in-out infinite;
+}
+
+.weather-icon-theme-motion .snow-flake,
+.weekly-forecast-icon.weather-icon-theme-motion .snow-flake {
+  animation: snowSway 2.2s linear infinite;
+}
+
+.weather-icon-theme-motion .snow-flake:nth-of-type(2) {
+  animation-delay: 0.3s;
+}
+
+.weather-icon-theme-motion .snow-flake:nth-of-type(3) {
+  animation-delay: 0.6s;
+}
+
+.weather-icon-theme-motion .snow-flake:nth-of-type(4) {
+  animation-delay: 0.9s;
+}
+
+@keyframes sunGlow {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes snowSway {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(3px, 6px);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-2px, 12px);
+    opacity: 0.2;
+  }
+}
+
 @keyframes sunPulse {
   0%,
   100% {

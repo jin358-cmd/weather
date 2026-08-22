@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v132-layer-switches";
+const SW_VERSION = "jin-v133-motion-weather-icons";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
