@@ -68,6 +68,7 @@ html.is-overlay-locked,
 html.is-overlay-locked body {
   overflow: hidden !important;
   overscroll-behavior: none;
+  touch-action: none;
 }
 
 html.is-overlay-locked body {
@@ -77,12 +78,17 @@ html.is-overlay-locked body {
   width: 100%;
 }
 
-html.is-overlay-locked::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 2390;
-  pointer-events: auto;
+html.is-overlay-locked .in-page-alert,
+html.is-overlay-locked .in-page-alert-close,
+html.is-overlay-locked .eq-detail-sheet,
+html.is-overlay-locked .eq-detail-sheet-panel,
+html.is-overlay-locked .eq-detail-sheet-toolbar {
+  touch-action: manipulation;
+}
+
+html.is-overlay-locked .in-page-alert-body,
+html.is-overlay-locked .eq-detail-sheet-body {
+  touch-action: pan-y;
 }
 
 body {
@@ -1512,12 +1518,13 @@ label {
   max-width: calc(100% - 24px);
   display: grid;
   gap: 8px;
-  z-index: 2400;
+  z-index: 2800;
   pointer-events: none;
 }
 
 .in-page-alert {
   pointer-events: auto;
+  touch-action: pan-y;
   margin: 0;
   padding: 12px 14px;
   border: 1px solid #9eb6e8;
@@ -1677,15 +1684,20 @@ label {
 }
 
 .in-page-alert-close {
+  position: relative;
+  z-index: 2;
   margin-top: 8px;
   border: 0;
   background: #1f5ae1;
   color: #fff;
   border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 10px 14px;
+  min-height: 44px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 @keyframes alertSlideUp {
@@ -4284,7 +4296,7 @@ input[type="checkbox"] {
 .eq-detail-sheet {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 2700;
   display: flex;
   align-items: center;
   justify-content: center;
