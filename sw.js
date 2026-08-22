@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v127-overlay-close";
+const SW_VERSION = "jin-v128-remove-map-layers";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
