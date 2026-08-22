@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v94-legend-focus-flash";
+const SW_VERSION = "jin-v95-refresh-done-fit";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

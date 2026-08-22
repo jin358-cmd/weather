@@ -1569,20 +1569,30 @@ label {
   z-index: 2600;
 }
 
-.in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-title {
-  font-size: clamp(32px, 7vw, 64px);
-  font-weight: 800;
-  line-height: 1.2;
-  white-space: nowrap;
+.in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done {
   overflow: hidden;
 }
 
+.in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-title {
+  font-size: clamp(18px, 7vw, 64px);
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  flex: 0 0 auto;
+}
+
+.in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-body {
+  overflow: hidden !important;
+  align-content: start;
+}
+
 .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-line {
-  font-size: clamp(20px, 4.2vw, 36px);
-  line-height: 1.45;
+  font-size: clamp(11px, 4.2vw, 36px);
+  line-height: 1.35;
   font-weight: 700;
   white-space: normal;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .in-page-alert-subscribe-tip .in-page-alert-line {
@@ -5490,18 +5500,26 @@ body.eq-sheet-open {
     z-index: 2600;
   }
 
-  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-title {
-    font-size: clamp(32px, 8vw, 52px);
-    white-space: nowrap;
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done {
     overflow: hidden;
   }
 
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-title {
+    font-size: clamp(18px, 8vw, 52px);
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-body {
+    overflow: hidden !important;
+  }
+
   .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-line {
-    font-size: clamp(20px, 4.6vw, 28px);
-    line-height: 1.45;
+    font-size: clamp(11px, 4.6vw, 28px);
+    line-height: 1.35;
     font-weight: 700;
     white-space: normal;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .in-page-alert-host:empty {
