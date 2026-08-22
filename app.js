@@ -6248,17 +6248,25 @@ function closeEarthquakeDetailSheet() {
   if (!earthquakeDetailSheet) {
     return;
   }
+  const wasOpen = !earthquakeDetailSheet.hidden;
   earthquakeDetailSheet.hidden = true;
   document.body.classList.remove("eq-sheet-open");
+  if (wasOpen) {
+    unlockPageScrollForOverlay();
+  }
 }
 
 function openEarthquakeDetailSheet(quake) {
   if (!earthquakeDetailSheet || !earthquakeDetailSheetBody) {
     return;
   }
+  const wasOpen = !earthquakeDetailSheet.hidden;
   earthquakeDetailSheetBody.innerHTML = buildEarthquakePopupHtml(quake);
   earthquakeDetailSheet.hidden = false;
   document.body.classList.add("eq-sheet-open");
+  if (!wasOpen) {
+    lockPageScrollForOverlay();
+  }
   window.requestAnimationFrame(() => {
     earthquakeDetailSheetBody.scrollTop = 0;
     const panel = earthquakeDetailSheet.querySelector(".eq-detail-sheet-panel");
@@ -6594,6 +6602,50 @@ function updateNotificationHint(extraMessage = "") {
   }
 }
 
+let overlayScrollLockCount = 0;
+let overlayLockedScrollY = 0;
+
+function isOverlayScrollExempt(target) {
+  return Boolean(
+    target?.closest?.(
+      ".in-page-alert, .in-page-alert-body, .eq-detail-sheet-panel, .eq-detail-sheet-body"
+    )
+  );
+}
+
+function onOverlayBackgroundScroll(event) {
+  if (isOverlayScrollExempt(event.target)) {
+    return;
+  }
+  event.preventDefault();
+}
+
+function lockPageScrollForOverlay() {
+  overlayScrollLockCount += 1;
+  if (overlayScrollLockCount > 1) {
+    return;
+  }
+  overlayLockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.documentElement.classList.add("is-overlay-locked");
+  document.body.classList.add("is-overlay-locked");
+  document.body.style.top = `-${overlayLockedScrollY}px`;
+  document.addEventListener("touchmove", onOverlayBackgroundScroll, { passive: false });
+  document.addEventListener("wheel", onOverlayBackgroundScroll, { passive: false });
+}
+
+function unlockPageScrollForOverlay() {
+  overlayScrollLockCount = Math.max(0, overlayScrollLockCount - 1);
+  if (overlayScrollLockCount > 0) {
+    return;
+  }
+  document.documentElement.classList.remove("is-overlay-locked");
+  document.body.classList.remove("is-overlay-locked");
+  document.body.style.top = "";
+  document.removeEventListener("touchmove", onOverlayBackgroundScroll);
+  document.removeEventListener("wheel", onOverlayBackgroundScroll);
+  window.scrollTo(0, overlayLockedScrollY);
+}
+
 function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, variant = "" } = {}) {
   if (!inPageAlertHost) {
     return false;
@@ -6638,14 +6690,21 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     bodyHost?.append(row);
   });
   const fitAbort = new AbortController();
+  let closed = false;
   const close = () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
     fitAbort.abort();
     alert.remove();
     if (!inPageAlertHost.querySelector(".in-page-alert-fullscreen")) {
       inPageAlertHost.classList.remove("is-fullscreen-mode");
     }
+    unlockPageScrollForOverlay();
   };
   alert.querySelector(".in-page-alert-close")?.addEventListener("click", close);
+  lockPageScrollForOverlay();
   if (fullscreen) {
     inPageAlertHost.classList.add("is-fullscreen-mode");
   }

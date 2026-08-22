@@ -64,6 +64,27 @@ html {
   text-size-adjust: 100%;
 }
 
+html.is-overlay-locked,
+html.is-overlay-locked body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+html.is-overlay-locked body {
+  position: fixed;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+html.is-overlay-locked::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2390;
+  pointer-events: auto;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
