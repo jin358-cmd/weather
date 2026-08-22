@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v109-freeway-dir-first";
+const SW_VERSION = "jin-v110-legend-popup-fix";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
