@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v78-cctv-dropdowns-row";
+const SW_VERSION = "jin-v79-no-closure-notify-3x";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

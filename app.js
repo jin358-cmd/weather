@@ -6870,10 +6870,6 @@ function getSubscriptionClosureMessage() {
   return `【停班停課】${locationLabel}：${closure.message}`;
 }
 
-function isClosureAlertMessage(message) {
-  return message.includes("停止上班") || message.includes("停止上課");
-}
-
 function getSubscriptionPowerOutageMessage() {
   const locationLabel = getSubscriptionLocationLabel();
   const nearby = getNearbyPowerOutages();
@@ -7386,28 +7382,17 @@ async function sendSubscriptionNotification({ force = false, inPage = true } = {
   }
 
   const body = messages.join("\n");
-  const hasClosureAlert = messages.some((message) => isClosureAlertMessage(message));
-  const repeatCount = hasClosureAlert ? 3 : 1;
 
-  for (let repeat = 0; repeat < repeatCount; repeat += 1) {
-    const suffix = repeatCount > 1 ? `\n（第 ${repeat + 1}/${repeatCount} 次提醒）` : "";
-    await showAppNotification("預報訂閱通知", `${body}${suffix}`, {
-      tag: `subscription-alert-${repeat}-${Date.now()}`,
-      skipInPage: !inPage,
-      variant: "subscription"
-    });
-    if (repeat < repeatCount - 1) {
-      await sleep(1800);
-    }
-  }
+  await showAppNotification("預報訂閱通知", body, {
+    tag: `subscription-alert-${Date.now()}`,
+    skipInPage: !inPage,
+    variant: "subscription"
+  });
 
   localStorage.setItem(NOTIFICATION_DIGEST_STORAGE_KEY, getNotificationDigest(messages));
   appState.lastNotifiedAt = Date.now();
   const channelHint = permissionMode === "granted" ? "系統通知＋頁面提醒" : "頁面內即時提醒";
-  const statusHint = hasClosureAlert
-    ? `訂閱${messages.length}項通知(停班停課提醒 3 次｜${channelHint})`
-    : `訂閱${messages.length}項通知(${channelHint})`;
-  renderSubscriptionStatus(statusHint);
+  renderSubscriptionStatus(`訂閱${messages.length}項通知(${channelHint})`);
   updateNotificationHint();
   return true;
 }
