@@ -1614,12 +1614,6 @@ label {
   }
 }
 
-.notice-hint {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
-}
-
 .text-short {
   display: none;
 }

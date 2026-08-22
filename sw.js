@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v67-weekly-type-up";
+const SW_VERSION = "jin-v68-notice-no-expand-hint";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
