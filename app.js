@@ -6635,6 +6635,7 @@ function buildBackgroundSubscriptionPrefs(subscription = appState.subscription) 
     lat: Number(location?.lat),
     lon: Number(location?.lon),
     notifyArmedByLocate: isForecastNotifyArmedByLocate(),
+    recoveryState: loadRecoveryState(),
     updatedAt: new Date().toISOString()
   };
 }
@@ -6656,12 +6657,46 @@ async function persistSubscriptionForBackground(subscription = appState.subscrip
   return prefs;
 }
 
+async function persistSubscriptionDigestForBackground(messages = []) {
+  const lines = (messages || []).map((item) => String(item || "").trim()).filter(Boolean);
+  await initServiceWorker();
+  await postToServiceWorker({
+    type: "SAVE_SUBSCRIPTION_DIGEST",
+    payload: {
+      digest: lines.join("\n"),
+      messages: lines
+    }
+  });
+  return lines;
+}
+
+const deviceNotifiedLinesThisRefresh = new Set();
+
+function rememberDeviceNotifiedLine(text) {
+  const line = String(text || "").trim();
+  if (line) {
+    deviceNotifiedLinesThisRefresh.add(line);
+  }
+}
+
+function wasDeviceNotifiedThisRefresh(text) {
+  return deviceNotifiedLinesThisRefresh.has(String(text || "").trim());
+}
+
+function clearDeviceNotifiedThisRefresh() {
+  deviceNotifiedLinesThisRefresh.clear();
+}
+
 async function enableBackgroundNotifications(subscription = appState.subscription) {
   const registration = await initServiceWorker();
   if (!registration) {
     return { enabled: false, reason: "no-sw" };
   }
   await persistSubscriptionForBackground(subscription);
+  const previewMessages = buildSubscriptionNotificationMessages();
+  if (previewMessages.length) {
+    await persistSubscriptionDigestForBackground(previewMessages);
+  }
 
   let pushSubscribed = false;
   try {
@@ -6709,9 +6744,6 @@ async function enableBackgroundNotifications(subscription = appState.subscriptio
     /* one-off sync is best-effort */
   }
 
-  // Kick an immediate background check so SW path is warm after subscribe.
-  await postToServiceWorker({ type: "RUN_BACKGROUND_CHECK" });
-
   return { enabled: true, pushSubscribed, periodicSync };
 }
 
@@ -6730,51 +6762,86 @@ async function getNotificationRegistration() {
   }
 }
 
-async function notifySubscriptionMessagesToDevice(messages, { title = "預報訂閱通知" } = {}) {
+async function notifySubscriptionMessagesToDevice(messages, { title = "預報訂閱通知", persist = false } = {}) {
   const lines = (messages || []).map((item) => String(item || "").trim()).filter(Boolean);
-  for (const [index, line] of lines.entries()) {
-    await showWindowsSystemNotification(title, line, {
-      tag: `subscription-bg-${Date.now()}-${index}`
-    });
-    if (index < lines.length - 1) {
-      await sleep(280);
+  if (!lines.length) {
+    return false;
+  }
+  const stamp = Date.now();
+  const items = lines.map((line, index) => ({
+    title,
+    body: line,
+    tag: `subscription-bg-${stamp}-${index}`
+  }));
+  await postToServiceWorker({
+    type: "SHOW_NOTIFICATION_BATCH",
+    payload: { items }
+  });
+  for (const [index, item] of items.entries()) {
+    await showWindowsSystemNotification(item.title, item.body, { tag: item.tag });
+    if (index < items.length - 1) {
+      await sleep(220);
     }
   }
-  return lines.length > 0;
+  if (persist) {
+    await persistSubscriptionDigestForBackground(lines);
+  }
+  return true;
 }
 
 async function showWindowsSystemNotification(title, body, { tag } = {}) {
   if (!window.isSecureContext || typeof Notification === "undefined") {
     return false;
   }
+  const text = String(body || "").trim();
+  if (!text) {
+    return false;
+  }
   if (Notification.permission !== "granted") {
     return false;
   }
   const payload = {
-    body: String(body || ""),
+    body: text,
     tag: tag || `jin-${Date.now()}`,
     renotify: true,
     silent: false,
     requireInteraction: true,
     icon: "./icons/icon-192.png",
-    badge: "./icons/icon-192.png"
+    badge: "./icons/icon-192.png",
+    data: { source: "subscription-device" }
   };
+  let shown = false;
   try {
     await initServiceWorker();
     const registration = await getNotificationRegistration();
     if (registration?.showNotification) {
       await registration.showNotification(title, payload);
-      return true;
+      shown = true;
+    }
+    const worker = registration?.active || registration?.waiting || registration?.installing;
+    if (worker) {
+      worker.postMessage({
+        type: "SHOW_NOTIFICATION",
+        title,
+        body: text,
+        tag: payload.tag,
+        data: payload.data
+      });
+      shown = true;
     }
   } catch {
     /* fall through to Notification constructor */
   }
-  try {
-    const notification = new Notification(title, payload);
-    return Boolean(notification);
-  } catch {
-    return false;
+  if (!shown) {
+    try {
+      const notification = new Notification(title, payload);
+      shown = Boolean(notification);
+    } catch {
+      return false;
+    }
   }
+  rememberDeviceNotifiedLine(text);
+  return shown;
 }
 
 async function notifyAutoRefreshComplete() {
@@ -6789,7 +6856,13 @@ async function notifyAutoRefreshComplete() {
     fullscreen: true,
     variant: "refresh-done"
   });
-  await showWindowsSystemNotification(title, body, { tag: "jin-auto-refresh" });
+  await showWindowsSystemNotification(title, intro, { tag: "jin-auto-refresh-intro" });
+  const unseen = updates.filter((line) => !wasDeviceNotifiedThisRefresh(line));
+  if (unseen.length) {
+    await notifySubscriptionMessagesToDevice(unseen, { title: "預報訂閱通知" });
+  }
+  await persistSubscriptionDigestForBackground(updates);
+  clearDeviceNotifiedThisRefresh();
 }
 
 function getSubscriptionUpdateLines() {
@@ -6843,6 +6916,7 @@ async function showAppNotification(title, body, { tag, data, skipInPage = false,
     if (registration?.showNotification && "Notification" in window && Notification.permission === "granted") {
       await registration.showNotification(title, payload);
       systemShown = true;
+      rememberDeviceNotifiedLine(body);
       try {
         registration.active?.postMessage({
           type: "SHOW_NOTIFICATION",
@@ -6918,7 +6992,10 @@ async function ensureNotificationPermission() {
 
 function isForecastNotifyArmedByLocate() {
   try {
-    return sessionStorage.getItem(FORECAST_NOTIFY_ARM_KEY) === "1";
+    return (
+      sessionStorage.getItem(FORECAST_NOTIFY_ARM_KEY) === "1" ||
+      localStorage.getItem(FORECAST_NOTIFY_ARM_KEY) === "1"
+    );
   } catch {
     return false;
   }
@@ -6927,6 +7004,7 @@ function isForecastNotifyArmedByLocate() {
 function armForecastNotifyByDeviceLocate() {
   try {
     sessionStorage.setItem(FORECAST_NOTIFY_ARM_KEY, "1");
+    localStorage.setItem(FORECAST_NOTIFY_ARM_KEY, "1");
   } catch {
     /* ignore */
   }
@@ -7562,7 +7640,8 @@ async function sendSubscriptionNotification({ force = false, inPage = true } = {
       variant: "subscription"
     });
   }
-  const deviceShown = await notifySubscriptionMessagesToDevice(messages);
+  const deviceShown = await notifySubscriptionMessagesToDevice(messages, { persist: true });
+  persistSubscriptionForBackground(appState.subscription).catch(() => {});
 
   localStorage.setItem(NOTIFICATION_DIGEST_STORAGE_KEY, getNotificationDigest(messages));
   appState.lastNotifiedAt = Date.now();
@@ -7592,6 +7671,16 @@ async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
   await sendSubscriptionNotification({
     inPage: triggerSource !== "auto" && !document.hidden
   });
+  const digestLines = [
+    ...(recoveryMessages || []).map((item) => (typeof item === "string" ? item : item?.text)),
+    ...buildSubscriptionNotificationMessages()
+  ]
+    .map((text) => String(text || "").trim())
+    .filter(Boolean);
+  if (digestLines.length) {
+    persistSubscriptionDigestForBackground(digestLines).catch(() => {});
+  }
+  persistSubscriptionForBackground(appState.subscription).catch(() => {});
 }
 
 function getShelterFullAddress(shelter = {}) {
@@ -9283,6 +9372,7 @@ function startAutoRefreshTimers() {
 }
 
 async function performFullRefresh(triggerSource) {
+  clearDeviceNotifiedThisRefresh();
   const showProgress = triggerSource === "manual";
   if (showProgress) {
     setRefreshButtonLoading(true);
@@ -9330,6 +9420,7 @@ async function performFullRefresh(triggerSource) {
     updateMapForCityChange();
     const recoveryMessages = updateRecoveryTrackingState();
     appState.lastRecoveryMessages = recoveryMessages;
+    persistSubscriptionForBackground(appState.subscription).catch(() => {});
     await flushPendingUtilityAlerts();
     await maybeNotifySubscribers(triggerSource, recoveryMessages);
     if (showProgress) {
