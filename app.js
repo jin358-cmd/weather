@@ -4437,7 +4437,7 @@ function fitClosureEmptyMessage() {
   const titlePx = getClosureFieldTitleFontPx();
   clearFittedTextStyles(msg);
   msg.style.whiteSpace = "normal";
-  msg.style.fontSize = `${titlePx * 1.25}px`;
+  msg.style.fontSize = `${titlePx * 1.1}px`;
 }
 
 function fitClosureMetaLine() {
