@@ -1527,13 +1527,13 @@ label {
 }
 
 .in-page-alert-refresh-done .in-page-alert-title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 800;
   line-height: 1.3;
 }
 
 .in-page-alert-refresh-done .in-page-alert-line {
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -2800,7 +2800,7 @@ input[type="checkbox"] {
 .alert-block .ai-alert-item,
 .alert-block .ai-alert-tag,
 .alert-block .ai-alert-body {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .topic-option-text {
@@ -4102,7 +4102,7 @@ body.eq-sheet-open {
 }
 
 .in-page-alert-host.is-fullscreen-mode .in-page-alert-title {
-  font-size: clamp(32px, 8vw, 52px);
+  font-size: clamp(20px, 4.8vw, 28px);
   font-weight: 800;
   line-height: 1.25;
   white-space: normal !important;
@@ -4126,7 +4126,7 @@ body.eq-sheet-open {
   overflow: visible !important;
   word-break: break-word;
   overflow-wrap: anywhere;
-  font-size: clamp(26px, 6.8vw, 44px);
+  font-size: clamp(16px, 4vw, 22px);
   line-height: 1.45;
   font-weight: 700;
 }
@@ -4149,8 +4149,13 @@ body.eq-sheet-open {
     0 18px 48px rgba(15, 22, 34, 0.3);
 }
 
-.in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-title,
+.in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-title {
+  font-size: clamp(32px, 8vw, 52px);
+  font-weight: 400;
+}
+
 .in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-line {
+  font-size: clamp(26px, 6.8vw, 44px);
   font-weight: 400;
 }
 
@@ -4482,7 +4487,7 @@ body.eq-sheet-open {
   border-radius: 10px;
   background: #f7f9fc;
   color: #243047;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -4491,7 +4496,7 @@ body.eq-sheet-open {
 .ai-alert-item.ai-alert-top .ai-alert-body,
 .ai-alert-tag,
 .ai-alert-body {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .ai-alert-tag {
@@ -5062,7 +5067,7 @@ body.eq-sheet-open {
 
   .ai-alert-item {
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .ai-alert-item.ai-alert-top,
@@ -5070,7 +5075,7 @@ body.eq-sheet-open {
   .ai-alert-item.ai-alert-top .ai-alert-body,
   .ai-alert-tag,
   .ai-alert-body {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .alert-block .topic-option,
@@ -5081,7 +5086,7 @@ body.eq-sheet-open {
   .alert-block .ai-alert-item,
   .alert-block .ai-alert-tag,
   .alert-block .ai-alert-body {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .alert-block .subscription-status-box,
@@ -5186,7 +5191,7 @@ body.eq-sheet-open {
   .in-page-alert-host.is-fullscreen-mode .in-page-alert-title {
     white-space: normal !important;
     overflow: visible !important;
-    font-size: clamp(32px, 8.5vw, 48px);
+    font-size: clamp(20px, 5vw, 26px);
     line-height: 1.25;
   }
 
@@ -5215,7 +5220,7 @@ body.eq-sheet-open {
     overflow: visible !important;
     word-break: break-word;
     overflow-wrap: anywhere;
-    font-size: clamp(26px, 7vw, 40px);
+    font-size: clamp(16px, 4.2vw, 22px);
     line-height: 1.45;
     font-weight: 700;
   }
@@ -5227,8 +5232,13 @@ body.eq-sheet-open {
       0 16px 40px rgba(15, 22, 34, 0.28);
   }
 
-  .in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-title,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-title {
+    font-size: clamp(32px, 8.5vw, 48px);
+    font-weight: 400;
+  }
+
   .in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-line {
+    font-size: clamp(26px, 7vw, 40px);
     font-weight: 400;
   }
 
