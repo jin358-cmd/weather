@@ -4248,7 +4248,14 @@ body.eq-sheet-open {
 
 .warning-map.leaflet-container .leaflet-popup,
 .leaflet-container .disaster-map-popup {
-  max-width: 80% !important;
+  max-width: min(80%, 420px) !important;
+  min-width: min(200px, 72vw);
+  z-index: 820;
+}
+
+.warning-map.leaflet-container .leaflet-popup-pane {
+  z-index: 820;
+  overflow: visible;
 }
 
 .warning-map.leaflet-container .leaflet-popup-content-wrapper,

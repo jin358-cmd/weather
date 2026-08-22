@@ -6224,6 +6224,9 @@ function updateEarthquakeMapLayer() {
         openEarthquakeDetailSheet(quake);
       }
     });
+    marker._earthquake = quake;
+    marker._legendKey = "earthquake";
+    marker._popupHtml = popupHtml;
     marker._legendPlace = extractEarthquakeRegionName(quake.place) || String(quake.place || "").trim();
     mapLegendMarkers.earthquake.push(marker);
   });
@@ -7701,9 +7704,14 @@ function getSheltersForMap() {
 }
 
 let shelterZoomTimer = 0;
+let mapPopupHoldUntil = 0;
 function scheduleShelterLayerByZoom() {
   window.clearTimeout(shelterZoomTimer);
   shelterZoomTimer = window.setTimeout(() => {
+    if (Date.now() < mapPopupHoldUntil) {
+      scheduleShelterLayerByZoom();
+      return;
+    }
     if (shelterDataset?.shelters?.length) {
       updateShelterMapLayer();
     }
@@ -7955,20 +7963,22 @@ function focusAllFloodMarkers() {
   if (!markers.length) {
     return;
   }
-  const group = L.featureGroup(markers);
-  const bounds = group.getBounds?.();
-  if (bounds?.isValid?.()) {
-    warningMap.fitBounds(bounds, {
-      padding: [28, 28],
-      maxZoom: 12,
-      animate: true
-    });
-  } else {
-    warningMap.setView(markers[0].getLatLng(), Math.max(warningMap.getZoom(), 11), { animate: true });
+  try {
+    fitMapToMarkerLatLngs(getMarkersLatLngs(markers), { maxZoom: 12 });
+  } catch {
+    /* keep going so the popup can still open */
   }
-  window.setTimeout(() => {
-    openMarkerPopupSafely(markers[0]);
-  }, 280);
+  const target = markers[0];
+  let opened = false;
+  const open = () => {
+    if (opened) {
+      return;
+    }
+    opened = true;
+    openMarkerPopupSafely(target);
+  };
+  warningMap.once("moveend", open);
+  window.setTimeout(open, 360);
 }
 
 async function loadFloodStations() {
@@ -8093,6 +8103,11 @@ function addVisibleLegendMarkers(layer, keys) {
       return;
     }
     (mapLegendMarkers[key] || []).forEach((marker) => {
+      marker._legendKey = key;
+      const popup = marker.getPopup?.();
+      if (popup && marker._popupHtml == null) {
+        marker._popupHtml = popup.getContent();
+      }
       if (!layer.hasLayer(marker)) {
         layer.addLayer(marker);
       }
@@ -8129,44 +8144,152 @@ function ensureLegendLayerSwitch(item) {
 }
 
 function getMapMessageMaxWidth() {
-  const mapWidth =
-    warningMap?.getSize?.()?.x ||
-    document.querySelector("#warningMap")?.clientWidth ||
-    window.innerWidth;
-  return Math.max(140, Math.floor(mapWidth * 0.8));
+  let mapWidth = 0;
+  try {
+    mapWidth = Number(warningMap?.getSize?.()?.x) || 0;
+  } catch {
+    mapWidth = 0;
+  }
+  if (!mapWidth) {
+    mapWidth =
+      Number(document.querySelector("#warningMap")?.clientWidth) ||
+      Number(window.innerWidth) ||
+      360;
+  }
+  const width = Math.floor(mapWidth * 0.8);
+  return Math.max(140, Number.isFinite(width) ? width : 140);
 }
 
 function getMapPopupOptions(extra = {}) {
   return {
     autoPanPadding: [16, 16],
     className: "disaster-map-popup",
+    autoPan: true,
     ...extra,
     maxWidth: getMapMessageMaxWidth()
   };
 }
 
-function openMarkerPopupSafely(marker) {
-  if (!warningMap || !marker || typeof marker.openPopup !== "function") {
+function getMarkersLatLngs(markers = []) {
+  return markers.map((marker) => getLeafletLatLng(marker)).filter(Boolean);
+}
+
+function fitMapToMarkerLatLngs(latlngs, { maxZoom = 14, animate = true } = {}) {
+  if (!warningMap || !latlngs.length) {
     return;
   }
-  const tryOpen = () => {
+  if (latlngs.length === 1) {
+    warningMap.setView(latlngs[0], Math.min(Math.max(warningMap.getZoom() || 12, 12), maxZoom), {
+      animate
+    });
+    return;
+  }
+  const bounds = L.latLngBounds(latlngs);
+  if (bounds.isValid()) {
+    warningMap.fitBounds(bounds, { padding: [28, 28], maxZoom, animate });
+  }
+}
+
+function ensureMarkerOnMap(marker) {
+  if (!warningMap || !marker) {
+    return false;
+  }
+  if (marker._map === warningMap) {
+    return true;
+  }
+  const host =
+    (marker._legendKey && getLegendLayerForKey(marker._legendKey)) ||
+    mapFloodLayer ||
+    mapPowerOutageLayer ||
+    mapEarthquakeLayer ||
+    mapShelterLayer ||
+    mapCameraLayer ||
+    mapCityFocusLayer;
+  try {
+    if (host && typeof host.addLayer === "function" && !host.hasLayer(marker)) {
+      host.addLayer(marker);
+    }
+    if (host && !warningMap.hasLayer(host)) {
+      host.addTo(warningMap);
+    }
+    if (!marker._map) {
+      marker.addTo(warningMap);
+    }
+    return Boolean(marker._map);
+  } catch {
+    return Boolean(marker._map);
+  }
+}
+
+function getLegendLayerForKey(key) {
+  if (String(key || "").startsWith("flood-")) {
+    return mapFloodLayer;
+  }
+  if (key === "power-disaster" || key === "power-planned") {
+    return mapPowerOutageLayer;
+  }
+  if (key === "earthquake") {
+    return mapEarthquakeLayer;
+  }
+  if (key === "shelter") {
+    return mapShelterLayer;
+  }
+  if (key === "cctv") {
+    return mapCameraLayer;
+  }
+  if (key === "city-focus") {
+    return mapCityFocusLayer;
+  }
+  return null;
+}
+
+function holdMapPopupRefresh(ms = 900) {
+  mapPopupHoldUntil = Math.max(mapPopupHoldUntil, Date.now() + ms);
+}
+
+function openMarkerPopupSafely(marker) {
+  if (!warningMap || !marker) {
+    return;
+  }
+  holdMapPopupRefresh(1000);
+  const latlng = getLeafletLatLng(marker);
+  const popup = typeof marker.getPopup === "function" ? marker.getPopup() : null;
+  const quake = marker._earthquake;
+  const reveal = () => {
+    if (quake && isCompactEarthquakeMapView()) {
+      openEarthquakeDetailSheet(quake);
+      return;
+    }
     try {
-      if (!marker.getPopup?.()) {
+      ensureMarkerOnMap(marker);
+      if (popup) {
+        popup.options.maxWidth = getMapMessageMaxWidth();
+        if (latlng) {
+          popup.setLatLng(latlng);
+        }
+        if (typeof marker.openPopup === "function" && marker._map) {
+          marker.openPopup();
+          return;
+        }
+        popup.openOn(warningMap);
         return;
       }
-      if (!marker._map) {
-        return;
+      const html = marker._popupHtml || marker.getPopup?.()?.getContent?.();
+      if (latlng && html) {
+        L.popup(getMapPopupOptions()).setLatLng(latlng).setContent(html).openOn(warningMap);
       }
-      marker.openPopup();
     } catch {
-      /* popup display is optional if the marker is off the map */
+      try {
+        const html = popup?.getContent?.() || marker._popupHtml;
+        if (latlng && html) {
+          L.popup(getMapPopupOptions()).setLatLng(latlng).setContent(html).openOn(warningMap);
+        }
+      } catch {
+        /* popup content could not be reconstructed */
+      }
     }
   };
-  if (marker._map) {
-    tryOpen();
-    return;
-  }
-  window.setTimeout(tryOpen, 320);
+  reveal();
 }
 
 function refreshMapPopupMaxWidths() {
@@ -8319,6 +8442,7 @@ function updateCityFocusLayer() {
     getMapPopupOptions()
   );
   center._legendPlace = String(location.label || "").trim();
+  center._legendKey = "city-focus";
   mapCityFocusLayer.addLayer(ring);
   mapCityFocusLayer.addLayer(center);
   mapLegendMarkers["city-focus"].push(center);
@@ -8694,27 +8818,40 @@ function syncMapAlertBadges() {
 }
 
 function focusMapLegendMarkers(legendKey) {
-  if (!warningMap) {
+  if (!warningMap || !legendKey) {
     return;
+  }
+  if (!isMapCategoryVisible(legendKey) && Object.prototype.hasOwnProperty.call(mapCategoryVisibility, legendKey)) {
+    mapCategoryVisibility[legendKey] = true;
+    mapCategoryUserOff.delete(legendKey);
+    try {
+      refreshDisasterMapLayers();
+    } catch {
+      /* still try to open any remaining marker popup */
+    }
   }
   const markers = mapLegendMarkers[legendKey] || [];
   if (!markers.length) {
     return;
   }
-  const group = L.featureGroup(markers);
-  const bounds = group.getBounds?.();
-  if (bounds?.isValid?.()) {
-    warningMap.fitBounds(bounds, {
-      padding: [28, 28],
-      maxZoom: legendKey === "city-focus" ? 12 : 14,
-      animate: true
+  try {
+    fitMapToMarkerLatLngs(getMarkersLatLngs(markers), {
+      maxZoom: legendKey === "city-focus" ? 12 : 14
     });
-  } else {
-    warningMap.setView(markers[0].getLatLng(), Math.max(warningMap.getZoom(), 13), { animate: true });
+  } catch {
+    /* keep going so the popup can still open */
   }
-  window.setTimeout(() => {
-    openMarkerPopupSafely(markers[0]);
-  }, 280);
+  const target = markers[0];
+  let opened = false;
+  const open = () => {
+    if (opened) {
+      return;
+    }
+    opened = true;
+    openMarkerPopupSafely(target);
+  };
+  warningMap.once("moveend", open);
+  window.setTimeout(open, 360);
 }
 
 function initMapLegendInteractions() {
