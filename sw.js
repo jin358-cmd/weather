@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v93-weather-label-larger";
+const SW_VERSION = "jin-v94-legend-focus-flash";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

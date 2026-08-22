@@ -7729,7 +7729,7 @@ function getMapMessageMaxWidth() {
     warningMap?.getSize?.()?.x ||
     document.querySelector("#warningMap")?.clientWidth ||
     window.innerWidth;
-  return Math.max(140, Math.floor(mapWidth * 0.9));
+  return Math.max(140, Math.floor(mapWidth * 0.8));
 }
 
 function getMapPopupOptions(extra = {}) {
@@ -7862,13 +7862,16 @@ function updateCityFocusLayer() {
     fillOpacity: 0.16,
     interactive: false
   });
-  const center = L.circleMarker([location.lat, location.lon], {
-    radius: 6,
-    color: "#ffffff",
-    weight: 2,
-    fillColor: "#00d4ff",
-    fillOpacity: 1,
-    interactive: true
+  const center = L.marker([location.lat, location.lon], {
+    interactive: true,
+    keyboard: false,
+    zIndexOffset: 850,
+    icon: L.divIcon({
+      className: "map-focus-pulse",
+      html: '<span class="map-focus-pulse-dot" aria-hidden="true"></span>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    })
   });
   center.bindPopup(
     `所選位置焦點範圍<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`,
@@ -8174,10 +8177,9 @@ function syncMapLegendState() {
     }
     item.classList.toggle("legend-item-empty", markers.length === 0);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
-    item.setAttribute("aria-disabled", markers.length === 0 ? "true" : "false");
-    const isDisasterLegend = !["cctv", "city-focus"].includes(key);
+    item.setAttribute("aria-disabled", key === "city-focus" ? "false" : markers.length === 0 ? "true" : "false");
     const row = item.closest("li");
-    const hideRow = !isDisasterLegend || markers.length === 0;
+    const hideRow = key === "cctv" || (key !== "city-focus" && markers.length === 0);
     if (row) {
       row.hidden = hideRow;
     }
