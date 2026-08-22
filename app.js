@@ -620,6 +620,16 @@ const mapCategoryVisibility = {
   cctv: true,
   "city-focus": true
 };
+const DISASTER_LEGEND_KEYS = [
+  "flood-4",
+  "flood-3",
+  "flood-2",
+  "flood-1",
+  "power-disaster",
+  "power-planned",
+  "earthquake"
+];
+const mapCategoryUserOff = new Set();
 const TAIWAN_MAP_BOUNDS = [
   [21.8, 119.15],
   [25.35, 122.05]
@@ -1069,10 +1079,8 @@ function updatePowerOutageMapLayer() {
     marker._legendPlace = String(sample.area || sample.label || sample.info || "").trim();
     const legendKey = type === "disaster" ? "power-disaster" : "power-planned";
     mapLegendMarkers[legendKey].push(marker);
-    if (isMapCategoryVisible(legendKey)) {
-      mapPowerOutageLayer.addLayer(marker);
-    }
   });
+  addVisibleLegendMarkers(mapPowerOutageLayer, ["power-disaster", "power-planned"]);
 
   syncMapLayerVisibility("power-outage");
   syncMapLegendState();
@@ -6214,10 +6222,8 @@ function updateEarthquakeMapLayer() {
     });
     marker._legendPlace = extractEarthquakeRegionName(quake.place) || String(quake.place || "").trim();
     mapLegendMarkers.earthquake.push(marker);
-    if (isMapCategoryVisible("earthquake")) {
-      mapEarthquakeLayer.addLayer(marker);
-    }
   });
+  addVisibleLegendMarkers(mapEarthquakeLayer, ["earthquake"]);
 
   syncMapLayerVisibility("earthquake-points");
   syncMapLegendState();
@@ -7667,10 +7673,8 @@ function updateShelterMapLayer() {
     marker.bindPopup(buildShelterPopupHtml(shelter), getMapPopupOptions({ className: "disaster-map-popup" }));
     marker._legendPlace = `${shelter.city || ""}${shelter.town || ""}`.trim() || shelter.name;
     mapLegendMarkers.shelter.push(marker);
-    if (isMapCategoryVisible("shelter")) {
-      mapShelterLayer.addLayer(marker);
-    }
   });
+  addVisibleLegendMarkers(mapShelterLayer, ["shelter"]);
   syncMapLayerVisibility("shelter-points");
   syncMapLegendState();
 }
@@ -7824,10 +7828,8 @@ function updateFloodMapLayer() {
     const level = Number(point.level) || getFloodLevelByDepth(point.depthCm);
     const key = `flood-${Math.min(4, Math.max(1, level))}`;
     mapLegendMarkers[key]?.push(marker);
-    if (isMapCategoryVisible(key)) {
-      mapFloodLayer.addLayer(marker);
-    }
   });
+  addVisibleLegendMarkers(mapFloodLayer, ["flood-4", "flood-3", "flood-2", "flood-1"]);
 
   syncMapLayerVisibility("flood-warning");
   updateFloodLayerMetaText();
@@ -7995,7 +7997,61 @@ function fitMapToTaiwan(animate = false) {
 }
 
 function isMapCategoryVisible(key) {
-  return true;
+  return mapCategoryVisibility[key] !== false;
+}
+
+function applyAutoDisasterLayerVisibility() {
+  DISASTER_LEGEND_KEYS.forEach((key) => {
+    const hasPoints = (mapLegendMarkers[key] || []).length > 0;
+    if (hasPoints && !mapCategoryUserOff.has(key)) {
+      mapCategoryVisibility[key] = true;
+    }
+  });
+}
+
+function addVisibleLegendMarkers(layer, keys) {
+  if (!layer) {
+    return;
+  }
+  applyAutoDisasterLayerVisibility();
+  keys.forEach((key) => {
+    if (!isMapCategoryVisible(key)) {
+      return;
+    }
+    (mapLegendMarkers[key] || []).forEach((marker) => {
+      if (!layer.hasLayer(marker)) {
+        layer.addLayer(marker);
+      }
+    });
+  });
+}
+
+function ensureLegendLayerSwitch(item) {
+  const key = item?.dataset?.legendKey;
+  if (!key) {
+    return null;
+  }
+  const host = item.parentElement;
+  if (host?.classList.contains("legend-item-row")) {
+    return host.querySelector("[data-legend-toggle]");
+  }
+  const row = document.createElement("div");
+  row.className = "legend-item-row";
+  const label = document.createElement("label");
+  label.className = "legend-layer-switch";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.dataset.legendToggle = key;
+  input.checked = isMapCategoryVisible(key);
+  const legendName = item.querySelector(".legend-label")?.textContent?.trim() || key;
+  input.setAttribute("aria-label", `顯示${legendName}圖層`);
+  const ui = document.createElement("span");
+  ui.className = "legend-switch-ui";
+  ui.setAttribute("aria-hidden", "true");
+  label.append(input, ui);
+  item.before(row);
+  row.append(label, item);
+  return input;
 }
 
 function getMapMessageMaxWidth() {
@@ -8032,12 +8088,16 @@ function refreshMapPopupMaxWidths() {
 }
 
 function syncMapLayerVisibilityFromCategories() {
-  mapLayerVisibility["flood-warning"] = true;
-  mapLayerVisibility["power-outage"] = true;
-  mapLayerVisibility["earthquake-points"] = true;
-  mapLayerVisibility["shelter-points"] = true;
-  mapLayerVisibility["cctv-points"] = true;
-  mapLayerVisibility["city-focus"] = true;
+  mapLayerVisibility["flood-warning"] = ["flood-4", "flood-3", "flood-2", "flood-1"].some((key) =>
+    isMapCategoryVisible(key)
+  );
+  mapLayerVisibility["power-outage"] = ["power-disaster", "power-planned"].some((key) =>
+    isMapCategoryVisible(key)
+  );
+  mapLayerVisibility["earthquake-points"] = isMapCategoryVisible("earthquake");
+  mapLayerVisibility["shelter-points"] = isMapCategoryVisible("shelter");
+  mapLayerVisibility["cctv-points"] = isMapCategoryVisible("cctv");
+  mapLayerVisibility["city-focus"] = isMapCategoryVisible("city-focus");
 }
 
 function refreshDisasterMapLayers() {
@@ -8052,10 +8112,17 @@ function refreshDisasterMapLayers() {
   syncMapLegendState();
 }
 
-function toggleMapCategory(_key) {
-  Object.keys(mapCategoryVisibility).forEach((key) => {
-    mapCategoryVisibility[key] = true;
-  });
+function toggleMapCategory(key, nextValue) {
+  if (!Object.prototype.hasOwnProperty.call(mapCategoryVisibility, key)) {
+    return;
+  }
+  const next = typeof nextValue === "boolean" ? nextValue : !isMapCategoryVisible(key);
+  mapCategoryVisibility[key] = next;
+  if (next) {
+    mapCategoryUserOff.delete(key);
+  } else {
+    mapCategoryUserOff.add(key);
+  }
   refreshDisasterMapLayers();
 }
 
@@ -8238,10 +8305,8 @@ function updateCameraMapLayer() {
       ? `${township.city}${township.town}`
       : String(areaText || "").trim();
     mapLegendMarkers.cctv.push(marker);
-    if (isMapCategoryVisible("cctv")) {
-      mapCameraLayer.addLayer(marker);
-    }
   });
+  addVisibleLegendMarkers(mapCameraLayer, ["cctv"]);
   mapLayerVisibility["cctv-points"] = isMapCategoryVisible("cctv");
   syncMapLayerVisibility("cctv-points");
   syncMapLegendState();
@@ -8453,6 +8518,11 @@ function syncMapLegendState() {
     }
     item.classList.toggle("legend-item-empty", markers.length === 0);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
+    const toggle = ensureLegendLayerSwitch(item);
+    if (toggle) {
+      toggle.checked = isMapCategoryVisible(key);
+      toggle.disabled = key !== "city-focus" && markers.length === 0;
+    }
     item.setAttribute("aria-disabled", key === "city-focus" ? "false" : markers.length === 0 ? "true" : "false");
     const row = item.closest("li");
     const hideRow = key === "cctv" || (key !== "city-focus" && markers.length === 0);
@@ -8555,7 +8625,17 @@ function initMapLegendInteractions() {
     return;
   }
   legend.dataset.bound = "1";
+  legend.addEventListener("change", (event) => {
+    const toggle = event.target.closest("[data-legend-toggle]");
+    if (!toggle) {
+      return;
+    }
+    toggleMapCategory(toggle.dataset.legendToggle, Boolean(toggle.checked));
+  });
   legend.addEventListener("click", (event) => {
+    if (event.target.closest("[data-legend-toggle], .legend-layer-switch")) {
+      return;
+    }
     const item = event.target.closest("[data-legend-key]");
     if (!item || item.classList.contains("legend-item-empty")) {
       return;

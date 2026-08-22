@@ -3638,6 +3638,34 @@ input[type="checkbox"] {
   color: var(--text);
 }
 
+.legend-item-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  gap: 8px;
+  width: 100%;
+}
+
+.legend-layer-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+}
+
+.legend-layer-switch input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.legend-switch-ui {
+  display: none;
+}
+
 .map-legend-below .legend-item-btn {
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr) auto;
