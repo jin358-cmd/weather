@@ -2236,7 +2236,7 @@ input[type="checkbox"] {
 
 .weather-block .weather-metrics dt,
 .msn-weather-card .weather-metrics dt {
-  font-size: clamp(15px, 3.8vw, 18px);
+  font-size: clamp(18px, 4.6vw, 22px);
 }
 
 .weather-block .weather-metrics dd,
@@ -2584,7 +2584,7 @@ input[type="checkbox"] {
 }
 
 .msn-weather-card .weather-metrics dt {
-  font-size: clamp(15px, 3.8vw, 18px);
+  font-size: clamp(18px, 4.6vw, 22px);
 }
 
 .msn-weather-card .weather-metrics dd {
@@ -5162,7 +5162,7 @@ body.eq-sheet-open {
 
   .weather-block .weather-metrics dt,
   .msn-weather-card .weather-metrics dt {
-    font-size: clamp(14px, 4vw, 16px);
+    font-size: clamp(17px, 4.6vw, 20px);
   }
 
   .weather-block .weather-metrics dd,
@@ -5834,7 +5834,7 @@ body.eq-sheet-open {
 
   .weather-block .weather-metrics dt,
   .msn-weather-card .weather-metrics dt {
-    font-size: clamp(13px, 3.8vw, 15px);
+    font-size: clamp(16px, 4.4vw, 19px);
   }
 
   .weather-block .weather-metrics dd,
@@ -5882,7 +5882,7 @@ body.eq-sheet-open {
 
   .weather-block .weather-metrics dt,
   .msn-weather-card .weather-metrics dt {
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .weather-block .weather-metrics dd,

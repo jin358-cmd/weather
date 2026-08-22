@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v92-eq-mag-vertical-oval";
+const SW_VERSION = "jin-v93-weather-label-larger";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
