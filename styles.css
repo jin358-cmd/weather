@@ -3925,6 +3925,11 @@ input[type="checkbox"] {
   border-radius: 50%;
 }
 
+.legend-swatch.shelter-point {
+  background: #15803d;
+  border-color: #14532d;
+}
+
 .earthquake-card {
   display: grid;
   gap: 10px;
@@ -4191,6 +4196,39 @@ body.eq-sheet-open {
 .leaflet-container .cctv-popup-wrap .leaflet-popup-content {
   margin: 10px 12px;
   max-width: 100% !important;
+}
+
+.shelter-map-popup {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #1f2a44;
+}
+
+.shelter-map-popup p {
+  margin: 4px 0 0;
+}
+
+.shelter-map-source {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.map-gmaps-link {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #1d4ed8;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.map-gmaps-link:hover,
+.map-gmaps-link:focus-visible {
+  background: #1e40af;
 }
 
 .cctv-map-popup {

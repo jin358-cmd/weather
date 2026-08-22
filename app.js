@@ -563,6 +563,7 @@ const autoRefreshIntervalSelect = document.querySelector("#autoRefreshInterval")
 let cityCameraDataset = null;
 let freewayCameraDataset = null;
 let freewayInterchangeIndex = null;
+let shelterDataset = null;
 let blackScreenCameraIds = new Set();
 let utilityAlertTimers = [];
 const DISABLED_CAMERA_HOSTS = new Set([]);
@@ -572,6 +573,7 @@ let mapCameraLayer = null;
 let mapCityFocusLayer = null;
 let mapPowerOutageLayer = null;
 let mapEarthquakeLayer = null;
+let mapShelterLayer = null;
 const mapLegendMarkers = {
   "flood-4": [],
   "flood-3": [],
@@ -580,6 +582,7 @@ const mapLegendMarkers = {
   "power-disaster": [],
   "power-planned": [],
   earthquake: [],
+  shelter: [],
   cctv: [],
   "city-focus": []
 };
@@ -591,15 +594,17 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage" },
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage" },
   earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points" },
+  shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points" },
   cctv: { title: "路口 CCTV", color: "#0096c7", layer: "cctv-points" },
   "city-focus": { title: "焦點範圍", color: "#00d4ff", layer: "city-focus" }
 };
 let mapLegendLabelLayer = null;
-const mapLayerOrder = ["city-focus", "flood-warning", "power-outage", "earthquake-points", "cctv-points"];
+const mapLayerOrder = ["city-focus", "flood-warning", "power-outage", "earthquake-points", "shelter-points", "cctv-points"];
 const mapLayerVisibility = {
   "power-outage": true,
   "flood-warning": true,
   "earthquake-points": true,
+  "shelter-points": true,
   "cctv-points": true,
   "city-focus": true
 };
@@ -611,6 +616,7 @@ const mapCategoryVisibility = {
   "power-disaster": true,
   "power-planned": true,
   earthquake: true,
+  shelter: true,
   cctv: true,
   "city-focus": true
 };
@@ -624,6 +630,7 @@ const mapLayerConfig = {
   "power-outage": { label: "停電區域標示", pane: "outagePane", hiddenInControl: true },
   "flood-warning": { label: "即時積淹水感測", pane: "floodPane", hiddenInControl: true },
   "earthquake-points": { label: "地震震央", pane: "earthquakePane", hiddenInControl: true },
+  "shelter-points": { label: "避難場所", pane: "shelterPane", hiddenInControl: true },
   "cctv-points": { label: "定位中心點區域CCTV", pane: "cameraPane", hiddenInControl: true },
   "city-focus": { label: "所選位置焦點範圍", pane: "focusPane", hiddenInControl: true }
 };
@@ -690,6 +697,8 @@ const CITY_CCTV_RADIUS_KM = 1;
 const CITY_CCTV_PREVIEW_LIMIT = 8;
 const CITY_CCTV_MORE_LIMIT = 40;
 const CITY_CCTV_VERIFY_EXPAND_SIZE = 80;
+const SHELTER_NEAR_KM = 8;
+const SHELTER_DATA_URL = "./data/shelters.json";
 const FREEWAY_CCTV_RADIUS_KM = 40;
 const FREEWAY_INTERCHANGE_BASE_RADIUS_KM = 40;
 const FREEWAY_CCTV_PREVIEW_LIMIT = 6;
@@ -7573,6 +7582,126 @@ async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
   }
 }
 
+function getShelterFullAddress(shelter = {}) {
+  return `${shelter.city || ""}${shelter.town || ""}${shelter.village || ""}${shelter.address || ""}`.trim();
+}
+
+function getGoogleMapsSearchUrl(lat, lon, name = "", address = "") {
+  if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lon))) {
+    return `https://www.google.com/maps/search/?api=1&query=${Number(lat)},${Number(lon)}`;
+  }
+  const query = [name, address].map((part) => String(part || "").trim()).filter(Boolean).join(" ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || "台灣")}`;
+}
+
+function buildShelterPopupHtml(shelter) {
+  const mapsUrl = getGoogleMapsSearchUrl(shelter.lat, shelter.lon, shelter.name, getShelterFullAddress(shelter));
+  const place = `${shelter.city || ""}${shelter.town || ""}${shelter.village || ""}`;
+  const space = [
+    shelter.indoor ? "室內" : "",
+    shelter.outdoor ? "室外" : "",
+    shelter.weaker ? "適合避難弱者" : ""
+  ]
+    .filter(Boolean)
+    .join("／");
+  return `
+    <div class="shelter-map-popup">
+      <strong>避難場所</strong>
+      <p>${escapeMapLegendHtml(shelter.name)}</p>
+      <p>${escapeMapLegendHtml(place)}</p>
+      ${shelter.address ? `<p>${escapeMapLegendHtml(shelter.address)}</p>` : ""}
+      ${shelter.disasters ? `<p>適用：${escapeMapLegendHtml(shelter.disasters)}</p>` : ""}
+      ${shelter.capacity ? `<p>預計收容：${shelter.capacity} 人</p>` : ""}
+      ${space ? `<p>${escapeMapLegendHtml(space)}</p>` : ""}
+      ${shelter.phone ? `<p>聯絡：${escapeMapLegendHtml(shelter.phone)}</p>` : ""}
+      <a class="map-gmaps-link" href="${mapsUrl}" target="_blank" rel="noopener noreferrer">Google 地圖</a>
+      <p class="shelter-map-source">來源：內政部消防署／各縣市政府核定</p>
+    </div>
+  `;
+}
+
+function getSheltersForMap() {
+  const shelters = shelterDataset?.shelters || [];
+  if (!shelters.length) {
+    return [];
+  }
+  const cityName = String(citySelect?.value || "").trim();
+  const townName = String(townshipSelect?.value || "").trim();
+  const focus = getCctvLocationFocus();
+  return shelters.filter((shelter) => {
+    if (cityName && shelter.city === cityName) {
+      return true;
+    }
+    if (
+      Number.isFinite(focus?.lat) &&
+      Number.isFinite(focus?.lon) &&
+      Number.isFinite(shelter.lat) &&
+      Number.isFinite(shelter.lon)
+    ) {
+      return getDistanceKm(focus.lat, focus.lon, shelter.lat, shelter.lon) <= SHELTER_NEAR_KM;
+    }
+    return false;
+  }).sort((a, b) => {
+    const aTown = townName && a.town === townName ? 0 : 1;
+    const bTown = townName && b.town === townName ? 0 : 1;
+    if (aTown !== bTown) {
+      return aTown - bTown;
+    }
+    if (!Number.isFinite(focus?.lat)) {
+      return String(a.name || "").localeCompare(String(b.name || ""), "zh-Hant");
+    }
+    return (
+      getDistanceKm(focus.lat, focus.lon, a.lat, a.lon) - getDistanceKm(focus.lat, focus.lon, b.lat, b.lon)
+    );
+  });
+}
+
+function updateShelterMapLayer() {
+  if (!warningMap) {
+    return;
+  }
+  if (!mapShelterLayer) {
+    mapShelterLayer = L.layerGroup();
+  }
+  mapShelterLayer.clearLayers();
+  mapLegendMarkers.shelter = [];
+  getSheltersForMap().forEach((shelter) => {
+    if (!Number.isFinite(shelter.lat) || !Number.isFinite(shelter.lon)) {
+      return;
+    }
+    const marker = L.circleMarker([shelter.lat, shelter.lon], {
+      pane: "shelterPane",
+      radius: 7,
+      color: "#14532d",
+      fillColor: "#15803d",
+      fillOpacity: 0.88,
+      weight: 2
+    });
+    marker.bindPopup(buildShelterPopupHtml(shelter), getMapPopupOptions({ className: "disaster-map-popup" }));
+    marker._legendPlace = `${shelter.city || ""}${shelter.town || ""}`.trim() || shelter.name;
+    mapLegendMarkers.shelter.push(marker);
+    if (isMapCategoryVisible("shelter")) {
+      mapShelterLayer.addLayer(marker);
+    }
+  });
+  syncMapLayerVisibility("shelter-points");
+  syncMapLegendState();
+}
+
+async function loadShelterDataset() {
+  if (shelterDataset?.shelters?.length) {
+    updateShelterMapLayer();
+    return shelterDataset;
+  }
+  const response = await fetch(SHELTER_DATA_URL);
+  if (!response.ok) {
+    throw new Error(`避難場所資料讀取失敗：${response.status}`);
+  }
+  shelterDataset = await response.json();
+  updateShelterMapLayer();
+  return shelterDataset;
+}
+
 function getMapLayerInstance(layerKey) {
   if (layerKey === "power-outage") {
     return mapPowerOutageLayer;
@@ -7582,6 +7711,9 @@ function getMapLayerInstance(layerKey) {
   }
   if (layerKey === "earthquake-points") {
     return mapEarthquakeLayer;
+  }
+  if (layerKey === "shelter-points") {
+    return mapShelterLayer;
   }
   if (layerKey === "cctv-points") {
     return mapCameraLayer;
@@ -7916,6 +8048,7 @@ function syncMapLayerVisibilityFromCategories() {
   mapLayerVisibility["flood-warning"] = true;
   mapLayerVisibility["power-outage"] = true;
   mapLayerVisibility["earthquake-points"] = true;
+  mapLayerVisibility["shelter-points"] = true;
   mapLayerVisibility["cctv-points"] = true;
   mapLayerVisibility["city-focus"] = true;
 }
@@ -7925,6 +8058,7 @@ function refreshDisasterMapLayers() {
   updateFloodMapLayer();
   updatePowerOutageMapLayer();
   updateEarthquakeMapLayer();
+  updateShelterMapLayer();
   updateCameraMapLayer();
   updateCityFocusLayer();
   renderMapCategoryFilters();
@@ -8377,6 +8511,7 @@ const ALERT_BADGE_CONFIG = [
   { key: "power-disaster", label: "災害停電", bg: "#6d28d9" },
   { key: "power-planned", label: "計畫停電", bg: "#7c3aed" },
   { key: "earthquake", label: "地震震央", bg: "#dc2626" },
+  { key: "shelter", label: "避難場所", bg: "#15803d" },
   { key: "cctv", label: "CCTV", bg: "#2563eb" },
   { key: "city-focus", label: "焦點範圍", bg: "#0891b2" }
 ];
@@ -8467,6 +8602,7 @@ function updateMapForCityChange() {
   updateCityFocusLayer();
   updateCameraMapLayer();
   updateEarthquakeMapLayer();
+  updateShelterMapLayer();
   fetchPowerOutageData().catch((error) => {
     appState.powerOutageMetaText = `停電區域資料暫時無法更新：${error.message}`;
     if (powerOutageMeta) {
@@ -8519,6 +8655,7 @@ function initWarningMap() {
   warningMap.createPane("outagePane");
   warningMap.createPane("floodPane");
   warningMap.createPane("earthquakePane");
+  warningMap.createPane("shelterPane");
   warningMap.createPane("cameraPane");
   warningMap.createPane("focusPane");
   warningMap.createPane("legendLabelPane");
@@ -8529,6 +8666,10 @@ function initWarningMap() {
   const earthquakePane = warningMap.getPane("earthquakePane");
   if (earthquakePane) {
     earthquakePane.style.zIndex = "670";
+  }
+  const shelterPane = warningMap.getPane("shelterPane");
+  if (shelterPane) {
+    shelterPane.style.zIndex = "665";
   }
   const legendLabelPane = warningMap.getPane("legendLabelPane");
   if (legendLabelPane) {
@@ -8555,6 +8696,9 @@ function initWarningMap() {
     });
   updateCityFocusLayer();
   updateCameraMapLayer();
+  loadShelterDataset().catch(() => {
+    /* shelter layer is optional if the snapshot is missing */
+  });
   warningMap.on("zoomend moveend", () => {
     updateMapLegendLocationPins();
   });
