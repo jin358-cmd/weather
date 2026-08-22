@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v97-map-shelters";
+const SW_VERSION = "jin-v98-eq-range-oneline";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
