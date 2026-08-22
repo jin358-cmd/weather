@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v108-subscription-bg-notify";
+const SW_VERSION = "jin-v109-freeway-dir-first";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
