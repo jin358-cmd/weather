@@ -7837,12 +7837,9 @@ function updateFloodMapLayer() {
 }
 
 function getFloodMarkersOnMap() {
-  return [
-    ...(mapLegendMarkers["flood-4"] || []),
-    ...(mapLegendMarkers["flood-3"] || []),
-    ...(mapLegendMarkers["flood-2"] || []),
-    ...(mapLegendMarkers["flood-1"] || [])
-  ];
+  return ["flood-4", "flood-3", "flood-2", "flood-1"].flatMap((key) =>
+    isMapCategoryVisible(key) ? mapLegendMarkers[key] || [] : []
+  );
 }
 
 function updateFloodLayerMetaText() {
