@@ -4164,12 +4164,35 @@ function buildWeeklyForecastDays(daily = {}) {
   });
 }
 
+function fitWeeklyForecastSummary() {
+  if (!weeklyForecastSummary) {
+    return;
+  }
+  clearFittedTextStyles(weeklyForecastSummary);
+  const computed = Number.parseFloat(window.getComputedStyle(weeklyForecastSummary).fontSize);
+  const maxPx = Number.isFinite(computed) && computed > 0 ? computed : 21;
+  const availablePx = Math.max(
+    0,
+    Math.floor(weeklyForecastSummary.getBoundingClientRect().width - 36)
+  );
+  fitSingleLineText(weeklyForecastSummary, {
+    maxPx,
+    minPx: 12,
+    fillRatio: 1,
+    fillLine: false,
+    availablePx
+  });
+}
+
 function renderWeeklyForecast(days = [], locationLabel = "") {
   appState.weeklyForecast = days;
   if (weeklyForecastSummary) {
     weeklyForecastSummary.textContent = locationLabel
       ? `${locationLabel}｜一週天氣預報`
       : "一週天氣預報";
+    window.requestAnimationFrame(() => {
+      fitWeeklyForecastSummary();
+    });
   }
   if (!weeklyForecastList) {
     return;
@@ -8957,6 +8980,7 @@ function fitHeroTexts() {
   fitSubscriptionTopicTexts();
   fitClosureMetaLine();
   fitClosureEmptyMessage();
+  fitWeeklyForecastSummary();
 }
 
 let heroFitRaf = 0;
