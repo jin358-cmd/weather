@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v115-freeway-select-labels";
+const SW_VERSION = "jin-v116-city-cctv-preview-6";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

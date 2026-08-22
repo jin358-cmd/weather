@@ -704,7 +704,7 @@ const LIKE_COUNTER_KEY = "likes";
 const LIKE_COUNTER_STORAGE_KEY = "siteLikeCountV1";
 const LIKE_VOTED_STORAGE_KEY = "siteLikedV1";
 const CITY_CCTV_RADIUS_KM = 1;
-const CITY_CCTV_PREVIEW_LIMIT = 8;
+const CITY_CCTV_PREVIEW_LIMIT = 6;
 const CITY_CCTV_MORE_LIMIT = 40;
 const CITY_CCTV_VERIFY_EXPAND_SIZE = 80;
 const SHELTER_NEAR_KM = 5;
@@ -3543,6 +3543,7 @@ function resetCityCameraLists() {
   }
   if (cameraListMore) {
     cameraListMore.innerHTML = "";
+    delete cameraListMore.dataset.filled;
   }
   if (cameraMoreDetails) {
     cameraMoreDetails.hidden = true;
@@ -3553,9 +3554,28 @@ function resetCityCameraLists() {
   }
 }
 
-function syncCityCameraMorePanel(extraCount) {
+function fillCityCameraMoreList(extraCameras = [], scopeLabel = "所選位置") {
+  if (!cameraListMore || cameraListMore.dataset.filled === "1") {
+    return;
+  }
+  cameraListMore.innerHTML = "";
+  extraCameras.forEach((camera) => {
+    const card = createCameraCard(camera, scopeLabel, {
+      forceImage: isLikelyDirectImageStream(camera.html)
+    });
+    cameraListMore.append(card);
+  });
+  cameraListMore.dataset.filled = "1";
+}
+
+function syncCityCameraMorePanel(extraCameras = [], scopeLabel = "所選位置") {
   if (!cameraMoreDetails || !cameraMoreSummaryText) {
     return;
+  }
+  const extraCount = extraCameras.length;
+  if (cameraListMore) {
+    cameraListMore.innerHTML = "";
+    delete cameraListMore.dataset.filled;
   }
   if (extraCount > 0) {
     cameraMoreDetails.hidden = false;
@@ -3566,6 +3586,9 @@ function syncCityCameraMorePanel(extraCount) {
       cameraMoreSummaryText.textContent = cameraMoreDetails.open
         ? `▾ 收合其餘 ${extraCount} 組路口監控`
         : `▸ 展開其餘 ${extraCount} 組路口監控`;
+      if (cameraMoreDetails.open) {
+        fillCityCameraMoreList(extraCameras, scopeLabel);
+      }
     };
     return;
   }
@@ -3657,13 +3680,18 @@ async function renderCameraList() {
       card.classList.add("camera-item-live");
       cameraList.append(card);
     });
-    setVerifiedCityCameras(renderQueue.slice(0, CITY_CCTV_PREVIEW_LIMIT));
+    confirmedLive.push(...renderQueue.slice(0, CITY_CCTV_PREVIEW_LIMIT));
+    setVerifiedCityCameras(confirmedLive);
   }
 
-  syncCityCameraMorePanel(0);
+  const shownIds = new Set(confirmedLive.map((camera) => String(camera?.id || "")));
+  const extraCameras = renderQueue
+    .filter((camera) => !shownIds.has(String(camera?.id || "")))
+    .slice(0, CITY_CCTV_MORE_LIMIT);
+  syncCityCameraMorePanel(extraCameras, scopeLabel);
   updateCameraMetaText();
   if (confirmedLive.length) {
-    setVerifiedCityCameras(confirmedLive);
+    setVerifiedCityCameras(confirmedLive.slice(0, CITY_CCTV_PREVIEW_LIMIT));
   }
   hideCityCameraLoadProgress();
 }
