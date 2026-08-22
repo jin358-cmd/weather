@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v114-freeway-dir-caption";
+const SW_VERSION = "jin-v115-freeway-select-labels";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

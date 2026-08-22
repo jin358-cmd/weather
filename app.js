@@ -1268,10 +1268,13 @@ function initFreewayRegionSelect() {
 }
 
 function initFreewayCitySelect() {
-  fillCameraCitySelectOptions(freewayCitySelect, "follow");
+  const locateCity = citySelect?.value || "follow";
+  fillCameraCitySelectOptions(freewayCitySelect, locateCity);
   reorderSelectCitiesSouthToNorth(freewayCitySelect);
   if (freewayCitySelect) {
-    freewayCitySelect.value = "follow";
+    freewayCitySelect.value = [...freewayCitySelect.options].some((option) => option.value === locateCity)
+      ? locateCity
+      : "follow";
   }
 }
 
@@ -1321,12 +1324,12 @@ function fillFreewayInterchangeSelect(preferred = "") {
   }
   const previous = preferred || freewayInterchangeSelect.value || "all";
   const options = getFreewayInterchangeOptions();
-  const nationwide = isFreewayCityManuallyScoped();
+  const nationwide = isFreewayNationwideScope();
   freewayInterchangeSelect.innerHTML = "";
 
   const allOption = document.createElement("option");
   allOption.value = "all";
-  allOption.textContent = nationwide ? "全台監控點" : "全部路段";
+  allOption.textContent = nationwide ? "全台監控點" : "全部監控點";
   freewayInterchangeSelect.append(allOption);
 
   options.forEach((item) => {
@@ -1360,7 +1363,7 @@ function getFreewayInterchangeOptions() {
     return [];
   }
   const region = getSelectedFreewayRegion();
-  const nationwide = isFreewayCityManuallyScoped();
+  const nationwide = isFreewayNationwideScope();
   const selectedCity = getSelectedFreewayCityName();
   const routeCameras = (freewayCameraDataset?.cameras || []).filter((camera) =>
     nationwide || cameraMatchesFreewayRoute(camera, region)
@@ -1419,6 +1422,27 @@ function isLocatorFollowCameraCity(selectElement) {
 function isFreewayCityManuallyScoped() {
   const value = String(freewayCitySelect?.value || "");
   return Boolean(value) && value !== "follow";
+}
+
+function isFreewayNationwideScope() {
+  return freewayCitySelect?.value === "all" || freewayRegionSelect?.value === "all-freeway";
+}
+
+function getNearestFreewayMonitorName(focus = getCctvLocationFocus()) {
+  const options = getFreewayInterchangeOptions();
+  if (!options.length || !Number.isFinite(focus?.lat) || !Number.isFinite(focus?.lon)) {
+    return "";
+  }
+  let bestName = "";
+  let bestDistance = Infinity;
+  options.forEach((item) => {
+    const distance = getDistanceKm(focus.lat, focus.lon, item.lat, item.lon);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestName = item.name;
+    }
+  });
+  return bestName;
 }
 
 function getFreewayBrowseFocus() {
@@ -1750,8 +1774,11 @@ function getNearestFreewayRegionId(focus = getCctvLocationFocus()) {
   return bestId;
 }
 
-function applyLocateDefaultFreewayRegion() {
-  if (!freewayRegionSelect || isFreewayCityManuallyScoped()) {
+function applyLocateDefaultFreewayRegion({ force = false } = {}) {
+  if (!freewayRegionSelect) {
+    return;
+  }
+  if (!force && freewayCitySelect?.value === "all") {
     return;
   }
   const regionId = getNearestFreewayRegionId();
@@ -1760,12 +1787,22 @@ function applyLocateDefaultFreewayRegion() {
   }
 }
 
-function syncFreewayCameraScopeToLocator() {
+function applyLocateDefaultFreewayScope() {
+  const cityName = citySelect?.value || "";
   if (freewayCitySelect) {
-    syncSelectValue(freewayCitySelect, "follow");
+    if (cityName && [...freewayCitySelect.options].some((option) => option.value === cityName)) {
+      freewayCitySelect.value = cityName;
+    } else {
+      syncSelectValue(freewayCitySelect, "follow");
+    }
   }
-  applyLocateDefaultFreewayRegion();
-  fillFreewayInterchangeSelect("all");
+  applyLocateDefaultFreewayRegion({ force: true });
+  const nearestPoint = getNearestFreewayMonitorName();
+  fillFreewayInterchangeSelect(nearestPoint || "all");
+}
+
+function syncFreewayCameraScopeToLocator() {
+  applyLocateDefaultFreewayScope();
 }
 
 function getSelectedFreewayRegion() {
@@ -9170,10 +9207,7 @@ async function fetchRoadCameras() {
     if (freewayResponse.ok) {
       freewayCameraDataset = await freewayResponse.json();
       freewayInterchangeIndex = buildFreewayInterchangeIndex(freewayCameraDataset.cameras || []);
-      if (isLocatorFollowCameraCity(freewayCitySelect)) {
-        applyLocateDefaultFreewayRegion();
-      }
-      fillFreewayInterchangeSelect(freewayInterchangeSelect?.value || "all");
+      applyLocateDefaultFreewayScope();
     } else if (freewayCameraMeta) {
       freewayCameraMeta.textContent = `國道監控資料暫時無法更新：HTTP ${freewayResponse.status}`;
     }
@@ -9550,15 +9584,21 @@ cameraCitySelect?.addEventListener("change", () => {
 });
 
 freewayRegionSelect?.addEventListener("change", () => {
-  fillFreewayInterchangeSelect();
+  const nearestPoint = getNearestFreewayMonitorName();
+  fillFreewayInterchangeSelect(nearestPoint || "all");
   renderFreewayCameraList();
 });
 
 freewayCitySelect?.addEventListener("change", () => {
-  if (isFreewayCityManuallyScoped() && freewayRegionSelect) {
+  if (freewayCitySelect.value === "all" && freewayRegionSelect) {
+    freewayRegionSelect.value = "all-freeway";
+  } else if (freewayCitySelect.value === "follow") {
+    applyLocateDefaultFreewayRegion({ force: true });
+  } else if (isFreewayCityManuallyScoped() && freewayRegionSelect) {
     freewayRegionSelect.value = "all-freeway";
   }
-  fillFreewayInterchangeSelect("all");
+  const nearestPoint = getNearestFreewayMonitorName();
+  fillFreewayInterchangeSelect(nearestPoint || "all");
   renderFreewayCameraList();
 });
 
