@@ -6638,16 +6638,17 @@ function updateNotificationHint(extraMessage = "") {
 let overlayScrollLockCount = 0;
 let overlayLockedScrollY = 0;
 
-function isOverlayScrollExempt(target) {
-  return Boolean(
-    target?.closest?.(
-      ".in-page-alert, .in-page-alert-body, .eq-detail-sheet-panel, .eq-detail-sheet-body"
+function isOverlayScrollExempt(event) {
+  const path = typeof event?.composedPath === "function" ? event.composedPath() : [event?.target];
+  return path.some((node) =>
+    node?.closest?.(
+      ".in-page-alert, .in-page-alert-close, .eq-detail-sheet-panel, .eq-detail-sheet-body"
     )
   );
 }
 
 function onOverlayBackgroundScroll(event) {
-  if (isOverlayScrollExempt(event.target)) {
+  if (isOverlayScrollExempt(event)) {
     return;
   }
   event.preventDefault();
@@ -6736,7 +6737,17 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     }
     unlockPageScrollForOverlay();
   };
-  alert.querySelector(".in-page-alert-close")?.addEventListener("click", close);
+  const closeBtn = alert.querySelector(".in-page-alert-close");
+  closeBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    close();
+  });
+  closeBtn?.addEventListener("pointerup", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    close();
+  });
   lockPageScrollForOverlay();
   if (fullscreen) {
     inPageAlertHost.classList.add("is-fullscreen-mode");
