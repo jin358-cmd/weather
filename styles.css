@@ -1983,11 +1983,16 @@ label {
 }
 
 .closure-list {
-  max-height: 320px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   display: grid;
   gap: 4px;
   margin-top: 6px;
+  padding-bottom: 22px;
+}
+
+.closure-card {
+  padding-bottom: 22px;
 }
 
 .closure-list.is-empty {
@@ -1999,6 +2004,7 @@ label {
   justify-content: center;
   align-items: center;
   overflow: visible;
+  padding-bottom: 0;
 }
 
 .closure-list > .status-ok,
@@ -5062,9 +5068,14 @@ body.eq-sheet-open {
   }
 
   .closure-list {
-    max-height: 240px;
+    max-height: none;
     gap: 4px;
     margin-top: 4px;
+    padding-bottom: 20px;
+  }
+
+  .closure-card {
+    padding-bottom: 20px;
   }
 
   .closure-list.is-empty .closure-empty-msg,
@@ -5607,7 +5618,12 @@ body.eq-sheet-open {
   }
 
   .closure-list {
-    max-height: 200px;
+    max-height: none;
+    padding-bottom: 18px;
+  }
+
+  .closure-card {
+    padding-bottom: 18px;
   }
 
   .metrics dd {
