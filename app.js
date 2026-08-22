@@ -2003,7 +2003,7 @@ function formatFreewayCameraCaption(camera) {
     ? simplifyFreewayOptionLabel(stake)
     : `${getSelectedFreewayRegion()?.label || "國道"}（${getFreewayEntranceExitLabel(camera)}）`;
   const direction = getFreewayDirectionLabel(camera.directionCode || getFreewayCameraDirectionCode(camera));
-  return direction ? `${segment}｜${direction}` : segment;
+  return direction ? `${direction}｜${segment}` : segment;
 }
 
 function isCameraUrlUsable(url) {
