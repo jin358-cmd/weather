@@ -710,8 +710,7 @@ const CITY_CCTV_VERIFY_EXPAND_SIZE = 80;
 const SHELTER_NEAR_KM = 5;
 const SHELTER_NATIONWIDE_MAX_ZOOM = 9;
 const SHELTER_DATA_URL = "./data/shelters.json";
-let shelterUserZoomedOut = false;
-let lastShelterUserZoom = null;
+let shelterWideViewUnlocked = false;
 let ignoreShelterZoomEvents = 0;
 const FREEWAY_CCTV_RADIUS_KM = 40;
 const FREEWAY_INTERCHANGE_BASE_RADIUS_KM = 40;
@@ -7638,23 +7637,35 @@ function getShelterMapZoom() {
   return Number.isFinite(zoom) ? zoom : TAIWAN_MAP_ZOOM;
 }
 
+function isShelterWideZoom() {
+  return getShelterMapZoom() <= SHELTER_NATIONWIDE_MAX_ZOOM;
+}
+
 function shouldShowNationwideShelters() {
-  return shelterUserZoomedOut && getShelterMapZoom() <= SHELTER_NATIONWIDE_MAX_ZOOM;
+  return shelterWideViewUnlocked && isShelterWideZoom();
 }
 
 function syncShelterDisplayModeFromZoom() {
   if (ignoreShelterZoomEvents > 0) {
-    lastShelterUserZoom = getShelterMapZoom();
     return;
   }
-  const zoom = getShelterMapZoom();
-  if (lastShelterUserZoom != null && zoom < lastShelterUserZoom && zoom <= SHELTER_NATIONWIDE_MAX_ZOOM) {
-    shelterUserZoomedOut = true;
+  if (isShelterWideZoom()) {
+    shelterWideViewUnlocked = true;
   }
-  if (zoom >= SHELTER_NATIONWIDE_MAX_ZOOM + 1) {
-    shelterUserZoomedOut = false;
+  if (getShelterMapZoom() >= SHELTER_NATIONWIDE_MAX_ZOOM + 1) {
+    shelterWideViewUnlocked = false;
   }
-  lastShelterUserZoom = zoom;
+}
+
+function unlockNationwideSheltersFromWideView() {
+  if (!isShelterWideZoom()) {
+    return;
+  }
+  if (shelterWideViewUnlocked) {
+    return;
+  }
+  shelterWideViewUnlocked = true;
+  scheduleShelterLayerByZoom();
 }
 
 function getShelterMarkerRadius() {
@@ -9009,6 +9020,9 @@ function initWarningMap() {
     syncShelterDisplayModeFromZoom();
     updateMapLegendLocationPins();
     scheduleShelterLayerByZoom();
+  });
+  warningMap.getContainer()?.querySelector(".leaflet-control-zoom-out")?.addEventListener("click", () => {
+    window.setTimeout(unlockNationwideSheltersFromWideView, 0);
   });
   warningMap.on("moveend", () => {
     updateMapLegendLocationPins();
