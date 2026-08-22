@@ -7658,10 +7658,7 @@ function syncShelterDisplayModeFromZoom() {
 }
 
 function unlockNationwideSheltersFromWideView() {
-  if (!isShelterWideZoom()) {
-    return;
-  }
-  if (shelterWideViewUnlocked) {
+  if (ignoreShelterZoomEvents > 0 || !isShelterWideZoom() || shelterWideViewUnlocked) {
     return;
   }
   shelterWideViewUnlocked = true;
