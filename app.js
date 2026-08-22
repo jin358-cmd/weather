@@ -9006,6 +9006,11 @@ function syncMapLegendState() {
     item.classList.toggle("legend-item-empty", markers.length === 0 && !alwaysShowRow);
     item.classList.toggle("legend-item-fixed", alwaysShowRow);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
+    const toggle = ensureLegendLayerSwitch(item);
+    if (toggle) {
+      toggle.checked = isMapCategoryVisible(key);
+      toggle.disabled = !alwaysShowRow && markers.length === 0;
+    }
     item.setAttribute("aria-disabled", alwaysShowRow || markers.length > 0 ? "false" : "true");
     const row = item.closest("li");
     const hideRow = !alwaysShowRow && markers.length === 0 && !userOff;
@@ -9125,7 +9130,17 @@ function initMapLegendInteractions() {
     return;
   }
   legend.dataset.bound = "1";
+  legend.addEventListener("change", (event) => {
+    const toggle = event.target.closest("[data-legend-toggle]");
+    if (!toggle) {
+      return;
+    }
+    toggleMapCategory(toggle.dataset.legendToggle, Boolean(toggle.checked));
+  });
   legend.addEventListener("click", (event) => {
+    if (event.target.closest("[data-legend-toggle], .legend-layer-switch")) {
+      return;
+    }
     const item = event.target.closest("[data-legend-key]");
     if (!item || item.classList.contains("legend-item-empty")) {
       return;
