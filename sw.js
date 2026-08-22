@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v76-legend-active-popups";
+const SW_VERSION = "jin-v77-hero-locate-refresh";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

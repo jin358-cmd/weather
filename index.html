@@ -44,9 +44,18 @@
           <p class="eyebrow">災防網絡 · 即時警報</p>
           <h1 class="hero-fit-text">停班停課+即時災害通報平台</h1>
         </div>
-        <button id="refreshBtn" type="button" class="refresh-btn">
-          <span class="refresh-btn-label">立即更新資料</span>
-        </button>
+        <div class="locate-wrap">
+          <button id="locateBtn" type="button" class="locate-btn locate-btn-pulse">
+            <span class="locate-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
+                />
+              </svg>
+            </span>
+            <span class="locate-btn-label">依設備定位選區</span>
+          </button>
+        </div>
       </header>
 
       <section class="controls card">
@@ -58,18 +67,6 @@
           <div>
             <label for="townshipSelect">鄉鎮市區</label>
             <select id="townshipSelect" aria-label="鄉鎮市區"></select>
-          </div>
-          <div class="locate-wrap">
-            <button id="locateBtn" type="button" class="locate-btn locate-btn-pulse">
-              <span class="locate-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path
-                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
-                  />
-                </svg>
-              </span>
-              <span class="locate-btn-label">依設備定位選區</span>
-            </button>
           </div>
         </div>
         <p id="regionMemoryMeta" class="timestamp" aria-live="polite">區域偏好：尚未儲存</p>
@@ -85,6 +82,9 @@
             <p id="autoRefreshMeta" class="auto-refresh-countdown">更新倒數：啟用中</p>
           </div>
         </div>
+        <button id="refreshBtn" type="button" class="refresh-btn">
+          <span class="refresh-btn-label">立即更新資料</span>
+        </button>
       </section>
 
       <div
