@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v82-weather-metrics-smaller";
+const SW_VERSION = "jin-v83-subscription-alert-top";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
