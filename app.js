@@ -1142,6 +1142,27 @@ function fillTownshipSelect(cityName, preferredTown) {
   }
 }
 
+function applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy) {
+  applyRegionSelection(getRegionForCity(nearest.city), nearest.city, nearest.town, {
+    persist: true,
+    updateMeta: false
+  });
+  cctvLocateFocus = {
+    lat: latitude,
+    lon: longitude,
+    label: `${nearest.city}${nearest.town}｜裝置定位`,
+    accuracy
+  };
+  syncCityCameraScopeToLocator();
+  syncFreewayCameraScopeToLocator();
+  setLocateCompleteMeta(nearest.city, nearest.town);
+  renderAllCameraLists();
+  updateMapForCityChange();
+  prefetchCityMonitorStreams(nearest.city, { label: nearest.city }).catch(() => {
+    /* background prefetch should not block locate UX */
+  });
+}
+
 function applyRegionSelection(regionName, cityName, townName, { persist = true, updateMeta = true } = {}) {
   const city = cityName || "臺北市";
   suppressRegionSelectEvents = true;
@@ -1450,14 +1471,22 @@ function getFreewayBrowseFocus() {
       return { lat: hit.lat, lon: hit.lon, label: hit.name };
     }
   }
+  const locate = getCctvLocationFocus();
+  const cityName = getSelectedFreewayCityName();
+  const locatorCity = String(citySelect?.value || "").trim();
+  const followsLocator =
+    freewayCitySelect?.value === "follow" ||
+    (Boolean(cctvLocateFocus) && cityName && cityName === locatorCity);
+  if (followsLocator && Number.isFinite(locate?.lat) && Number.isFinite(locate?.lon)) {
+    return locate;
+  }
   if (isFreewayCityManuallyScoped()) {
-    const cityName = getSelectedFreewayCityName();
     const city = CITY_LOCATIONS.find((item) => item.name === cityName);
     if (city) {
       return { lat: city.lat, lon: city.lon, label: city.name };
     }
   }
-  return getCctvLocationFocus();
+  return locate;
 }
 
 function findNearestTownship(lat, lon) {
@@ -1564,18 +1593,7 @@ async function locateByDevice() {
       return;
     }
 
-    applyRegionSelection(getRegionForCity(nearest.city), nearest.city, nearest.town, {
-      persist: true,
-      updateMeta: false
-    });
-    syncCityCameraScopeToLocator();
-    syncFreewayCameraScopeToLocator();
-    cctvLocateFocus = {
-      lat: latitude,
-      lon: longitude,
-      label: `${nearest.city}${nearest.town}｜裝置定位`,
-      accuracy
-    };
+    applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy);
     windyLocateFocus = {
       lat: latitude,
       lon: longitude,
@@ -1583,8 +1601,6 @@ async function locateByDevice() {
       precision: 6
     };
     updateWindyTrackEmbed({ force: true });
-
-    setLocateCompleteMeta(nearest.city, nearest.town);
 
     armForecastNotifyByDeviceLocate();
     if (appState.subscription?.email) {
@@ -1595,16 +1611,12 @@ async function locateByDevice() {
     setLocateButtonText();
     performFullRefresh("manual")
       .then(async () => {
+        updateMapForCityChange();
         if (appState.subscription?.email) {
           await sendSubscriptionNotification({ force: true });
         }
       })
       .catch(() => {});
-    renderAllCameraLists();
-    updateMapForCityChange();
-    prefetchCityMonitorStreams(nearest.city, { label: nearest.city }).catch(() => {
-      /* background prefetch should not block locate UX */
-    });
   };
 
   const failWith = (error) => {
@@ -2314,10 +2326,15 @@ function getFilteredSortedCityCameras({ forMap = false } = {}) {
       appendUniqueCameras(ordered, scoreCityCameras({ keyword, radiusOnly: false }));
       appendUniqueCameras(ordered, scoreCityCameras({ cityName, keyword: "", radiusOnly: false }));
     }
-    appendUniqueCameras(
-      ordered,
-      scoreCityCameras({ keyword: "", radiusOnly: false }).map((camera) => ({ ...camera, locateFallback: true }))
-    );
+    if (!ordered.length) {
+      appendUniqueCameras(
+        ordered,
+        scoreCityCameras({ keyword: "", radiusOnly: false }).map((camera) => ({
+          ...camera,
+          locateFallback: true
+        }))
+      );
+    }
   }
 
   if (forMap) {
@@ -5132,27 +5149,7 @@ function locateWindyEmbed() {
 
     const nearest = findNearestTownship(latitude, longitude);
     if (nearest) {
-      applyRegionSelection(getRegionForCity(nearest.city), nearest.city, nearest.town, {
-        persist: true,
-        updateMeta: false
-      });
-      syncCityCameraScopeToLocator();
-      syncFreewayCameraScopeToLocator();
-      cctvLocateFocus = {
-        lat: latitude,
-        lon: longitude,
-        label: `${nearest.city}${nearest.town}｜裝置定位`,
-        accuracy
-      };
-      renderAllCameraLists();
-      updateMapForCityChange();
-      prefetchCityMonitorStreams(nearest.city, { label: nearest.city }).catch(() => {
-        /* background prefetch should not block locate UX */
-      });
-    }
-
-    if (nearest) {
-      setLocateCompleteMeta(nearest.city, nearest.town);
+      applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy);
     }
     finish();
   };
@@ -5954,7 +5951,7 @@ function estimateEpicenterFromPlace(place) {
 }
 
 function enrichEarthquakeDistances(quakes) {
-  const location = getSubscriptionWeatherLocation() || getSelectedTownship();
+  const location = getCctvLocationFocus() || getSubscriptionWeatherLocation() || getSelectedTownship();
   if (!location) {
     return quakes;
   }
@@ -8637,7 +8634,7 @@ function updateCityFocusLayer() {
   if (!warningMap) {
     return;
   }
-  const location = getActiveWeatherLocation();
+  const location = getCctvLocationFocus();
   if (mapCityFocusLayer) {
     try {
       warningMap.removeLayer(mapCityFocusLayer);

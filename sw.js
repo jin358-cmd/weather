@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v125-shelters-always-on";
+const SW_VERSION = "jin-v126-locate-displays";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
