@@ -8344,7 +8344,11 @@ function toggleMapCategory(key, nextValue) {
   } else {
     mapCategoryUserOff.add(key);
   }
-  refreshDisasterMapLayers();
+  try {
+    refreshDisasterMapLayers();
+  } catch (error) {
+    console.warn("圖層切換後重新繪製失敗：", error);
+  }
 }
 
 function renderMapCategoryFilters() {
