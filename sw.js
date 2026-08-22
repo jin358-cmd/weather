@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v89-float-windows-center";
+const SW_VERSION = "jin-v90-locate-btn-flatter";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
