@@ -488,6 +488,7 @@ const cloudValue = document.querySelector("#cloudValue");
 const pressureValue = document.querySelector("#pressureValue");
 const rainTimeline = document.querySelector("#rainTimeline");
 const weeklyForecastSummary = document.querySelector("#weeklyForecastSummary");
+const weeklyForecastSummaryText = document.querySelector("#weeklyForecastSummaryText");
 const weeklyForecastList = document.querySelector("#weeklyForecastList");
 const closureMeta = document.querySelector("#closureMeta");
 const closureList = document.querySelector("#closureList");
@@ -4312,32 +4313,16 @@ function buildWeeklyForecastDays(daily = {}) {
 }
 
 function fitWeeklyForecastSummary() {
-  if (!weeklyForecastSummary) {
-    return;
-  }
   clearFittedTextStyles(weeklyForecastSummary);
-  const computed = Number.parseFloat(window.getComputedStyle(weeklyForecastSummary).fontSize);
-  const maxPx = Number.isFinite(computed) && computed > 0 ? computed : 34;
-  const styles = window.getComputedStyle(weeklyForecastSummary);
-  const paddingX =
-    (Number.parseFloat(styles.paddingLeft) || 0) + (Number.parseFloat(styles.paddingRight) || 0);
-  const availablePx = Math.max(0, Math.floor(weeklyForecastSummary.clientWidth - paddingX));
-  fitSingleLineText(weeklyForecastSummary, {
-    maxPx,
-    minPx: 20,
-    fillRatio: 1,
-    fillLine: false,
-    availablePx
-  });
-  weeklyForecastSummary.style.letterSpacing = "";
-  weeklyForecastSummary.style.textAlign = "center";
+  clearFittedTextStyles(weeklyForecastSummaryText);
 }
 
 function renderWeeklyForecast(days = [], locationLabel = "") {
   appState.weeklyForecast = days;
-  if (weeklyForecastSummary) {
-    weeklyForecastSummary.textContent = locationLabel
-      ? `${locationLabel}｜一週天氣預報`
+  if (weeklyForecastSummaryText || weeklyForecastSummary) {
+    const titleHost = weeklyForecastSummaryText || weeklyForecastSummary;
+    titleHost.textContent = locationLabel
+      ? `${locationLabel}｜\n一週天氣預報`
       : "一週天氣預報";
     window.requestAnimationFrame(() => {
       fitWeeklyForecastSummary();
