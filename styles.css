@@ -1473,8 +1473,10 @@ label {
 .in-page-alert-host {
   position: fixed;
   left: 50%;
-  bottom: calc(18px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  top: 50%;
+  bottom: auto;
+  right: auto;
+  transform: translate(-50%, -50%);
   width: min(92%, 420px);
   max-width: calc(100% - 24px);
   display: grid;
@@ -4071,7 +4073,7 @@ input[type="checkbox"] {
   inset: 0;
   z-index: 1000;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   overscroll-behavior: contain;
 }
@@ -4087,12 +4089,12 @@ input[type="checkbox"] {
   position: relative;
   z-index: 1;
   width: min(96vw, 560px);
-  max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top) - 8px));
+  max-height: min(88dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px));
   margin: 0;
-  border-radius: 18px 18px 0 0;
+  border-radius: 18px;
   background: #fff;
-  box-shadow: 0 -12px 40px rgba(15, 22, 34, 0.28);
-  padding: 14px 14px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 18px 48px rgba(15, 22, 34, 0.28);
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -4405,11 +4407,11 @@ body.eq-sheet-open {
 
 .in-page-alert-host:has(.in-page-alert-subscription),
 .in-page-alert-host.is-fullscreen-mode:has(.in-page-alert-subscription) {
-  top: calc(10px + env(safe-area-inset-top));
+  top: 50%;
   bottom: auto;
   left: 50%;
   right: auto;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   width: min(94vw, 560px);
   max-width: min(94vw, 560px);
   height: auto;
@@ -5367,11 +5369,11 @@ body.eq-sheet-open {
 
   .in-page-alert-host:has(.in-page-alert-subscription),
   .in-page-alert-host.is-fullscreen-mode:has(.in-page-alert-subscription) {
-    top: calc(10px + env(safe-area-inset-top));
+    top: 50%;
     bottom: auto;
     left: 50%;
     right: auto;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     width: min(94vw, 560px);
     max-width: min(94vw, 560px);
     height: auto;
