@@ -463,7 +463,7 @@ function setLocateCompleteMeta(city, town) {
   const cityName = String(city || "").trim();
   const townName = String(town || "").trim();
   regionMemoryMeta.classList.remove("locate-status-error");
-  regionMemoryMeta.textContent = `區域偏好：定位完成：${cityName}${townName}｜路口／國道監控跟隨 ${cityName}，並背景預載全市串流`;
+  regionMemoryMeta.textContent = `區域：${cityName}${townName}定位完成，並背景預載全市路口監控串流`;
 }
 const refreshBtn = document.querySelector("#refreshBtn");
 const refreshBtnLabel = refreshBtn?.querySelector(".refresh-btn-label");
