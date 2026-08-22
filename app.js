@@ -541,7 +541,6 @@ const likeCountValue = document.querySelector("#likeCountValue");
 const powerOutageMeta = document.querySelector("#powerOutageMeta");
 const mapFloodCountBtn = document.querySelector("#mapFloodCountBtn");
 const mapFloodCountValue = document.querySelector("#mapFloodCountValue");
-const mapTaiwanViewBtn = document.querySelector("#mapTaiwanViewBtn");
 const mapCategoryFilters = document.querySelector("#mapCategoryFilters");
 const aiAlertList = document.querySelector("#aiAlertList");
 const earthquakeMeta = document.querySelector("#earthquakeMeta");
@@ -9564,9 +9563,6 @@ document.querySelector("#airDetails")?.addEventListener("toggle", () => {
 });
 initVisitorCounter();
 initLikeCounter();
-mapTaiwanViewBtn?.addEventListener("click", () => {
-  fitMapToTaiwan(true);
-});
 performFullRefresh("manual");
 fetchRoadCameras();
 initWarningMap();
