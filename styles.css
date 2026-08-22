@@ -245,7 +245,6 @@ body {
 .app .earthquake-meta,
 .app .analysis-list,
 .app .notice-details,
-.app .map-legend,
 .app .map-category-filters,
 .app .camera-card > .timestamp,
 .app .freeway-details > .timestamp {
@@ -307,9 +306,20 @@ body {
   text-align: center;
 }
 
-.app .map-category-filters,
-.app .map-legend-below .legend-list {
+.app .map-category-filters {
   justify-content: center;
+}
+
+.app .map-legend,
+.app .map-legend-below,
+.app .map-legend-below .legend-list {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  justify-self: stretch;
+  justify-content: flex-start;
+  justify-items: stretch;
+  text-align: left;
 }
 
 .app .control-grid select,
@@ -3535,6 +3545,7 @@ input[type="checkbox"] {
   background: var(--card-solid, var(--card));
   color: var(--text);
   box-shadow: none;
+  text-align: left;
 }
 
 .map-legend-below h4 {
@@ -3543,6 +3554,7 @@ input[type="checkbox"] {
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.04em;
+  text-align: left;
 }
 
 .map-legend-hint {
@@ -3550,6 +3562,7 @@ input[type="checkbox"] {
   font-size: 11px;
   line-height: 1.35;
   color: var(--muted);
+  text-align: left;
 }
 
 .map-legend-empty {
@@ -3806,11 +3819,13 @@ input[type="checkbox"] {
   margin-top: 4px;
   padding-top: 8px;
   border-top: 1px dashed var(--border);
+  text-align: left;
 }
 
 .map-legend h4 {
   margin: 0 0 4px;
   font-size: 13px;
+  text-align: left;
 }
 
 .legend-list {
