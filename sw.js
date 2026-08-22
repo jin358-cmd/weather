@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v130-weekly-title-oneline";
+const SW_VERSION = "jin-v131-taiwan-shelters";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
