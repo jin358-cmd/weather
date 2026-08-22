@@ -2909,9 +2909,15 @@ input[type="checkbox"] {
 
 /* Match 地震通報 / ai-alert-top title+body scale for all realtime alert items. */
 .alert-block .ai-alert-item,
-.alert-block .ai-alert-tag,
 .alert-block .ai-alert-body {
   font-size: 12px;
+}
+
+.alert-block .ai-alert-item .ai-alert-tag,
+.alert-block .ai-alert-item.ai-alert-top .ai-alert-tag,
+.ai-alert-item .ai-alert-tag,
+.ai-alert-item.ai-alert-top .ai-alert-tag {
+  font-size: 18px;
 }
 
 .topic-option-text {
@@ -4672,9 +4678,7 @@ body.eq-sheet-open {
 }
 
 .ai-alert-item.ai-alert-top,
-.ai-alert-item.ai-alert-top .ai-alert-tag,
 .ai-alert-item.ai-alert-top .ai-alert-body,
-.ai-alert-tag,
 .ai-alert-body {
   font-size: 12px;
 }
@@ -5274,11 +5278,16 @@ body.eq-sheet-open {
   }
 
   .ai-alert-item.ai-alert-top,
-  .ai-alert-item.ai-alert-top .ai-alert-tag,
   .ai-alert-item.ai-alert-top .ai-alert-body,
-  .ai-alert-tag,
   .ai-alert-body {
     font-size: 12px;
+  }
+
+  .alert-block .ai-alert-item .ai-alert-tag,
+  .alert-block .ai-alert-item.ai-alert-top .ai-alert-tag,
+  .ai-alert-item .ai-alert-tag,
+  .ai-alert-item.ai-alert-top .ai-alert-tag {
+    font-size: 16px;
   }
 
   .alert-block .topic-option,
@@ -5287,7 +5296,6 @@ body.eq-sheet-open {
   }
 
   .alert-block .ai-alert-item,
-  .alert-block .ai-alert-tag,
   .alert-block .ai-alert-body {
     font-size: 12px;
   }
