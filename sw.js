@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v103-air-btn-thin";
+const SW_VERSION = "jin-v104-weekly-title-center";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
