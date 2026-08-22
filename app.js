@@ -594,7 +594,7 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage" },
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage" },
   earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points" },
-  shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
+  shelter: { title: "全台避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
   cctv: { title: "CCTV位置", color: "#0096c7", layer: "cctv-points", alwaysShow: true },
   "city-focus": { title: "焦點範圍", color: "#00d4ff", layer: "city-focus", alwaysShow: true }
 };
@@ -640,7 +640,7 @@ const mapLayerConfig = {
   "power-outage": { label: "停電區域標示", pane: "outagePane", hiddenInControl: true },
   "flood-warning": { label: "即時積淹水感測", pane: "floodPane", hiddenInControl: true },
   "earthquake-points": { label: "地震震央", pane: "earthquakePane", hiddenInControl: true },
-  "shelter-points": { label: "避難場所", pane: "shelterPane", hiddenInControl: true },
+  "shelter-points": { label: "全台避難場所", pane: "shelterPane", hiddenInControl: true },
   "cctv-points": { label: "定位中心點區域CCTV", pane: "cameraPane", hiddenInControl: true },
   "city-focus": { label: "所選位置焦點範圍", pane: "focusPane", hiddenInControl: true }
 };
@@ -8986,7 +8986,14 @@ function syncMapLegendState() {
     const markers = mapLegendMarkers[key] || [];
     const countEl = item.querySelector("[data-legend-count]");
     const placeEl = item.querySelector("[data-legend-place]");
-    const placeText = markers.length ? describeLegendMarkerPlaces(markers) : "目前無點位";
+    const placeText =
+      key === "shelter"
+        ? markers.length
+          ? "全台"
+          : "目前無點位"
+        : markers.length
+          ? describeLegendMarkerPlaces(markers)
+          : "目前無點位";
     const alwaysShowRow = key === "cctv" || key === "city-focus" || key === "shelter";
     const userOff = mapCategoryUserOff.has(key);
     if (countEl) {
@@ -9044,7 +9051,7 @@ const ALERT_BADGE_CONFIG = [
   { key: "power-disaster", label: "災害停電", bg: "#6d28d9" },
   { key: "power-planned", label: "計畫停電", bg: "#7c3aed" },
   { key: "earthquake", label: "地震震央", bg: "#dc2626" },
-  { key: "shelter", label: "避難場所", bg: "#15803d" },
+  { key: "shelter", label: "全台避難場所", bg: "#15803d" },
   { key: "cctv", label: "CCTV", bg: "#2563eb" },
   { key: "city-focus", label: "焦點範圍", bg: "#0891b2" }
 ];
@@ -9086,6 +9093,10 @@ function focusMapLegendMarkers(legendKey) {
   }
   const markers = mapLegendMarkers[legendKey] || [];
   if (!markers.length) {
+    return;
+  }
+  if (legendKey === "shelter") {
+    fitMapToTaiwan(true);
     return;
   }
   try {
