@@ -2565,6 +2565,8 @@ input[type="checkbox"] {
 .weekly-forecast-below:not([open]) {
   padding-top: 1px;
   padding-bottom: 1px;
+  overflow: hidden;
+  clip-path: none;
 }
 
 .weekly-forecast-below > summary {
@@ -2574,13 +2576,16 @@ input[type="checkbox"] {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
-  font-size: clamp(22px, 5.6vw, 28px);
+  font-size: clamp(26px, 7.2vw, 34px);
   font-weight: 800;
   padding: 8px 28px;
   line-height: 1.3;
   min-height: 0;
   position: relative;
   white-space: nowrap;
+  overflow: hidden;
+  letter-spacing: 0;
+  font-style: normal;
 }
 
 .msn-weather-card .metrics {
@@ -2663,13 +2668,16 @@ input[type="checkbox"] {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
-  font-size: clamp(22px, 5.6vw, 28px);
+  font-size: clamp(26px, 7.2vw, 34px);
   font-weight: 800;
   color: #072445;
   line-height: 1.3;
   padding: 8px 28px;
   position: relative;
   white-space: nowrap;
+  overflow: hidden;
+  letter-spacing: 0;
+  font-style: normal;
 }
 
 .weekly-forecast-details > summary::-webkit-details-marker {
@@ -3151,7 +3159,7 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-below > summary {
-    font-size: clamp(20px, 5.4vw, 26px);
+    font-size: clamp(24px, 6.8vw, 32px);
     padding: 8px 26px;
     justify-content: center;
     text-align: center;
@@ -5777,7 +5785,7 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-details > summary {
-    font-size: clamp(20px, 5.4vw, 26px);
+    font-size: clamp(24px, 6.8vw, 32px);
     padding: 8px 26px;
     justify-content: center;
     text-align: center;

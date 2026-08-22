@@ -4317,18 +4317,20 @@ function fitWeeklyForecastSummary() {
   }
   clearFittedTextStyles(weeklyForecastSummary);
   const computed = Number.parseFloat(window.getComputedStyle(weeklyForecastSummary).fontSize);
-  const maxPx = Number.isFinite(computed) && computed > 0 ? computed : 26;
-  const availablePx = Math.max(
-    0,
-    Math.floor(weeklyForecastSummary.getBoundingClientRect().width - 36)
-  );
+  const maxPx = Number.isFinite(computed) && computed > 0 ? computed : 34;
+  const styles = window.getComputedStyle(weeklyForecastSummary);
+  const paddingX =
+    (Number.parseFloat(styles.paddingLeft) || 0) + (Number.parseFloat(styles.paddingRight) || 0);
+  const availablePx = Math.max(0, Math.floor(weeklyForecastSummary.clientWidth - paddingX));
   fitSingleLineText(weeklyForecastSummary, {
     maxPx,
-    minPx: 16,
+    minPx: 20,
     fillRatio: 1,
     fillLine: false,
     availablePx
   });
+  weeklyForecastSummary.style.letterSpacing = "";
+  weeklyForecastSummary.style.textAlign = "center";
 }
 
 function renderWeeklyForecast(days = [], locationLabel = "") {
