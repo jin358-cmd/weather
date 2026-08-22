@@ -2712,7 +2712,7 @@ input[type="checkbox"] {
   font-size: clamp(18px, 4.4vw, 22px);
   font-weight: 800;
   color: #072445;
-  line-height: 1.25;
+  line-height: 1.15;
   padding: 4px 0;
   position: relative;
   white-space: nowrap;
