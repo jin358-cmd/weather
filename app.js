@@ -4459,7 +4459,18 @@ function buildWeeklyForecastDays(daily = {}) {
 
 function fitWeeklyForecastSummary() {
   clearFittedTextStyles(weeklyForecastSummary);
-  clearFittedTextStyles(weeklyForecastSummaryText);
+  const node = weeklyForecastSummaryText;
+  if (!node) {
+    return;
+  }
+  const fieldWidth = Math.floor(node.getBoundingClientRect().width);
+  fitSingleLineText(node, {
+    minPx: 11,
+    maxPx: 56,
+    fillRatio: 0.9,
+    fillLine: true,
+    availablePx: fieldWidth || undefined
+  });
 }
 
 function renderWeeklyForecast(days = [], locationLabel = "") {
@@ -4467,7 +4478,7 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
   if (weeklyForecastSummaryText || weeklyForecastSummary) {
     const titleHost = weeklyForecastSummaryText || weeklyForecastSummary;
     titleHost.textContent = locationLabel
-      ? `${locationLabel}｜\n一週天氣預報`
+      ? `${locationLabel}｜一週天氣預報`
       : "一週天氣預報";
     window.requestAnimationFrame(() => {
       fitWeeklyForecastSummary();
