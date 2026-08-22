@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v110-legend-popup-fix";
+const SW_VERSION = "jin-v111-air-btn-hairline";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
