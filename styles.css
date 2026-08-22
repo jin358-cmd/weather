@@ -2257,9 +2257,13 @@ input[type="checkbox"] {
   max-width: 100%;
 }
 
-.weather-block .big-text,
-.weather-block .air-inline-summary {
+.weather-block .big-text {
   font-size: 20px;
+}
+
+.weather-block .air-inline-summary,
+.weather-block .air-details > summary {
+  font-size: 28px;
 }
 
 .weather-block .metrics dt {
@@ -2910,7 +2914,7 @@ input[type="checkbox"] {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
-  font-size: 16px;
+  font-size: 28px;
   font-weight: 800;
   color: #072445;
   line-height: 1.35;
@@ -2946,7 +2950,7 @@ input[type="checkbox"] {
 
 .air-inline-summary {
   margin: 0;
-  font-size: 16px;
+  font-size: 28px;
   font-weight: 800;
   padding: 6px 28px;
   border-radius: 8px;
@@ -5455,9 +5459,15 @@ body.eq-sheet-open {
     line-height: 1.25;
   }
 
-  .weather-block .big-text,
-  .weather-block .air-inline-summary {
+  .weather-block .big-text {
     font-size: 16px;
+  }
+
+  .weather-block .air-inline-summary,
+  .weather-block .air-details > summary,
+  .air-inline-summary,
+  .air-details > summary {
+    font-size: 22px;
   }
 
   .weather-block .metrics dt,
