@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v131-taiwan-shelters";
+const SW_VERSION = "jin-v132-layer-switches";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
