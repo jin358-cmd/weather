@@ -707,8 +707,12 @@ const CITY_CCTV_RADIUS_KM = 1;
 const CITY_CCTV_PREVIEW_LIMIT = 8;
 const CITY_CCTV_MORE_LIMIT = 40;
 const CITY_CCTV_VERIFY_EXPAND_SIZE = 80;
-const SHELTER_NEAR_KM = 8;
+const SHELTER_NEAR_KM = 5;
+const SHELTER_NATIONWIDE_MAX_ZOOM = 9;
 const SHELTER_DATA_URL = "./data/shelters.json";
+let shelterUserZoomedOut = false;
+let lastShelterUserZoom = null;
+let ignoreShelterZoomEvents = 0;
 const FREEWAY_CCTV_RADIUS_KM = 40;
 const FREEWAY_INTERCHANGE_BASE_RADIUS_KM = 40;
 const FREEWAY_CCTV_PREVIEW_LIMIT = 6;
@@ -7613,40 +7617,94 @@ function buildShelterPopupHtml(shelter) {
   `;
 }
 
+function getShelterMapZoom() {
+  const zoom = warningMap?.getZoom?.();
+  return Number.isFinite(zoom) ? zoom : TAIWAN_MAP_ZOOM;
+}
+
+function shouldShowNationwideShelters() {
+  return shelterUserZoomedOut && getShelterMapZoom() <= SHELTER_NATIONWIDE_MAX_ZOOM;
+}
+
+function syncShelterDisplayModeFromZoom() {
+  if (ignoreShelterZoomEvents > 0) {
+    lastShelterUserZoom = getShelterMapZoom();
+    return;
+  }
+  const zoom = getShelterMapZoom();
+  if (lastShelterUserZoom != null && zoom < lastShelterUserZoom && zoom <= SHELTER_NATIONWIDE_MAX_ZOOM) {
+    shelterUserZoomedOut = true;
+  }
+  if (zoom >= SHELTER_NATIONWIDE_MAX_ZOOM + 1) {
+    shelterUserZoomedOut = false;
+  }
+  lastShelterUserZoom = zoom;
+}
+
+function getShelterMarkerRadius() {
+  const zoom = getShelterMapZoom();
+  if (zoom <= 7) {
+    return 3;
+  }
+  if (zoom <= 9) {
+    return 4;
+  }
+  if (zoom <= 11) {
+    return 6;
+  }
+  return 7;
+}
+
 function getSheltersForMap() {
   const shelters = shelterDataset?.shelters || [];
   if (!shelters.length) {
     return [];
   }
-  const cityName = String(citySelect?.value || "").trim();
+  if (shouldShowNationwideShelters()) {
+    return shelters;
+  }
   const townName = String(townshipSelect?.value || "").trim();
   const focus = getCctvLocationFocus();
-  return shelters.filter((shelter) => {
-    if (cityName && shelter.city === cityName) {
-      return true;
-    }
-    if (
-      Number.isFinite(focus?.lat) &&
-      Number.isFinite(focus?.lon) &&
-      Number.isFinite(shelter.lat) &&
-      Number.isFinite(shelter.lon)
-    ) {
+  if (!Number.isFinite(focus?.lat) || !Number.isFinite(focus?.lon)) {
+    return [];
+  }
+  return shelters
+    .filter((shelter) => {
+      if (!Number.isFinite(shelter.lat) || !Number.isFinite(shelter.lon)) {
+        return false;
+      }
       return getDistanceKm(focus.lat, focus.lon, shelter.lat, shelter.lon) <= SHELTER_NEAR_KM;
+    })
+    .sort((a, b) => {
+      const aTown = townName && a.town === townName ? 0 : 1;
+      const bTown = townName && b.town === townName ? 0 : 1;
+      if (aTown !== bTown) {
+        return aTown - bTown;
+      }
+      return (
+        getDistanceKm(focus.lat, focus.lon, a.lat, a.lon) - getDistanceKm(focus.lat, focus.lon, b.lat, b.lon)
+      );
+    });
+}
+
+let shelterZoomTimer = 0;
+function scheduleShelterLayerByZoom() {
+  window.clearTimeout(shelterZoomTimer);
+  shelterZoomTimer = window.setTimeout(() => {
+    if (shelterDataset?.shelters?.length) {
+      updateShelterMapLayer();
     }
-    return false;
-  }).sort((a, b) => {
-    const aTown = townName && a.town === townName ? 0 : 1;
-    const bTown = townName && b.town === townName ? 0 : 1;
-    if (aTown !== bTown) {
-      return aTown - bTown;
-    }
-    if (!Number.isFinite(focus?.lat)) {
-      return String(a.name || "").localeCompare(String(b.name || ""), "zh-Hant");
-    }
-    return (
-      getDistanceKm(focus.lat, focus.lon, a.lat, a.lon) - getDistanceKm(focus.lat, focus.lon, b.lat, b.lon)
-    );
-  });
+  }, 160);
+}
+
+function getShelterRenderer() {
+  if (!warningMap || typeof L === "undefined" || typeof L.canvas !== "function") {
+    return undefined;
+  }
+  if (!warningMap._shelterCanvasRenderer) {
+    warningMap._shelterCanvasRenderer = L.canvas({ padding: 0.45, pane: "shelterPane" });
+  }
+  return warningMap._shelterCanvasRenderer;
 }
 
 function updateShelterMapLayer() {
@@ -7658,13 +7716,15 @@ function updateShelterMapLayer() {
   }
   mapShelterLayer.clearLayers();
   mapLegendMarkers.shelter = [];
+  const shelterRenderer = getShelterRenderer();
   getSheltersForMap().forEach((shelter) => {
     if (!Number.isFinite(shelter.lat) || !Number.isFinite(shelter.lon)) {
       return;
     }
     const marker = L.circleMarker([shelter.lat, shelter.lon], {
       pane: "shelterPane",
-      radius: 7,
+      renderer: shelterRenderer,
+      radius: getShelterMarkerRadius(),
       color: "#14532d",
       fillColor: "#15803d",
       fillOpacity: 0.88,
@@ -7894,7 +7954,7 @@ function focusAllFloodMarkers() {
     warningMap.setView(markers[0].getLatLng(), Math.max(warningMap.getZoom(), 11), { animate: true });
   }
   window.setTimeout(() => {
-    markers[0]?.openPopup?.();
+    openMarkerPopupSafely(markers[0]);
   }, 280);
 }
 
@@ -7985,12 +8045,16 @@ function fitMapToTaiwan(animate = false) {
   if (!warningMap) {
     return;
   }
+  ignoreShelterZoomEvents += 1;
   warningMap.invalidateSize();
   warningMap.fitBounds(TAIWAN_MAP_BOUNDS, {
     padding: [18, 18],
     maxZoom: 8,
     animate
   });
+  window.setTimeout(() => {
+    ignoreShelterZoomEvents = Math.max(0, ignoreShelterZoomEvents - 1);
+  }, 450);
 }
 
 function isMapCategoryVisible(key) {
@@ -8066,6 +8130,30 @@ function getMapPopupOptions(extra = {}) {
     ...extra,
     maxWidth: getMapMessageMaxWidth()
   };
+}
+
+function openMarkerPopupSafely(marker) {
+  if (!warningMap || !marker || typeof marker.openPopup !== "function") {
+    return;
+  }
+  const tryOpen = () => {
+    try {
+      if (!marker.getPopup?.()) {
+        return;
+      }
+      if (!marker._map) {
+        return;
+      }
+      marker.openPopup();
+    } catch {
+      /* popup display is optional if the marker is off the map */
+    }
+  };
+  if (marker._map) {
+    tryOpen();
+    return;
+  }
+  window.setTimeout(tryOpen, 320);
 }
 
 function refreshMapPopupMaxWidths() {
@@ -8417,7 +8505,7 @@ function openLegendSourceMarker(sourceMarker) {
     warningMap.setView(latlng, Math.max(warningMap.getZoom(), 13), { animate: true });
   }
   window.setTimeout(() => {
-    sourceMarker.openPopup?.();
+    openMarkerPopupSafely(sourceMarker);
   }, 220);
 }
 
@@ -8612,7 +8700,7 @@ function focusMapLegendMarkers(legendKey) {
     warningMap.setView(markers[0].getLatLng(), Math.max(warningMap.getZoom(), 13), { animate: true });
   }
   window.setTimeout(() => {
-    markers[0]?.openPopup?.();
+    openMarkerPopupSafely(markers[0]);
   }, 280);
 }
 
@@ -8763,7 +8851,12 @@ function initWarningMap() {
   loadShelterDataset().catch(() => {
     /* shelter layer is optional if the snapshot is missing */
   });
-  warningMap.on("zoomend moveend", () => {
+  warningMap.on("zoomend", () => {
+    syncShelterDisplayModeFromZoom();
+    updateMapLegendLocationPins();
+    scheduleShelterLayerByZoom();
+  });
+  warningMap.on("moveend", () => {
     updateMapLegendLocationPins();
   });
   warningMap.on("resize", () => {
