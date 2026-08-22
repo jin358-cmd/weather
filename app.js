@@ -4222,7 +4222,10 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
       <div class="weekly-forecast-side">
         <span class="weekly-forecast-label">${day.label}</span>
         <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
-        <span class="weekly-forecast-rain">降雨 ${rainProbText}｜${rainSumText}</span>
+        <span class="weekly-forecast-rain">
+          <span class="weekly-forecast-rain-prob">降雨 ${rainProbText}</span>
+          <span class="weekly-forecast-rain-sum">${rainSumText}</span>
+        </span>
       </div>
     `;
     weeklyForecastList.append(row);

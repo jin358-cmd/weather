@@ -2090,12 +2090,22 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-rain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
   font-size: clamp(13px, 3.2vw, 16px);
   color: #5b6b86;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   flex: 0 0 auto;
+}
+
+.weekly-forecast-rain-prob,
+.weekly-forecast-rain-sum {
+  white-space: nowrap;
 }
 
 .air-details {
