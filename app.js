@@ -6419,8 +6419,12 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     inPageAlertHost.classList.add("is-fullscreen-mode");
   }
   inPageAlertHost.append(alert);
-  // Readable tips use CSS wrapping sizes; shrink-to-fit made long notices unreadable.
-  if (!fullscreen && !isReadableTip) {
+  if (variant === "refresh-done" && fullscreen) {
+    window.requestAnimationFrame(() => {
+      fitRefreshDoneAlertText(alert);
+    });
+  } else if (!fullscreen && !isReadableTip) {
+    // Readable tips use CSS wrapping sizes; shrink-to-fit made long notices unreadable.
     window.requestAnimationFrame(() => {
       const width = Math.floor(alert.getBoundingClientRect().width || 0);
       fitSingleLineText(titleEl, {
@@ -6614,7 +6618,7 @@ async function notifyAutoRefreshComplete() {
   const body = [intro, "訂閱更新：", ...updates].join("\n");
   showInPageAlert(title, body, {
     timeoutMs: Math.min(20000, 9000 + updates.length * 1200),
-    fullscreen: false,
+    fullscreen: true,
     variant: "refresh-done"
   });
   await showWindowsSystemNotification(title, body, { tag: "jin-auto-refresh" });
@@ -8912,6 +8916,54 @@ function syncNoticeDetailsOpen() {
     return;
   }
   noticeDetails.open = window.matchMedia("(min-width: 861px)").matches;
+}
+
+function fitRefreshDoneAlertText(alert) {
+  if (!alert) {
+    return;
+  }
+  const titleEl = alert.querySelector(".in-page-alert-title");
+  const bodyHost = alert.querySelector(".in-page-alert-body");
+  const lines = [...(bodyHost?.querySelectorAll(".in-page-alert-line") || [])];
+  if (titleEl) {
+    const titleWidth = Math.floor(titleEl.getBoundingClientRect().width || alert.getBoundingClientRect().width || 0);
+    fitSingleLineText(titleEl, {
+      maxPx: Math.min(72, Math.max(40, Math.floor(titleWidth * 0.18))),
+      minPx: 32,
+      fillRatio: 0.96,
+      availablePx: titleWidth
+    });
+  }
+  if (!bodyHost || !lines.length) {
+    return;
+  }
+  const availableHeight = Math.floor(bodyHost.clientHeight || 0);
+  const availableWidth = Math.floor(bodyHost.clientWidth || 0);
+  if (!availableHeight) {
+    return;
+  }
+  const minPx = 20;
+  const maxPx = Math.min(40, Math.max(24, Math.floor(availableWidth * 0.058)));
+  let low = minPx;
+  let high = Math.max(minPx, maxPx);
+  let best = minPx;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    lines.forEach((lineEl) => {
+      lineEl.style.whiteSpace = "normal";
+      lineEl.style.fontSize = `${mid}px`;
+    });
+    if (bodyHost.scrollHeight <= availableHeight + 1) {
+      best = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+  lines.forEach((lineEl) => {
+    lineEl.style.whiteSpace = "normal";
+    lineEl.style.fontSize = `${best}px`;
+  });
 }
 
 function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1, fillLine = false, availablePx } = {}) {
