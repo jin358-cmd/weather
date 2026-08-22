@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v121-cctv-more-after-last";
+const SW_VERSION = "jin-v122-cctv-filters-oneline";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
