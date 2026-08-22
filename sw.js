@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v107-shelter-zoom-5km";
+const SW_VERSION = "jin-v108-subscription-bg-notify";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
@@ -273,7 +273,9 @@ async function runBackgroundSubscriptionCheck() {
   if (previous === digest) {
     return { checked: true, notified: false, reason: "unchanged" };
   }
-  await showSystemNotification("災害訂閱背景通知", digest, `jin-bg-${Date.now()}`);
+  for (const [index, message] of messages.entries()) {
+    await showSystemNotification("災害訂閱背景通知", message, `jin-bg-${Date.now()}-${index}`);
+  }
   await idbSet(LAST_DIGEST_KEY, digest);
   return { checked: true, notified: true };
 }

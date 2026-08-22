@@ -6728,6 +6728,19 @@ async function getNotificationRegistration() {
   }
 }
 
+async function notifySubscriptionMessagesToDevice(messages, { title = "預報訂閱通知" } = {}) {
+  const lines = (messages || []).map((item) => String(item || "").trim()).filter(Boolean);
+  for (const [index, line] of lines.entries()) {
+    await showWindowsSystemNotification(title, line, {
+      tag: `subscription-bg-${Date.now()}-${index}`
+    });
+    if (index < lines.length - 1) {
+      await sleep(280);
+    }
+  }
+  return lines.length > 0;
+}
+
 async function showWindowsSystemNotification(title, body, { tag } = {}) {
   if (!window.isSecureContext || typeof Notification === "undefined") {
     return false;
@@ -7540,15 +7553,19 @@ async function sendSubscriptionNotification({ force = false, inPage = true } = {
 
   const body = messages.join("\n");
 
-  await showAppNotification("預報訂閱通知", body, {
-    tag: `subscription-alert-${Date.now()}`,
-    skipInPage: !inPage,
-    variant: "subscription"
-  });
+  if (inPage) {
+    showInPageAlert("預報訂閱通知", body, {
+      timeoutMs: Math.min(20000, 8000 + messages.length * 800),
+      fullscreen: true,
+      variant: "subscription"
+    });
+  }
+  const deviceShown = await notifySubscriptionMessagesToDevice(messages);
 
   localStorage.setItem(NOTIFICATION_DIGEST_STORAGE_KEY, getNotificationDigest(messages));
   appState.lastNotifiedAt = Date.now();
-  const channelHint = permissionMode === "granted" ? "系統通知＋頁面提醒" : "頁面內即時提醒";
+  const channelHint =
+    permissionMode === "granted" && deviceShown ? "系統通知＋頁面提醒" : "頁面內即時提醒";
   renderSubscriptionStatus(`訂閱${messages.length}項通知(${channelHint})`);
   updateNotificationHint();
   return true;
@@ -7570,13 +7587,9 @@ async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
   } catch (error) {
     console.warn("每日天氣預報 Email 發送失敗：", error);
   }
-  const shouldNotify = triggerSource === "auto" || (triggerSource === "manual" && document.hidden);
-  if (!shouldNotify) {
-    return;
-  }
-  if (triggerSource === "auto" || document.hidden) {
-    await sendSubscriptionNotification({ inPage: triggerSource !== "auto" });
-  }
+  await sendSubscriptionNotification({
+    inPage: triggerSource !== "auto" && !document.hidden
+  });
 }
 
 function getShelterFullAddress(shelter = {}) {
