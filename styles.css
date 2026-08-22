@@ -2829,6 +2829,20 @@ input[type="checkbox"] {
   gap: 8px;
 }
 
+.air-details:not([open]) {
+  padding: 0 10px;
+  gap: 0;
+  min-height: 0;
+  border-radius: 8px;
+}
+
+.air-details:not([open]) > summary,
+.air-details:not([open]) .air-inline-summary {
+  padding-top: 1px;
+  padding-bottom: 1px;
+  min-height: 0;
+}
+
 .air-details > summary {
   cursor: pointer;
   list-style: none;
