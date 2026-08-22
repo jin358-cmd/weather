@@ -234,7 +234,6 @@ body {
 
 .app .control-grid,
 .app .auto-refresh-row,
-.app .camera-controls,
 .app .subscription-form,
 .app .metrics,
 .app .rain-forecast-inline,
@@ -260,7 +259,8 @@ body {
 .app .weekly-forecast-details,
 .app .weekly-forecast-details .weekly-forecast-list,
 .app .air-details .metrics,
-.app .rain-forecast-inline .rain-timeline {
+.app .rain-forecast-inline .rain-timeline,
+.app .camera-controls {
   width: 100%;
   max-width: none;
   margin-inline: 0;
@@ -1635,19 +1635,31 @@ label {
 }
 
 .camera-controls-grid {
-  grid-template-columns: minmax(0, 1fr);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
 }
 
-@media (min-width: 861px) {
-  .camera-controls-grid {
-    grid-template-columns: minmax(0, 220px) minmax(0, 240px) minmax(0, 1fr);
-  }
+.city-camera-controls > :last-child {
+  grid-column: 1 / -1;
+}
+
+.freeway-camera-controls {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.camera-controls-grid label {
+  white-space: normal;
+  line-height: 1.25;
 }
 
 .camera-controls-grid select,
 .camera-controls-grid input {
   width: 100%;
+  min-width: 0;
 }
 
 .freeway-details {
@@ -4932,9 +4944,16 @@ body.eq-sheet-open {
     gap: 8px;
   }
 
-  .control-grid,
-  .camera-controls-grid {
+  .control-grid {
     grid-template-columns: 1fr;
+  }
+
+  .city-camera-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .freeway-camera-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .region-grid {
