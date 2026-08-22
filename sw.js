@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v64-mobile-fields-wider";
+const SW_VERSION = "jin-v65-closure-empty-2x";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
