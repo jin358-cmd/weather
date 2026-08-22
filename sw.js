@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v80-closure-list-grow";
+const SW_VERSION = "jin-v81-eq-alert-wider-left";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

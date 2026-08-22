@@ -3915,6 +3915,24 @@ input[type="checkbox"] {
   gap: 10px;
 }
 
+.earthquake-card > .earthquake-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.app .earthquake-card > .earthquake-list {
+  width: min(90%, 34rem);
+  max-width: 34rem;
+  margin-left: max(0px, calc((100% - min(90%, 34rem)) / 2 - 0.75rem));
+  margin-right: auto;
+}
+
+.app .earthquake-more-list {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
 .earthquake-more-wrap {
   list-style: none;
   margin: 0;
