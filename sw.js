@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v75-weekly-rain-stack";
+const SW_VERSION = "jin-v76-legend-active-popups";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

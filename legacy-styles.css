@@ -3198,11 +3198,28 @@ body.eq-sheet-open {
   overflow: hidden;
 }
 
-.leaflet-container .eq-popup-wrap .leaflet-popup-content {
+.warning-map.leaflet-container .leaflet-popup,
+.leaflet-container .disaster-map-popup {
+  max-width: 90% !important;
+}
+
+.warning-map.leaflet-container .leaflet-popup-content-wrapper,
+.leaflet-container .disaster-map-popup .leaflet-popup-content-wrapper {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.leaflet-container .eq-popup-wrap .leaflet-popup-content,
+.leaflet-container .disaster-map-popup .leaflet-popup-content {
   margin: 12px 14px;
+  max-width: 100% !important;
+  width: auto !important;
   max-height: min(70vh, 420px);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .leaflet-container .eq-popup-wrap .eq-popup {
@@ -3212,7 +3229,7 @@ body.eq-sheet-open {
 
 .leaflet-container .cctv-popup-wrap .leaflet-popup-content {
   margin: 10px 12px;
-  max-width: 280px;
+  max-width: 100% !important;
 }
 
 .cctv-map-popup {

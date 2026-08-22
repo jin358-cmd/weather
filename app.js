@@ -1055,7 +1055,7 @@ function updatePowerOutageMapLayer() {
         return `<strong>計畫性停電</strong><br/>${item.area}<br/>時段：${item.firstTime}<br/>工作：${item.summary || "-"}`;
       })
       .join("<hr/>");
-    marker.bindPopup(`${popupLines}<br/>來源：台灣電力公司開放資料`);
+    marker.bindPopup(`${popupLines}<br/>來源：台灣電力公司開放資料`, getMapPopupOptions());
     marker._legendPlace = String(sample.area || sample.label || sample.info || "").trim();
     const legendKey = type === "disaster" ? "power-disaster" : "power-planned";
     mapLegendMarkers[legendKey].push(marker);
@@ -6064,11 +6064,7 @@ function updateEarthquakeMapLayer() {
       weight: 2
     });
     const popupHtml = buildEarthquakePopupHtml(quake);
-    marker.bindPopup(popupHtml, {
-      maxWidth: isCompactEarthquakeMapView() ? Math.min(window.innerWidth - 24, 420) : 360,
-      className: "eq-popup-wrap",
-      autoPanPadding: [24, 24]
-    });
+    marker.bindPopup(popupHtml, getMapPopupOptions({ className: "eq-popup-wrap disaster-map-popup" }));
     marker.on("click", () => {
       if (!quake.reportContent) {
         quake.reportContent = buildCwaEarthquakeReportContent(quake);
@@ -7566,7 +7562,8 @@ function updateFloodMapLayer() {
         即時水深：${point.depthCm} cm<br/>
         更新時間：${point.updatedAt || "-"}<br/>
         來源：水利署 IoW 即時感測（智慧尺標）
-      `
+      `,
+      getMapPopupOptions()
     );
     marker._legendPlace = `${point.county || ""}${point.town || ""}`.trim();
     const level = Number(point.level) || getFloodLevelByDepth(point.depthCm);
@@ -7746,6 +7743,39 @@ function isMapCategoryVisible(key) {
   return true;
 }
 
+function getMapMessageMaxWidth() {
+  const mapWidth =
+    warningMap?.getSize?.()?.x ||
+    document.querySelector("#warningMap")?.clientWidth ||
+    window.innerWidth;
+  return Math.max(140, Math.floor(mapWidth * 0.9));
+}
+
+function getMapPopupOptions(extra = {}) {
+  return {
+    autoPanPadding: [16, 16],
+    className: "disaster-map-popup",
+    ...extra,
+    maxWidth: getMapMessageMaxWidth()
+  };
+}
+
+function refreshMapPopupMaxWidths() {
+  const maxWidth = getMapMessageMaxWidth();
+  Object.values(mapLegendMarkers).forEach((markers) => {
+    (markers || []).forEach((marker) => {
+      const popup = marker.getPopup?.();
+      if (!popup) {
+        return;
+      }
+      popup.options.maxWidth = maxWidth;
+      if (popup.isOpen()) {
+        popup.update();
+      }
+    });
+  });
+}
+
 function syncMapLayerVisibilityFromCategories() {
   mapLayerVisibility["flood-warning"] = true;
   mapLayerVisibility["power-outage"] = true;
@@ -7859,7 +7889,10 @@ function updateCityFocusLayer() {
     fillOpacity: 1,
     interactive: true
   });
-  center.bindPopup(`所選位置焦點範圍<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`);
+  center.bindPopup(
+    `所選位置焦點範圍<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`,
+    getMapPopupOptions()
+  );
   center._legendPlace = String(location.label || "").trim();
   mapCityFocusLayer.addLayer(ring);
   mapCityFocusLayer.addLayer(center);
@@ -7938,7 +7971,7 @@ function updateCameraMapLayer() {
           </div>
         </div>
       `,
-      { maxWidth: 300, className: "cctv-popup-wrap", autoPanPadding: [24, 24] }
+      getMapPopupOptions({ className: "cctv-popup-wrap disaster-map-popup" })
     );
     const township = findNearestTownship(lat, lon);
     marker._legendPlace = township
@@ -8110,9 +8143,10 @@ function updateMapLegendLocationPins() {
   });
   pins.forEach((pin) => {
     const stack = pin.slot % 8;
+    const cardMax = Math.min(158, getMapMessageMaxWidth());
     const html = `
       <span class="map-legend-callout-dot" style="background:${pin.config.color}"></span>
-      <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; transform: translateY(${stack * 22}px)">
+      <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
         <strong>${escapeMapLegendHtml(pin.config.title)}</strong>
         <span class="map-legend-callout-place">${escapeMapLegendHtml(pin.place)}</span>
       </span>
@@ -8160,6 +8194,13 @@ function syncMapLegendState() {
     item.classList.toggle("legend-item-empty", markers.length === 0);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
     item.setAttribute("aria-disabled", markers.length === 0 ? "true" : "false");
+    const isDisasterLegend = !["cctv", "city-focus"].includes(key);
+    const row = item.closest("li");
+    const hideRow = !isDisasterLegend || markers.length === 0;
+    if (row) {
+      row.hidden = hideRow;
+    }
+    item.hidden = hideRow;
     const label = item.querySelector(".legend-label")?.textContent?.trim() || key;
     item.title = markers.length ? `${label}｜位置：${placeText}` : `${label}｜目前無點位`;
     item.setAttribute(
@@ -8167,6 +8208,23 @@ function syncMapLegendState() {
       markers.length ? `${label}，${markers.length} 處，位置 ${placeText}` : `${label}，目前無點位`
     );
   });
+  const hasDisasterItems = [
+    "flood-4",
+    "flood-3",
+    "flood-2",
+    "flood-1",
+    "power-disaster",
+    "power-planned",
+    "earthquake"
+  ].some((key) => (mapLegendMarkers[key] || []).length > 0);
+  let emptyNote = legend.querySelector(".map-legend-empty");
+  if (!emptyNote) {
+    emptyNote = document.createElement("p");
+    emptyNote.className = "map-legend-empty";
+    legend.append(emptyNote);
+  }
+  emptyNote.textContent = "目前無災害點位";
+  emptyNote.hidden = hasDisasterItems;
   syncMapFloodCountBadge(getFloodMarkersOnMap().length);
   syncMapAlertBadges();
   renderMapCategoryFilters();
@@ -8191,13 +8249,17 @@ function syncMapAlertBadges() {
   container.innerHTML = "";
   ALERT_BADGE_CONFIG.forEach(({ key, label, bg, color }) => {
     const count = (mapLegendMarkers[key] || []).length;
+    if (!count) {
+      return;
+    }
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "map-alert-badge";
     btn.style.background = bg;
     if (color) btn.style.color = color;
-    btn.dataset.empty = count === 0 ? "true" : "false";
+    btn.dataset.empty = "false";
     btn.textContent = `${label} ${count}`;
+    btn.title = `定位${label}點位`;
     btn.addEventListener("click", () => focusMapLegendMarkers(key));
     container.append(btn);
   });
@@ -8356,6 +8418,10 @@ function initWarningMap() {
   updateCityFocusLayer();
   updateCameraMapLayer();
   warningMap.on("zoomend moveend", () => {
+    updateMapLegendLocationPins();
+  });
+  warningMap.on("resize", () => {
+    refreshMapPopupMaxWidths();
     updateMapLegendLocationPins();
   });
   warningMap.whenReady(() => {
