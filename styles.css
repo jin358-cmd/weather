@@ -3995,14 +3995,15 @@ input[type="checkbox"] {
   border-color: #dc2626;
 }
 
-.earthquake-place-label {
+.earthquake-place-label,
+.eq-located-label {
   display: block;
-  font-size: 0.92em;
-  font-weight: 600;
+  font-size: clamp(16px, 4.4vw, 20px);
+  font-weight: 700;
   color: #9a6b4a;
   margin-left: 0;
   padding-left: 0;
-  line-height: 1.2;
+  line-height: 1.35;
 }
 
 .earthquake-item .earthquake-place-label,
@@ -4595,6 +4596,10 @@ body.eq-sheet-open {
   color: #63708a;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.earthquake-body .earthquake-range-line {
+  white-space: nowrap;
 }
 
 .earthquake-item-main {

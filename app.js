@@ -6025,8 +6025,10 @@ function createEarthquakeListItem(quake) {
   const mapUrl = getEarthquakeTaiwanMapUrl(quake);
   const placeLine = getEarthquakeLocatedLabel(quake.place, quake);
   const timeLine = formatDateTime(quake.timeMs);
-  const distanceLine = Number.isFinite(quake.distanceKm) ? `約 ${quake.distanceKm.toFixed(0)} 公里` : "";
-  const depthLine = `深度 ${Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"}`;
+  const depthText = `深度 ${Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"}`;
+  const rangeLine = Number.isFinite(quake.distanceKm)
+    ? `約 ${quake.distanceKm.toFixed(0)} 公里 ｜${depthText}`
+    : depthText;
   const nationalLine = isNationalEarthquakeAlert(quake) ? "國家警報同步" : "";
   item.innerHTML = `
     <a class="earthquake-item-main" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="開啟台灣地圖地震圖：${serialText}">
@@ -6035,8 +6037,7 @@ function createEarthquakeListItem(quake) {
         <strong>${serialText}｜震度 ${formatIntensityLabel(quake.intensityValue)}</strong>
         <span class="earthquake-place-label">${placeLine}</span>
         <small class="earthquake-meta-line">${timeLine}</small>
-        ${distanceLine ? `<small class="earthquake-meta-line">${distanceLine}</small>` : ""}
-        <small class="earthquake-meta-line">${depthLine}</small>
+        <small class="earthquake-meta-line earthquake-range-line">${rangeLine}</small>
         ${nationalLine ? `<small class="earthquake-meta-line">${nationalLine}</small>` : ""}
       </span>
     </a>
@@ -6148,7 +6149,7 @@ function buildEarthquakePopupHtml(quake) {
     <div class="eq-popup">
       <strong>${style.label}｜規模 ${quake.magnitude.toFixed(1)}</strong>
       <div>最大震度：${formatIntensityLabel(quake.intensityValue)}</div>
-      <div>${locatedLabel}</div>
+      <div class="eq-located-label">${locatedLabel}</div>
       <div>${formatDateTime(quake.timeMs)}</div>
       <div>深度 ${Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"}${
         quake.approxCoords ? "（暫估位置）" : ""
