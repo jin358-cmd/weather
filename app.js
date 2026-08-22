@@ -3709,10 +3709,8 @@ async function renderAllCameraLists() {
 
 function formatEarthquakeMagnitudeLabel(magnitude) {
   const value = Number(magnitude);
-  if (!Number.isFinite(value)) {
-    return "--(級)";
-  }
-  return `${value.toFixed(1)}(級)`;
+  const number = Number.isFinite(value) ? value.toFixed(1) : "--";
+  return `<span class="earthquake-mag-value">${number}</span><span class="earthquake-mag-unit">(級)</span>`;
 }
 
 function getKawaiiWeatherIconSvg(code, cloudCover) {

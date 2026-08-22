@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v91-eq-report-lines";
+const SW_VERSION = "jin-v92-eq-mag-vertical-oval";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
