@@ -3986,8 +3986,14 @@ input[type="checkbox"] {
   font-weight: 600;
   color: #9a6b4a;
   margin-left: 0;
-  padding-left: 1em;
+  padding-left: 0;
   line-height: 1.2;
+}
+
+.earthquake-item .earthquake-place-label,
+.earthquake-item .earthquake-meta-line {
+  display: block;
+  padding-left: 0;
 }
 
 .earthquake-list {
@@ -4517,7 +4523,9 @@ body.eq-sheet-open {
   line-height: 1.35;
 }
 
-.earthquake-body small {
+.earthquake-body small,
+.earthquake-body .earthquake-meta-line {
+  display: block;
   color: #63708a;
   font-size: 12px;
   line-height: 1.4;
@@ -4527,7 +4535,7 @@ body.eq-sheet-open {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
-  align-items: center;
+  align-items: start;
   min-width: 0;
   color: inherit;
   text-decoration: none;

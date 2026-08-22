@@ -5866,22 +5866,23 @@ function createEarthquakeListItem(quake) {
   item.className = `earthquake-item alert-${colorKey}${
     isNationalEarthquakeAlert(quake) ? " is-national" : ""
   }${intensityHigh ? " intensity-3-plus" : " intensity-below-3"}`;
-  const distanceText = Number.isFinite(quake.distanceKm)
-    ? `｜約 ${quake.distanceKm.toFixed(0)} 公里`
-    : "";
   const serialText = formatEarthquakeSerialLabel(quake);
   const mapUrl = getEarthquakeTaiwanMapUrl(quake);
+  const placeLine = getEarthquakeLocatedLabel(quake.place, quake);
+  const timeLine = formatDateTime(quake.timeMs);
+  const distanceLine = Number.isFinite(quake.distanceKm) ? `約 ${quake.distanceKm.toFixed(0)} 公里` : "";
+  const depthLine = `深度 ${Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"}`;
+  const nationalLine = isNationalEarthquakeAlert(quake) ? "國家警報同步" : "";
   item.innerHTML = `
     <a class="earthquake-item-main" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="開啟台灣地圖地震圖：${serialText}">
       <span class="earthquake-mag">${formatEarthquakeMagnitudeLabel(quake.magnitude)}</span>
       <span class="earthquake-body">
-        <strong>${serialText}｜震度 ${formatIntensityLabel(quake.intensityValue)}<span class="earthquake-place-label">${getEarthquakeLocatedLabel(
-          quake.place,
-          quake
-        )}</span></strong>
-        <small>${formatDateTime(quake.timeMs)}${distanceText}｜深度 ${
-          Number.isFinite(quake.depthKm) ? `${quake.depthKm.toFixed(1)} 公里` : "--"
-        }${isNationalEarthquakeAlert(quake) ? "｜國家警報同步" : ""}</small>
+        <strong>${serialText}｜震度 ${formatIntensityLabel(quake.intensityValue)}</strong>
+        <span class="earthquake-place-label">${placeLine}</span>
+        <small class="earthquake-meta-line">${timeLine}</small>
+        ${distanceLine ? `<small class="earthquake-meta-line">${distanceLine}</small>` : ""}
+        <small class="earthquake-meta-line">${depthLine}</small>
+        ${nationalLine ? `<small class="earthquake-meta-line">${nationalLine}</small>` : ""}
       </span>
     </a>
     <span class="earthquake-links">
