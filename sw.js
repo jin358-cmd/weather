@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v72-closure-empty-smaller";
+const SW_VERSION = "jin-v73-closure-1p5-locate-narrow";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
