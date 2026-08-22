@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v124-eq-mag-left-center";
+const SW_VERSION = "jin-v125-shelters-always-on";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

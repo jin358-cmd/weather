@@ -707,10 +707,7 @@ const CITY_CCTV_RADIUS_KM = 1;
 const CITY_CCTV_PREVIEW_LIMIT = 6;
 const CITY_CCTV_MORE_LIMIT = 40;
 const CITY_CCTV_VERIFY_EXPAND_SIZE = 80;
-const SHELTER_NEAR_KM = 5;
-const SHELTER_NATIONWIDE_MAX_ZOOM = 9;
 const SHELTER_DATA_URL = "./data/shelters.json";
-let shelterWideViewUnlocked = false;
 let ignoreShelterZoomEvents = 0;
 const FREEWAY_CCTV_RADIUS_KM = 40;
 const FREEWAY_INTERCHANGE_BASE_RADIUS_KM = 40;
@@ -7905,34 +7902,6 @@ function getShelterMapZoom() {
   return Number.isFinite(zoom) ? zoom : TAIWAN_MAP_ZOOM;
 }
 
-function isShelterWideZoom() {
-  return getShelterMapZoom() <= SHELTER_NATIONWIDE_MAX_ZOOM;
-}
-
-function shouldShowNationwideShelters() {
-  return shelterWideViewUnlocked && isShelterWideZoom();
-}
-
-function syncShelterDisplayModeFromZoom() {
-  if (ignoreShelterZoomEvents > 0) {
-    return;
-  }
-  if (isShelterWideZoom()) {
-    shelterWideViewUnlocked = true;
-  }
-  if (getShelterMapZoom() >= SHELTER_NATIONWIDE_MAX_ZOOM + 1) {
-    shelterWideViewUnlocked = false;
-  }
-}
-
-function unlockNationwideSheltersFromWideView() {
-  if (ignoreShelterZoomEvents > 0 || !isShelterWideZoom() || shelterWideViewUnlocked) {
-    return;
-  }
-  shelterWideViewUnlocked = true;
-  scheduleShelterLayerByZoom();
-}
-
 function getShelterMarkerRadius() {
   const zoom = getShelterMapZoom();
   if (zoom <= 7) {
@@ -7948,44 +7917,31 @@ function getShelterMarkerRadius() {
 }
 
 function getSheltersForMap() {
-  const shelters = shelterDataset?.shelters || [];
-  if (!shelters.length) {
-    return [];
-  }
-  if (shouldShowNationwideShelters()) {
-    return shelters;
-  }
-  const townName = String(townshipSelect?.value || "").trim();
-  const focus = getCctvLocationFocus();
-  if (!Number.isFinite(focus?.lat) || !Number.isFinite(focus?.lon)) {
-    return [];
-  }
-  return shelters
-    .filter((shelter) => {
-      if (!Number.isFinite(shelter.lat) || !Number.isFinite(shelter.lon)) {
-        return false;
-      }
-      return getDistanceKm(focus.lat, focus.lon, shelter.lat, shelter.lon) <= SHELTER_NEAR_KM;
-    })
-    .sort((a, b) => {
-      const aTown = townName && a.town === townName ? 0 : 1;
-      const bTown = townName && b.town === townName ? 0 : 1;
-      if (aTown !== bTown) {
-        return aTown - bTown;
-      }
-      return (
-        getDistanceKm(focus.lat, focus.lon, a.lat, a.lon) - getDistanceKm(focus.lat, focus.lon, b.lat, b.lon)
-      );
-    });
+  return (shelterDataset?.shelters || []).filter(
+    (shelter) => Number.isFinite(shelter.lat) && Number.isFinite(shelter.lon)
+  );
 }
 
 let shelterZoomTimer = 0;
 let mapPopupHoldUntil = 0;
+function resizeShelterMarkers() {
+  const radius = getShelterMarkerRadius();
+  (mapLegendMarkers.shelter || []).forEach((marker) => {
+    if (typeof marker.setRadius === "function") {
+      marker.setRadius(radius);
+    }
+  });
+}
+
 function scheduleShelterLayerByZoom() {
   window.clearTimeout(shelterZoomTimer);
   shelterZoomTimer = window.setTimeout(() => {
     if (Date.now() < mapPopupHoldUntil) {
       scheduleShelterLayerByZoom();
+      return;
+    }
+    if (mapLegendMarkers.shelter?.length) {
+      resizeShelterMarkers();
       return;
     }
     if (shelterDataset?.shelters?.length) {
@@ -9012,7 +8968,7 @@ function syncMapLegendState() {
     const countEl = item.querySelector("[data-legend-count]");
     const placeEl = item.querySelector("[data-legend-place]");
     const placeText = markers.length ? describeLegendMarkerPlaces(markers) : "目前無點位";
-    const alwaysShowRow = key === "cctv" || key === "city-focus";
+    const alwaysShowRow = key === "cctv" || key === "city-focus" || key === "shelter";
     const userOff = mapCategoryUserOff.has(key);
     if (countEl) {
       countEl.textContent = String(markers.length);
@@ -9286,12 +9242,8 @@ function initWarningMap() {
     /* shelter layer is optional if the snapshot is missing */
   });
   warningMap.on("zoomend", () => {
-    syncShelterDisplayModeFromZoom();
     updateMapLegendLocationPins();
     scheduleShelterLayerByZoom();
-  });
-  warningMap.getContainer()?.querySelector(".leaflet-control-zoom-out")?.addEventListener("click", () => {
-    window.setTimeout(unlockNationwideSheltersFromWideView, 0);
   });
   warningMap.on("moveend", () => {
     updateMapLegendLocationPins();
