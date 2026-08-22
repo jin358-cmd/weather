@@ -1976,6 +1976,28 @@ label {
   margin-top: 10px;
 }
 
+.camera-list > .camera-more-details {
+  display: contents;
+  margin-top: 0;
+}
+
+.camera-list > .camera-more-details[hidden] {
+  display: none !important;
+}
+
+.camera-list > .camera-more-details > .camera-more-summary {
+  align-self: start;
+  width: 100%;
+  margin: 0;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.camera-list > .camera-more-details > .camera-list {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
 .camera-more-details[hidden] {
   display: none !important;
 }
@@ -3453,6 +3475,10 @@ input[type="checkbox"] {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.camera-list > .status-warn {
+  grid-column: 1 / -1;
 }
 
 .camera-item {

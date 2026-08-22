@@ -3537,10 +3537,51 @@ function updateCameraMetaText() {
   cameraMeta.textContent = `定位點：${focusLabel}｜快照：${cityFetchedAt}`;
 }
 
-function resetCityCameraLists() {
-  if (cameraList) {
-    cameraList.innerHTML = "";
+function placeCityCameraMoreAfterLastScreen() {
+  if (!cameraList || !cameraMoreDetails) {
+    return;
   }
+  if (cameraMoreDetails.parentElement !== cameraList) {
+    cameraList.append(cameraMoreDetails);
+  }
+}
+
+function clearCityCameraCards() {
+  if (!cameraList) {
+    return;
+  }
+  cameraList.querySelectorAll(".camera-item, .status-warn").forEach((node) => node.remove());
+}
+
+function appendCityCameraCard(card) {
+  if (!cameraList || !card) {
+    return;
+  }
+  placeCityCameraMoreAfterLastScreen();
+  if (cameraMoreDetails && cameraMoreDetails.parentElement === cameraList) {
+    cameraList.insertBefore(card, cameraMoreDetails);
+    return;
+  }
+  cameraList.append(card);
+}
+
+function showCityCameraListMessage(message) {
+  clearCityCameraCards();
+  if (!cameraList) {
+    return;
+  }
+  const note = document.createElement("p");
+  note.className = "status-warn";
+  note.textContent = message;
+  if (cameraMoreDetails && cameraMoreDetails.parentElement === cameraList) {
+    cameraList.insertBefore(note, cameraMoreDetails);
+  } else {
+    cameraList.append(note);
+  }
+}
+
+function resetCityCameraLists() {
+  clearCityCameraCards();
   if (cameraListMore) {
     cameraListMore.innerHTML = "";
     delete cameraListMore.dataset.filled;
@@ -3552,6 +3593,7 @@ function resetCityCameraLists() {
   if (cameraMoreSummaryText) {
     cameraMoreSummaryText.textContent = "▸ 展開其餘路口監控";
   }
+  placeCityCameraMoreAfterLastScreen();
 }
 
 function fillCityCameraMoreList(extraCameras = [], scopeLabel = "所選位置") {
@@ -3572,6 +3614,7 @@ function syncCityCameraMorePanel(extraCameras = [], scopeLabel = "所選位置")
   if (!cameraMoreDetails || !cameraMoreSummaryText) {
     return;
   }
+  placeCityCameraMoreAfterLastScreen();
   const extraCount = extraCameras.length;
   if (cameraListMore) {
     cameraListMore.innerHTML = "";
@@ -3605,9 +3648,7 @@ async function renderCameraList() {
   setVerifiedCityCameras([]);
 
   if (!cityCameraDataset || !Array.isArray(cityCameraDataset.cameras)) {
-    if (cameraList) {
-      cameraList.innerHTML = `<p class="status-warn">目前無法載入各縣市市區路口監控資料。</p>`;
-    }
+    showCityCameraListMessage("目前無法載入各縣市市區路口監控資料。");
     hideCityCameraLoadProgress();
     return;
   }
@@ -3619,9 +3660,7 @@ async function renderCameraList() {
   const scopeLabel = getCctvLocationFocus().label || district?.label || "所選位置";
   const candidates = rows.length ? rows : cityCameraDataset.cameras || [];
   if (!candidates.length) {
-    if (cameraList) {
-      cameraList.innerHTML = `<p class="status-warn">目前無法載入各縣市市區路口監控資料。</p>`;
-    }
+    showCityCameraListMessage("目前無法載入各縣市市區路口監控資料。");
     hideCityCameraLoadProgress();
     return;
   }
@@ -3654,7 +3693,7 @@ async function renderCameraList() {
     const card = createCameraCard(camera, scopeLabel, {
       forceImage: isLikelyDirectImageStream(camera.html)
     });
-    cameraList.append(card);
+    appendCityCameraCard(card);
     const ok = await waitForCameraCardDecision(card, 8000);
     if (ok) {
       confirmedLive.push(camera);
@@ -3678,7 +3717,7 @@ async function renderCameraList() {
       });
       card.hidden = false;
       card.classList.add("camera-item-live");
-      cameraList.append(card);
+      appendCityCameraCard(card);
     });
     confirmedLive.push(...renderQueue.slice(0, CITY_CCTV_PREVIEW_LIMIT));
     setVerifiedCityCameras(confirmedLive);
@@ -9306,7 +9345,7 @@ async function fetchRoadCameras() {
     renderAllCameraLists();
   } catch (error) {
     cameraMeta.textContent = `市區監控資料暫時無法更新：${error.message}`;
-    cameraList.innerHTML = `<p class="status-warn">請稍後重試或改用來源網址查詢。</p>`;
+    showCityCameraListMessage("請稍後重試或改用來源網址查詢。");
   }
 }
 

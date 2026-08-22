@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v120-legend-cctv-focus";
+const SW_VERSION = "jin-v121-cctv-more-after-last";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
