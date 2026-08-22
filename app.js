@@ -595,8 +595,8 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage" },
   earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points" },
   shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
-  cctv: { title: "路口 CCTV", color: "#0096c7", layer: "cctv-points", skipCallout: true },
-  "city-focus": { title: "焦點範圍", color: "#00d4ff", layer: "city-focus" }
+  cctv: { title: "CCTV位置", color: "#0096c7", layer: "cctv-points", alwaysShow: true },
+  "city-focus": { title: "焦點範圍", color: "#00d4ff", layer: "city-focus", alwaysShow: true }
 };
 let mapLegendLabelLayer = null;
 const mapLayerOrder = ["city-focus", "flood-warning", "power-outage", "earthquake-points", "shelter-points", "cctv-points"];
@@ -8893,9 +8893,10 @@ function updateMapLegendLocationPins() {
     return;
   }
   layer.clearLayers();
-  if (!warningMap || warningMap.getZoom() < 11) {
+  if (!warningMap) {
     return;
   }
+  const zoom = warningMap.getZoom();
   const pins = [];
   Object.keys(MAP_LEGEND_CALLOUT_CONFIG).forEach((key) => {
     const config = MAP_LEGEND_CALLOUT_CONFIG[key];
@@ -8903,6 +8904,10 @@ function updateMapLegendLocationPins() {
       return;
     }
     if (config.skipCallout || !isMapCategoryVisible(key)) {
+      return;
+    }
+    const alwaysShow = Boolean(config.alwaysShow);
+    if (!alwaysShow && zoom < 11) {
       return;
     }
     (mapLegendMarkers[key] || []).forEach((sourceMarker) => {
@@ -8933,7 +8938,7 @@ function updateMapLegendLocationPins() {
     const stack = pin.slot % 8;
     const cardMax = Math.min(240, getMapMessageMaxWidth());
     const html = `
-      <span class="map-legend-callout-dot" style="background:${pin.config.color}"></span>
+      <span class="map-legend-callout-dot map-legend-callout-dot-flash" style="--legend-dot:${pin.config.color}"></span>
       <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
         <strong>${escapeMapLegendHtml(pin.config.title)}</strong>
         <span class="map-legend-callout-place">${escapeMapLegendHtml(pin.place)}</span>
@@ -8962,16 +8967,14 @@ function syncMapLegendState() {
   if (!legend) {
     return;
   }
-  // Keep CCTV legend count identical to markers currently drawn on the map layer.
-  if (mapCameraLayer?.getLayers) {
-    mapLegendMarkers.cctv = mapCameraLayer.getLayers();
-  }
   legend.querySelectorAll("[data-legend-key]").forEach((item) => {
     const key = item.dataset.legendKey;
     const markers = mapLegendMarkers[key] || [];
     const countEl = item.querySelector("[data-legend-count]");
     const placeEl = item.querySelector("[data-legend-place]");
     const placeText = markers.length ? describeLegendMarkerPlaces(markers) : "目前無點位";
+    const alwaysShowRow = key === "cctv" || key === "city-focus";
+    const userOff = mapCategoryUserOff.has(key);
     if (countEl) {
       countEl.textContent = String(markers.length);
       countEl.removeAttribute("aria-hidden");
@@ -8979,16 +8982,17 @@ function syncMapLegendState() {
     if (placeEl) {
       placeEl.textContent = placeText;
     }
-    item.classList.toggle("legend-item-empty", markers.length === 0);
+    item.classList.toggle("legend-item-empty", markers.length === 0 && !alwaysShowRow);
+    item.classList.toggle("legend-item-fixed", alwaysShowRow);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
     const toggle = ensureLegendLayerSwitch(item);
     if (toggle) {
       toggle.checked = isMapCategoryVisible(key);
-      toggle.disabled = key !== "city-focus" && markers.length === 0;
+      toggle.disabled = !alwaysShowRow && markers.length === 0;
     }
-    item.setAttribute("aria-disabled", key === "city-focus" ? "false" : markers.length === 0 ? "true" : "false");
+    item.setAttribute("aria-disabled", alwaysShowRow || markers.length > 0 ? "false" : "true");
     const row = item.closest("li");
-    const hideRow = key === "cctv" || (key !== "city-focus" && markers.length === 0);
+    const hideRow = !alwaysShowRow && markers.length === 0 && !userOff;
     if (row) {
       row.hidden = hideRow;
     }
