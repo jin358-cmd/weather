@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v99-legend-place-normal";
+const SW_VERSION = "jin-v100-remove-map-intro";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
