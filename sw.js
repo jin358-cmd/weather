@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v105-legend-layer-toggle";
+const SW_VERSION = "jin-v106-air-btn-ultra-thin";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

@@ -2860,16 +2860,17 @@ input[type="checkbox"] {
 }
 
 .air-details:not([open]) {
-  padding: 0 10px;
+  padding: 0 8px;
   gap: 0;
   min-height: 0;
-  border-radius: 8px;
+  border: 1px solid #8ebce6;
+  border-radius: 6px;
 }
 
 .air-details:not([open]) > summary,
 .air-details:not([open]) .air-inline-summary {
-  padding-top: 1px;
-  padding-bottom: 1px;
+  padding-top: 0;
+  padding-bottom: 0;
   min-height: 0;
 }
 
