@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v122-cctv-filters-oneline";
+const SW_VERSION = "jin-v123-air-quality-type";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
