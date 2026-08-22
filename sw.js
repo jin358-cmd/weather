@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v106-air-btn-ultra-thin";
+const SW_VERSION = "jin-v107-shelter-zoom-5km";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
