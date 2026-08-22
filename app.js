@@ -1811,6 +1811,14 @@ function simplifyFreewayOptionLabel(text = "") {
   return simplified || raw;
 }
 
+function stripFreewayDirectionFromLabel(text = "") {
+  return String(text || "")
+    .replace(/[｜|／/]\s*(北向|南向|東向|西向|北上|南下)\s*$/u, "")
+    .replace(/^\s*(北向|南向|東向|西向|北上|南下)\s*[｜|／/]/u, "")
+    .replace(/\s*(北向|南向|東向|西向|北上|南下)\s*$/u, "")
+    .trim();
+}
+
 function getCameraEntranceExitLabel(camera) {
   const text = String(camera?.stakenumber || "").trim();
   const match = text.match(/[（(]([^）)]+)[）)]/);
@@ -1998,10 +2006,18 @@ function getFreewayEntranceExitLabel(camera) {
 
 function formatFreewayCameraCaption(camera) {
   const stake = String(camera?.stakenumber || "").trim();
-  const segment = stake
-    ? simplifyFreewayOptionLabel(stake)
-    : `${getSelectedFreewayRegion()?.label || "國道"}（${getFreewayEntranceExitLabel(camera)}）`;
+  const segment = stripFreewayDirectionFromLabel(
+    stake
+      ? simplifyFreewayOptionLabel(stake)
+      : `${getSelectedFreewayRegion()?.label || "國道"}（${getFreewayEntranceExitLabel(camera)}）`
+  );
   const direction = getFreewayDirectionLabel(camera.directionCode || getFreewayCameraDirectionCode(camera));
+  return direction ? `${direction}｜${segment}` : segment;
+}
+
+function formatFreewayChannelLabel(camera) {
+  const direction = getFreewayDirectionLabel(camera.directionCode || getFreewayCameraDirectionCode(camera));
+  const segment = stripFreewayDirectionFromLabel(getCameraEntranceExitLabel(camera));
   return direction ? `${direction}｜${segment}` : segment;
 }
 
@@ -3669,7 +3685,7 @@ function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `freeway-channel-btn${index === 0 ? " is-active" : ""}`;
-    button.textContent = getCameraEntranceExitLabel(camera);
+    button.textContent = formatFreewayChannelLabel(camera);
     button.addEventListener("click", () => showCamera(camera, button));
     channels.append(button);
   });
