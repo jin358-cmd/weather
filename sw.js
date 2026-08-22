@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v84-refresh-done-fullscreen";
+const SW_VERSION = "jin-v85-cctv-label-rename";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

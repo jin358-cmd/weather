@@ -3480,14 +3480,7 @@ function updateFreewayCameraMetaText(directionGroups = []) {
     ? formatDateTime(freewayCameraDataset.fetchedAt)
     : "未提供";
   const region = getSelectedFreewayRegion();
-  const directionText = directionGroups.length
-    ? directionGroups.map((group) => group.label).join("／")
-    : "北向／南向";
-  const nearest = directionGroups
-    .flatMap((group) => group.cameras)
-    .sort((a, b) => (a.distanceKm || Infinity) - (b.distanceKm || Infinity))[0];
-  const segment = nearest ? getFreewayEntranceExitLabel(nearest) : "所選路段";
-  freewayCameraMeta.textContent = `${region.label}｜${directionText}｜(${segment})快照：${freewayFetchedAt}`;
+  freewayCameraMeta.textContent = `${region.label}｜快照：${freewayFetchedAt}`;
 }
 
 function createFreewayMonitorPanel(cameras, directionLabel, isCurrent) {

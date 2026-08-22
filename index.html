@@ -462,20 +462,19 @@
           >）
         </p>
         <div class="camera-controls camera-controls-grid city-camera-controls">
-          <div>
-            <label for="cameraCitySelect">縣市範圍</label>
-            <select id="cameraCitySelect" aria-label="選擇 CCTV 縣市範圍"></select>
+          <div class="camera-city-region">
+            <p id="cameraCityRegionLabel" class="camera-field-label">縣市及地區</p>
+            <div class="camera-city-region-selects">
+              <select id="cameraCitySelect" aria-label="縣市" aria-labelledby="cameraCityRegionLabel"></select>
+              <select id="cameraRegionSelect" aria-label="地區" aria-labelledby="cameraCityRegionLabel"></select>
+            </div>
           </div>
           <div>
-            <label for="cameraRegionSelect">地區範圍（地政鄉鎮市區）</label>
-            <select id="cameraRegionSelect" aria-label="選擇地政鄉鎮市區範圍"></select>
-          </div>
-          <div>
-            <label for="cameraKeyword">關鍵字篩選（路口/路名/代碼）</label>
+            <label for="cameraKeyword">關鍵字(路名)</label>
             <input
               id="cameraKeyword"
               type="text"
-              placeholder="例如：中山路、市民大道、安平"
+              placeholder="例如：中山路、市民大道"
               autocomplete="off"
             />
           </div>

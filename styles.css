@@ -282,6 +282,7 @@ body {
 
 .app .control-grid label,
 .app .camera-controls label,
+.app .camera-controls .camera-field-label,
 .app .subscription-form > label[for] {
   display: block;
   width: 100%;
@@ -1672,8 +1673,31 @@ label {
   max-width: 100%;
 }
 
+.city-camera-controls > .camera-city-region,
 .city-camera-controls > :last-child {
   grid-column: 1 / -1;
+}
+
+.camera-city-region {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.camera-city-region .camera-field-label {
+  margin: 0;
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.camera-city-region-selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
 }
 
 .freeway-camera-controls {
