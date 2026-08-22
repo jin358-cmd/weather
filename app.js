@@ -4170,14 +4170,14 @@ function fitWeeklyForecastSummary() {
   }
   clearFittedTextStyles(weeklyForecastSummary);
   const computed = Number.parseFloat(window.getComputedStyle(weeklyForecastSummary).fontSize);
-  const maxPx = Number.isFinite(computed) && computed > 0 ? computed : 21;
+  const maxPx = Number.isFinite(computed) && computed > 0 ? computed : 26;
   const availablePx = Math.max(
     0,
     Math.floor(weeklyForecastSummary.getBoundingClientRect().width - 36)
   );
   fitSingleLineText(weeklyForecastSummary, {
     maxPx,
-    minPx: 12,
+    minPx: 16,
     fillRatio: 1,
     fillLine: false,
     availablePx
