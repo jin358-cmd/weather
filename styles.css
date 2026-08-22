@@ -2613,7 +2613,7 @@ input[type="checkbox"] {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
-  font-size: clamp(30px, 8.8vw, 42px);
+  font-size: clamp(18px, 4.4vw, 22px);
   font-weight: 800;
   padding: 4px 0;
   line-height: 1.25;
@@ -2709,7 +2709,7 @@ input[type="checkbox"] {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
-  font-size: clamp(30px, 8.8vw, 42px);
+  font-size: clamp(18px, 4.4vw, 22px);
   font-weight: 800;
   color: #072445;
   line-height: 1.25;
@@ -3247,7 +3247,7 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-below > summary {
-    font-size: clamp(28px, 8.4vw, 38px);
+    font-size: clamp(16px, 4.2vw, 20px);
     padding: 4px 0;
     justify-items: center;
     text-align: center;
@@ -5996,7 +5996,7 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-details > summary {
-    font-size: clamp(28px, 8.4vw, 38px);
+    font-size: clamp(16px, 4.2vw, 20px);
     padding: 4px 0;
     justify-items: center;
     text-align: center;
