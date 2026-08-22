@@ -2860,18 +2860,28 @@ input[type="checkbox"] {
 }
 
 .air-details:not([open]) {
-  padding: 0 8px;
+  padding: 0 6px;
   gap: 0;
   min-height: 0;
+  height: auto;
   border: 1px solid #8ebce6;
-  border-radius: 6px;
+  border-radius: 2px;
 }
 
 .air-details:not([open]) > summary,
 .air-details:not([open]) .air-inline-summary {
+  appearance: none;
+  -webkit-appearance: none;
   padding-top: 0;
   padding-bottom: 0;
+  padding-block: 0;
+  margin: 0;
   min-height: 0;
+  height: auto;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-sizing: border-box;
 }
 
 .air-details > summary {
