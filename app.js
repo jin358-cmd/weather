@@ -6400,7 +6400,9 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     row.textContent = line;
     bodyHost?.append(row);
   });
+  const fitAbort = new AbortController();
   const close = () => {
+    fitAbort.abort();
     alert.remove();
     if (!inPageAlertHost.querySelector(".in-page-alert-fullscreen")) {
       inPageAlertHost.classList.remove("is-fullscreen-mode");
@@ -6412,9 +6414,14 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
   }
   inPageAlertHost.append(alert);
   if (variant === "refresh-done" && fullscreen) {
-    window.requestAnimationFrame(() => {
-      fitRefreshDoneAlertText(alert);
-    });
+    scheduleRefreshDoneAlertFit(alert);
+    window.addEventListener(
+      "resize",
+      () => {
+        scheduleRefreshDoneAlertFit(alert);
+      },
+      { passive: true, signal: fitAbort.signal }
+    );
   } else if (!fullscreen && !isReadableTip) {
     // Readable tips use CSS wrapping sizes; shrink-to-fit made long notices unreadable.
     window.requestAnimationFrame(() => {
@@ -8912,52 +8919,161 @@ function syncNoticeDetailsOpen() {
   noticeDetails.open = window.matchMedia("(min-width: 861px)").matches;
 }
 
-function fitRefreshDoneAlertText(alert) {
+function refreshDoneAlertFits(alert, bodyHost) {
+  const slack = 2;
+  if (!alert.clientHeight) {
+    return false;
+  }
+  if (alert.scrollHeight > alert.clientHeight + slack) {
+    return false;
+  }
+  if (bodyHost) {
+    if (!bodyHost.clientHeight) {
+      return false;
+    }
+    if (bodyHost.scrollHeight > bodyHost.clientHeight + slack) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function scheduleRefreshDoneAlertFit(alert) {
   if (!alert) {
     return;
   }
+  let tries = 0;
+  const run = () => {
+    if (!alert.isConnected) {
+      return;
+    }
+    const fitted = fitRefreshDoneAlertText(alert);
+    tries += 1;
+    if (!fitted && tries < 10) {
+      window.requestAnimationFrame(run);
+    }
+  };
+  window.requestAnimationFrame(run);
+}
+
+function fitRefreshDoneAlertText(alert) {
+  if (!alert) {
+    return false;
+  }
   const titleEl = alert.querySelector(".in-page-alert-title");
   const bodyHost = alert.querySelector(".in-page-alert-body");
+  const closeBtn = alert.querySelector(".in-page-alert-close");
   const lines = [...(bodyHost?.querySelectorAll(".in-page-alert-line") || [])];
+  alert.style.overflow = "hidden";
+  if (bodyHost) {
+    bodyHost.style.overflow = "hidden";
+    bodyHost.style.minHeight = "0";
+  }
+  const cardWidth = Math.floor(alert.clientWidth || alert.getBoundingClientRect().width || 0);
+  const cardHeight = Math.floor(alert.clientHeight || alert.getBoundingClientRect().height || 0);
+  if (!cardWidth || !cardHeight) {
+    return false;
+  }
+
+  const applyTitle = (px) => {
+    if (!titleEl) {
+      return;
+    }
+    titleEl.style.whiteSpace = "nowrap";
+    titleEl.style.overflow = "hidden";
+    titleEl.style.lineHeight = "1.2";
+    titleEl.style.fontSize = `${px}px`;
+  };
+
+  const applyBody = (px) => {
+    const lineHeight = px < 16 ? "1.25" : "1.35";
+    const gap = px <= 14 ? 4 : px <= 18 ? 6 : 10;
+    lines.forEach((lineEl) => {
+      lineEl.style.whiteSpace = "normal";
+      lineEl.style.overflow = "hidden";
+      lineEl.style.lineHeight = lineHeight;
+      lineEl.style.fontSize = `${px}px`;
+    });
+    if (bodyHost) {
+      bodyHost.style.gap = `${gap}px`;
+    }
+  };
+
+  const titlePrefMax = Math.min(72, Math.max(32, Math.floor(cardWidth * 0.16)));
+  const titleAbsMin = 18;
+  const bodyPrefMax = Math.min(40, Math.max(20, Math.floor(cardWidth * 0.055)));
+  const bodyPrefMin = 20;
+  const bodyAbsMin = 11;
+
   if (titleEl) {
-    const titleWidth = Math.floor(titleEl.getBoundingClientRect().width || alert.getBoundingClientRect().width || 0);
+    const titleWidth = Math.floor(titleEl.getBoundingClientRect().width || cardWidth);
     fitSingleLineText(titleEl, {
-      maxPx: Math.min(72, Math.max(40, Math.floor(titleWidth * 0.18))),
-      minPx: 32,
+      maxPx: titlePrefMax,
+      minPx: titleAbsMin,
       fillRatio: 0.96,
       availablePx: titleWidth
     });
   }
+
   if (!bodyHost || !lines.length) {
-    return;
+    return true;
   }
-  const availableHeight = Math.floor(bodyHost.clientHeight || 0);
-  const availableWidth = Math.floor(bodyHost.clientWidth || 0);
-  if (!availableHeight) {
-    return;
-  }
-  const minPx = 20;
-  const maxPx = Math.min(40, Math.max(24, Math.floor(availableWidth * 0.058)));
-  let low = minPx;
-  let high = Math.max(minPx, maxPx);
-  let best = minPx;
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    lines.forEach((lineEl) => {
-      lineEl.style.whiteSpace = "normal";
-      lineEl.style.fontSize = `${mid}px`;
-    });
-    if (bodyHost.scrollHeight <= availableHeight + 1) {
-      best = mid;
-      low = mid + 1;
-    } else {
-      high = mid - 1;
+
+  const tryBodySize = (minPx, maxPx) => {
+    let low = minPx;
+    let high = Math.max(minPx, maxPx);
+    let best = minPx;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      applyBody(mid);
+      if (refreshDoneAlertFits(alert, bodyHost)) {
+        best = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
     }
+    applyBody(best);
+    return refreshDoneAlertFits(alert, bodyHost);
+  };
+
+  if (tryBodySize(bodyPrefMin, bodyPrefMax)) {
+    return true;
   }
-  lines.forEach((lineEl) => {
-    lineEl.style.whiteSpace = "normal";
-    lineEl.style.fontSize = `${best}px`;
-  });
+
+  if (titleEl) {
+    const currentTitle = Number.parseInt(titleEl.style.fontSize, 10) || titlePrefMax;
+    let titleLow = titleAbsMin;
+    let titleHigh = Math.max(titleAbsMin, currentTitle);
+    let titleBest = titleAbsMin;
+    while (titleLow <= titleHigh) {
+      const mid = Math.floor((titleLow + titleHigh) / 2);
+      applyTitle(mid);
+      if (tryBodySize(bodyAbsMin, bodyPrefMax)) {
+        titleBest = mid;
+        titleLow = mid + 1;
+      } else {
+        titleHigh = mid - 1;
+      }
+    }
+    applyTitle(titleBest);
+    if (tryBodySize(bodyAbsMin, bodyPrefMax)) {
+      return true;
+    }
+  } else if (tryBodySize(bodyAbsMin, bodyPrefMax)) {
+    return true;
+  }
+
+  if (closeBtn) {
+    closeBtn.style.minHeight = "40px";
+    closeBtn.style.padding = "8px 12px";
+    closeBtn.style.fontSize = "14px";
+  }
+  alert.style.gap = "8px";
+  alert.style.padding = "12px 14px";
+  applyTitle(titleAbsMin);
+  tryBodySize(bodyAbsMin, bodyPrefMax);
+  return refreshDoneAlertFits(alert, bodyHost);
 }
 
 function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1, fillLine = false, availablePx } = {}) {
