@@ -337,7 +337,7 @@
 
       <section class="card map-card map-card-responsive map-card-live" aria-label="即時災害警示地圖">
         <p class="map-live-intro">
-          全台積淹水、停電、地震等災害點位依類別色標顯示。點選地圖標記查看災害內容。
+          全台積淹水、停電、地震等災害點位依類別色標顯示，並標示各縣市政府核定避難場所。點選地圖標記查看內容與 Google 地圖連結。
         </p>
         <div class="map-toolbar">
           <button id="mapTaiwanViewBtn" type="button" class="ghost-btn map-taiwan-view-btn">檢視全台</button>
@@ -411,6 +411,14 @@
                 <button type="button" class="legend-item-btn" data-legend-key="earthquake">
                   <span class="legend-swatch earthquake-point" aria-hidden="true"></span>
                   <span class="legend-label">地震震央</span>
+                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                  <span class="legend-place" data-legend-place>目前無點位</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="legend-item-btn" data-legend-key="shelter">
+                  <span class="legend-swatch shelter-point" aria-hidden="true"></span>
+                  <span class="legend-label">避難場所</span>
                   <span class="legend-count" data-legend-count aria-hidden="true">0</span>
                   <span class="legend-place" data-legend-place>目前無點位</span>
                 </button>
@@ -567,8 +575,9 @@
             <li>颱風分析：中央氣象署颱風消息／警報頁面即時解析。</li>
             <li>Windy颱風走勢圖：Windy.com 颱風／氣象動態圖嵌入。</li>
             <li>
-              即時災害警示地圖：全台積淹水、停電、地震點位依類別色標，點選標記可看災害內容。
+              即時災害警示地圖：全台積淹水、停電、地震點位依類別色標，並標示各縣市政府核定避難場所；點選標記可看內容與 Google 地圖連結。
             </li>
+            <li>避難場所：內政部消防署開放資料「避難收容處所點位檔」，由各縣市政府核定。</li>
             <li>
               地震通報：中央氣象署台灣地區有感／顯著有感地震（測報中心公開頁面鏡像），並串接
               公眾警示國家緊急訊息通報內容。
