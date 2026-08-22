@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v98-eq-range-oneline";
+const SW_VERSION = "jin-v99-legend-place-normal";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

@@ -594,8 +594,8 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage" },
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage" },
   earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points" },
-  shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points" },
-  cctv: { title: "路口 CCTV", color: "#0096c7", layer: "cctv-points" },
+  shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
+  cctv: { title: "路口 CCTV", color: "#0096c7", layer: "cctv-points", skipCallout: true },
   "city-focus": { title: "焦點範圍", color: "#00d4ff", layer: "city-focus" }
 };
 let mapLegendLabelLayer = null;
@@ -8388,7 +8388,7 @@ function updateMapLegendLocationPins() {
     if (config.layer && mapLayerVisibility[config.layer] === false) {
       return;
     }
-    if (!isMapCategoryVisible(key)) {
+    if (config.skipCallout || !isMapCategoryVisible(key)) {
       return;
     }
     (mapLegendMarkers[key] || []).forEach((sourceMarker) => {
@@ -8417,7 +8417,7 @@ function updateMapLegendLocationPins() {
   });
   pins.forEach((pin) => {
     const stack = pin.slot % 8;
-    const cardMax = Math.min(158, getMapMessageMaxWidth());
+    const cardMax = Math.min(240, getMapMessageMaxWidth());
     const html = `
       <span class="map-legend-callout-dot" style="background:${pin.config.color}"></span>
       <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
