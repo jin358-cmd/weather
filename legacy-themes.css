@@ -651,6 +651,10 @@ body.theme-elegant[data-legacy-theme="dusk"] .subscription-card {
   border-color: #c9bfae;
 }
 
+body.theme-elegant[data-legacy-theme="dusk"] .notice-card ul {
+  color: #f4efe6;
+}
+
 body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="page"] {
   color: #f4efe6;
 }

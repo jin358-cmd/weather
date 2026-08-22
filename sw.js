@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v118-eq-located-smaller";
+const SW_VERSION = "jin-v119-notice-text-invert";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
