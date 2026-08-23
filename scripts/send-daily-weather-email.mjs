@@ -14,7 +14,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SUBSCRIBERS_PATH = path.join(ROOT, "data", "subscribers.json");
-const SITE_URL = "https://jin358-cmd.github.io/weather/";
+// Must match app.js SITE_PUBLIC_URL — subscriber-facing platform link.
+const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
 const FROM_EMAIL = process.env.MAIL_FROM || "停班停課通報 <onboarding@resend.dev>";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 
@@ -110,7 +111,7 @@ function buildWeatherBody(subscriber, payload) {
     "未來 8 小時降雨機率：",
     rainLines || "（暫無預報資料）",
     "",
-    `平台：${SITE_URL}`,
+    `平台：${SITE_PUBLIC_URL}`,
     "本信為每日一次天氣預報，如需取消請於網站取消訂閱主題或清除訂閱。"
   ].join("\n");
 }
@@ -149,7 +150,7 @@ async function sendWithFormSubmit(toEmail, subject, text) {
       _captcha: "false",
       _honey: "",
       message: text,
-      platform: SITE_URL
+      platform: SITE_PUBLIC_URL
     })
   });
   const raw = await response.text();
