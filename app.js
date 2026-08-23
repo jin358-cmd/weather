@@ -8323,7 +8323,17 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     inPageAlertHost.classList.add("is-fullscreen-mode");
   }
   inPageAlertHost.append(alert);
-  if (isDesktopNotifyLayout()) {
+  const useFullscreenFit = fullscreen && (variant === "refresh-done" || variant === "subscription");
+  if (useFullscreenFit) {
+    scheduleRefreshDoneAlertFit(alert);
+    window.addEventListener(
+      "resize",
+      () => {
+        scheduleRefreshDoneAlertFit(alert);
+      },
+      { passive: true, signal: fitAbort.signal }
+    );
+  } else if (isDesktopNotifyLayout()) {
     scheduleDesktopNotifyFit(alert);
     window.addEventListener(
       "resize",
@@ -8333,15 +8343,6 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
         } else {
           clearDesktopNotifyFitStyles(alert);
         }
-      },
-      { passive: true, signal: fitAbort.signal }
-    );
-  } else if (variant === "refresh-done" && fullscreen) {
-    scheduleRefreshDoneAlertFit(alert);
-    window.addEventListener(
-      "resize",
-      () => {
-        scheduleRefreshDoneAlertFit(alert);
       },
       { passive: true, signal: fitAbort.signal }
     );
@@ -12297,8 +12298,8 @@ function fitRefreshDoneAlertText(alert) {
   };
 
   const applyBody = (px) => {
-    const lineHeight = px < 16 ? "1.25" : "1.35";
-    const gap = px <= 14 ? 4 : px <= 18 ? 6 : 10;
+    const lineHeight = px < 13 ? "1.18" : px < 16 ? "1.25" : "1.35";
+    const gap = px <= 12 ? 2 : px <= 14 ? 3 : px <= 18 ? 6 : 10;
     lines.forEach((lineEl) => {
       lineEl.style.whiteSpace = "normal";
       lineEl.style.overflow = "hidden";
@@ -12310,11 +12311,12 @@ function fitRefreshDoneAlertText(alert) {
     }
   };
 
-  const titlePrefMax = Math.min(72, Math.max(32, Math.floor(cardWidth * 0.16)));
-  const titleAbsMin = 18;
-  const bodyPrefMax = Math.min(40, Math.max(20, Math.floor(cardWidth * 0.055)));
-  const bodyPrefMin = 20;
-  const bodyAbsMin = 11;
+  const manyLines = lines.length >= 6;
+  const titlePrefMax = Math.min(72, Math.max(28, Math.floor(cardWidth * 0.14)));
+  const titleAbsMin = manyLines ? 16 : 18;
+  const bodyPrefMax = Math.min(40, Math.max(manyLines ? 16 : 20, Math.floor(cardWidth * (manyLines ? 0.042 : 0.055))));
+  const bodyPrefMin = manyLines ? 13 : 20;
+  const bodyAbsMin = 10;
 
   if (titleEl) {
     const titleWidth = Math.floor(titleEl.getBoundingClientRect().width || cardWidth);
@@ -12376,15 +12378,19 @@ function fitRefreshDoneAlertText(alert) {
   }
 
   if (closeBtn) {
-    closeBtn.style.minHeight = "40px";
-    closeBtn.style.padding = "8px 12px";
-    closeBtn.style.fontSize = "14px";
+    closeBtn.style.minHeight = "36px";
+    closeBtn.style.padding = "6px 10px";
+    closeBtn.style.fontSize = "13px";
   }
-  alert.style.gap = "8px";
-  alert.style.padding = "12px 14px";
+  alert.style.gap = "6px";
+  alert.style.padding = "10px 12px";
   applyTitle(titleAbsMin);
   tryBodySize(bodyAbsMin, bodyPrefMax);
-  return refreshDoneAlertFits(alert, bodyHost);
+  alert.style.overflow = "hidden";
+  if (bodyHost) {
+    bodyHost.style.overflow = "hidden";
+  }
+  return true;
 }
 
 function fitSingleLineText(element, { maxPx, minPx, fillRatio = 1, fillLine = false, availablePx } = {}) {
