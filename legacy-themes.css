@@ -192,6 +192,18 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   text-align: center;
 }
 
+.theme-elegant .ai-alert-item.ai-alert-closure-stop,
+.theme-elegant .alert-block .ai-alert-item.ai-alert-closure-stop {
+  border-color: #7f1d1d;
+  background: #b71c1c;
+  color: #fff;
+}
+
+.theme-elegant .ai-alert-item.ai-alert-closure-stop .ai-alert-tag,
+.theme-elegant .ai-alert-item.ai-alert-closure-stop .ai-alert-body {
+  color: #fff;
+}
+
 .theme-elegant .refresh-btn {
   background: var(--btn-bg);
   color: var(--btn-text);
