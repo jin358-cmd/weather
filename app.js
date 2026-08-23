@@ -4437,6 +4437,22 @@ function getMotionWeatherIconSvg(code, cloudCover) {
   return MOTION_WEATHER_ICONS[getWeatherCategory(code)] || MOTION_WEATHER_ICONS.clear;
 }
 
+const MOTION_WEATHER_ICON_PNG = {
+  clear: "./icons/weather/motion-clear.png",
+  partly: "./icons/weather/motion-partly.png",
+  overcast: "./icons/weather/motion-overcast.png",
+  rain: "./icons/weather/motion-rain.png",
+  snow: "./icons/weather/motion-snow.png",
+  thunder: "./icons/weather/motion-thunder.png"
+};
+
+function getWeeklyForecastIconHtml(weatherCode) {
+  const category = getWeatherCategory(weatherCode);
+  const src = MOTION_WEATHER_ICON_PNG[category] || MOTION_WEATHER_ICON_PNG.clear;
+  const label = WEATHER_CODE_LABEL[Number(weatherCode)] || "天氣";
+  return `<img class="weekly-forecast-icon-img" src="${src}" alt="${label}" width="48" height="48" decoding="async" />`;
+}
+
 function getWeatherIconTheme() {
   const saved = localStorage.getItem(WEATHER_ICON_THEME_KEY);
   return "motion";
@@ -4680,7 +4696,7 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
         <strong>${index === 0 ? "今天" : day.weekday}</strong>
         <span>${day.monthDay}</span>
       </div>
-      <div class="weekly-forecast-icon ${WEATHER_ICON_THEMES[getWeatherIconTheme()].className}" aria-hidden="true">${getWeatherIconSvg(day.weatherCode, getWeatherIconTheme(), day.cloudCover)}</div>
+      <div class="weekly-forecast-icon weekly-forecast-icon-png">${getWeeklyForecastIconHtml(day.weatherCode)}</div>
       <div class="weekly-forecast-side">
         <span class="weekly-forecast-label">${day.label}</span>
         <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
