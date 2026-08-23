@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v138-weather-icon-match";
+const SW_VERSION = "jin-v139-weekly-type-up";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

@@ -2741,7 +2741,7 @@ input[type="checkbox"] {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
-  font-size: clamp(18px, 4.4vw, 22px);
+  font-size: clamp(21px, 5.2vw, 26px);
   font-weight: 800;
   padding: 4px 0;
   line-height: 1.15;
@@ -2837,7 +2837,7 @@ input[type="checkbox"] {
   text-align: center;
   width: 100%;
   box-sizing: border-box;
-  font-size: clamp(18px, 4.4vw, 22px);
+  font-size: clamp(21px, 5.2vw, 26px);
   font-weight: 800;
   color: #072445;
   line-height: 1.15;
@@ -2929,7 +2929,7 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-day strong {
-  font-size: clamp(18px, 4.4vw, 22px);
+  font-size: clamp(20px, 5vw, 25px);
   font-weight: 900;
   color: #0b3fad;
   line-height: 1.15;
@@ -2937,7 +2937,7 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-day span {
-  font-size: clamp(15px, 3.8vw, 18px);
+  font-size: clamp(17px, 4.2vw, 21px);
   font-weight: 800;
   color: #0b3fad;
   line-height: 1.2;
@@ -2973,7 +2973,7 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-label {
-  font-size: clamp(16px, 4vw, 19px);
+  font-size: clamp(18px, 4.5vw, 22px);
   font-weight: 700;
   color: #1f2a44;
   line-height: 1.2;
@@ -2985,7 +2985,7 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-temps {
-  font-size: clamp(17px, 4.2vw, 21px);
+  font-size: clamp(19px, 4.7vw, 24px);
   font-weight: 800;
   color: #0b3fad;
   font-variant-numeric: tabular-nums;
@@ -3000,7 +3000,7 @@ input[type="checkbox"] {
   align-items: flex-end;
   justify-content: center;
   gap: 1px;
-  font-size: clamp(13px, 3.2vw, 16px);
+  font-size: clamp(15px, 3.6vw, 18px);
   color: #5b6b86;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
@@ -3378,7 +3378,7 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-below > summary {
-    font-size: clamp(16px, 4.2vw, 20px);
+    font-size: clamp(19px, 5vw, 24px);
     padding: 4px 0;
     justify-items: center;
     text-align: center;
@@ -6127,7 +6127,7 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-details > summary {
-    font-size: clamp(16px, 4.2vw, 20px);
+    font-size: clamp(19px, 5vw, 24px);
     padding: 4px 0;
     justify-items: center;
     text-align: center;
@@ -6150,22 +6150,22 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-day strong {
-    font-size: clamp(17px, 4.4vw, 20px);
+    font-size: clamp(19px, 5vw, 23px);
     font-weight: 900;
   }
 
   .weekly-forecast-day span {
-    font-size: clamp(14px, 3.8vw, 17px);
+    font-size: clamp(16px, 4.2vw, 19px);
     font-weight: 800;
     color: #0b3fad;
   }
 
   .weekly-forecast-label {
-    font-size: clamp(15px, 4vw, 17px);
+    font-size: clamp(17px, 4.5vw, 20px);
   }
 
   .weekly-forecast-temps {
-    font-size: clamp(16px, 4.2vw, 19px);
+    font-size: clamp(18px, 4.7vw, 22px);
   }
 
   .weekly-forecast-side {
@@ -6173,7 +6173,7 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-rain {
-    font-size: clamp(13px, 3.4vw, 15px);
+    font-size: clamp(15px, 3.8vw, 17px);
     line-height: 1;
     white-space: nowrap;
   }
