@@ -397,7 +397,11 @@
           </div>
           <div class="map-legend map-legend-below" aria-label="地圖圖例對照">
             <h4>圖例對照</h4>
-            <p class="map-legend-hint">圖例依災害分類顯示。無災害的圖層會自動關閉並收入收合層。停班停課以縣市標示並寫出適用日期。定位範圍為綠點閃暗，其餘標記維持原色。路口監控以縮影顯示，點選後在縮影上方標示兩個交叉路口名稱。</p>
+            <p class="map-legend-hint">圖例依災害分類顯示。定位縣市若有停班停課公告，會自動移到開啟中的圖層；恢復正常上班上課後會關閉並收入災害圖層。無災害的圖層會自動關閉並收入收合層。停班停課以縣市標示並寫出適用日期。定位範圍為綠點閃暗，其餘標記維持原色。路口監控以縮影顯示，點選後在縮影上方標示兩個交叉路口名稱。</p>
+            <div id="legendActiveBlock" class="legend-active-block" hidden>
+              <p class="legend-group-label">開啟中的圖層</p>
+              <ul id="legendActiveList" class="legend-list legend-list-active"></ul>
+            </div>
             <details id="legendDisasterGroup" class="legend-disaster-group">
               <summary>災害圖層 <span id="legendDisasterSummary">目前無災害</span></summary>
               <p class="legend-group-label">積水</p>
@@ -651,7 +655,7 @@
             <li>颱風分析：中央氣象署颱風消息／警報頁面即時解析。</li>
             <li>Windy颱風走勢圖：Windy.com 颱風／氣象動態圖嵌入。</li>
             <li>
-              即時災害警示地圖：停班停課、積淹水、停電、停水、地震、避難場所與路口監控依顏色分層。停班停課以縣市標示並顯示適用日期；其餘點位僅顯示定位點直徑 5 公里內。
+              即時災害警示地圖：停班停課、積淹水、停電、停水、地震、避難場所與路口監控依顏色分層。停班停課以縣市標示並顯示適用日期；定位縣市有公告時該圖層會移到開啟中，恢復正常上班上課後關閉並收入災害圖層。其餘點位僅顯示定位點直徑 5 公里內。
             </li>
             <li>避難場所：內政部消防署開放資料「避難收容處所點位檔」，由各縣市政府核定。</li>
             <li>
