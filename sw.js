@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v178-history-closed-smaller";
+const SW_VERSION = "jin-v179-drop-ncdr-field";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -14,7 +14,6 @@ const PWA_PRECACHE_URLS = [
   "./icons/apple-touch-icon.png"
 ];
 const CWA_WARNING_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
-const NCDR_ALERT_MIRROR = "https://r.jina.ai/https://alerts.ncdr.nat.gov.tw/";
 const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
 const COOLDOWN_KEY = "notifyCooldown";
 const PREFS_DB = "jin-bg-prefs-v1";
@@ -371,6 +370,10 @@ function stampSourceLine(source, body) {
 
 function isOfficialWarningCatalogLine(line) {
   return /資料提供\s*:|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(line);
+}
+
+function isDroppedNcdrAlertText(text) {
+  return /【NCDR\s*示警】|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(String(text || ""));
 }
 
 function parseOfficialWarningMarkdown(markdown, cityName, { sourceLabel, keyword }) {
@@ -938,22 +941,6 @@ async function buildBackgroundAlertMessages(prefs) {
     }
   }
 
-  if (topics.has("ncdr-alert")) {
-    try {
-      const response = await fetch(NCDR_ALERT_MIRROR, { cache: "no-store" });
-      if (response.ok) {
-        const text = await response.text();
-        const parsed = parseOfficialWarningMarkdown(text, city, {
-          sourceLabel: "NCDR 民生示警",
-          keyword: /示警|警戒|警報|淹水|土石流|停電|道路/
-        });
-        messages.push(parsed || stampSourceLine("NCDR 民生示警", `【NCDR 示警】${label} 目前無縣市對應示警`));
-      }
-    } catch {
-      messages.push(stampSourceLine("NCDR 民生示警", `【NCDR 示警】${label} 資料暫時無法讀取`));
-    }
-  }
-
   if (topics.has("earthquake")) {
     try {
       const response = await fetch(EARTHQUAKE_CWA_LIST_MIRROR, { cache: "no-store" });
@@ -1026,8 +1013,8 @@ async function buildBackgroundAlertMessages(prefs) {
   }
 
   return {
-    messages: messages.filter(Boolean),
-    recoveryMessages: recoveryMessages.filter(Boolean),
+    messages: messages.filter((line) => line && !isDroppedNcdrAlertText(line)),
+    recoveryMessages: recoveryMessages.filter((line) => line && !isDroppedNcdrAlertText(line)),
     recoveryState: next
   };
 }
@@ -1047,7 +1034,11 @@ async function showSystemNotification(title, body, tag) {
 
 async function showNotificationBatch(items = []) {
   for (const [index, item] of (items || []).entries()) {
-    const body = String(item?.body || "").trim();
+    const body = String(item?.body || "")
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter((line) => line && !isDroppedNcdrAlertText(line))
+      .join("\n");
     if (!body) {
       continue;
     }
