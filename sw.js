@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v150-subscribe-confirm-zh";
+const SW_VERSION = "jin-v151-subscribe-url-consistent";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

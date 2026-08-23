@@ -693,6 +693,7 @@ const SUBSCRIPTION_TOPIC_ORDER = [
   "water-outage",
   "earthquake"
 ];
+// Canonical public site. Subscribe UI + confirmation emails must use this exact string.
 const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
 const SUBSCRIPTION_TOPIC_LABELS = {
   weather: "每日天氣預報（Email，每天一次）",

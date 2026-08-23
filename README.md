@@ -54,7 +54,7 @@ python3 -m http.server 4173
 
 ## 公開網站（GitHub Pages）
 
-程式碼已在公開倉庫：https://github.com/amjin358-svg/jin
+程式碼已在公開倉庫：https://github.com/jin358-cmd/weather
 
 預期公開網址：
 
@@ -85,14 +85,14 @@ python3 -m http.server 4173
 
 目前 Actions 無法代替擁有者「第一次」開啟 Pages（權限限制）。請用擁有者帳號完成：
 
-1. 開啟 [Pages 設定](https://github.com/amjin358-svg/jin/settings/pages)
+1. 開啟 [Pages 設定](https://github.com/jin358-cmd/weather/settings/pages)
 2. **Build and deployment → Source** 選其中一種：
    - **最快**：`Deploy from a branch` → Branch 選 `main` → Folder `/ (root)` → Save  
    - 或：`GitHub Actions`（之後每次推 `main` 會自動部署）
-3. 若選 GitHub Actions，請再到 [Actions 權限](https://github.com/amjin358-svg/jin/settings/actions)：
+3. 若選 GitHub Actions，請再到 [Actions 權限](https://github.com/jin358-cmd/weather/settings/actions)：
    - Workflow permissions → **Read and write permissions** → Save
-4. 開啟 [Actions](https://github.com/amjin358-svg/jin/actions) 手動執行 **Deploy site to GitHub Pages**（或再推一次 `main`）
-5. 約 1～2 分鐘後造訪：https://amjin358-svg.github.io/jin/
+4. 開啟 [Actions](https://github.com/jin358-cmd/weather/actions) 手動執行 **Deploy site to GitHub Pages**（或再推一次 `main`）
+5. 約 1～2 分鐘後造訪：https://jin358-cmd.github.io/weather/
 
 ### 自動部署工作流程
 

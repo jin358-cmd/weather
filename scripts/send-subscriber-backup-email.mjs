@@ -14,7 +14,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SUBSCRIBERS_PATH = path.join(ROOT, "data", "subscribers.json");
-const SITE_URL = "https://jin358-cmd.github.io/weather/";
+// Must match app.js SITE_PUBLIC_URL — subscriber-facing platform link.
+const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
 const BACKUP_TO = process.env.SUBSCRIBER_BACKUP_TO || "jin358@gmail.com";
 const FROM_EMAIL = process.env.MAIL_FROM || "停班停課通報 <onboarding@resend.dev>";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
@@ -96,7 +97,7 @@ async function sendWithFormSubmit(toEmail, subject, text) {
       _captcha: "false",
       _honey: "",
       message: text,
-      platform: SITE_URL,
+      platform: SITE_PUBLIC_URL,
       backupType: "subscribers-database"
     })
   });
@@ -138,7 +139,7 @@ function buildBackupBody(payload, records) {
     `備份日期：${dateKey}（台北時間 ${taipeiDateTime()}）`,
     `收件備份信箱：${BACKUP_TO}`,
     `訂閱筆數：${records.length}`,
-    `平台：${SITE_URL}`,
+    `平台：${SITE_PUBLIC_URL}`,
     `資料來源：data/subscribers.json`,
     "",
     "—— 訂閱名單摘要 ——",
