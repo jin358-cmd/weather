@@ -1733,6 +1733,27 @@ label {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.city-camera-controls {
+  align-items: start;
+}
+
+.city-camera-controls > div {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.city-camera-controls > div > label {
+  order: 2;
+  margin: 0;
+}
+
+.city-camera-controls > div > select,
+.city-camera-controls > div > input {
+  order: 1;
+}
+
 .camera-controls-grid label {
   white-space: normal;
   line-height: 1.25;

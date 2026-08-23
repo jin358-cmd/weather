@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v141-subscribe-email";
+const SW_VERSION = "jin-v142-cctv-locate-meta";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
