@@ -3981,6 +3981,28 @@ input[type="checkbox"] {
   display: none;
 }
 
+.legend-active-block {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(183, 28, 28, 0.35);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card-solid, var(--card)) 88%, #b71c1c 12%);
+}
+
+.legend-active-block[hidden] {
+  display: none;
+}
+
+.legend-active-block .legend-group-label {
+  margin-top: 0;
+  color: var(--text);
+}
+
+.legend-disaster-group .legend-group-label[hidden],
+.legend-disaster-group .legend-list[hidden] {
+  display: none;
+}
+
 .legend-disaster-group {
   margin: 0 0 10px;
   padding: 8px 10px;

@@ -10360,14 +10360,94 @@ function isMapCategoryVisible(key) {
   return mapCategoryVisibility[key] !== false;
 }
 
+function getSelectedCityClosureRow() {
+  const cityName = citySelect?.value || "";
+  return (appState.closureRows || []).find((item) => item.city === cityName) || null;
+}
+
+function hasSelectedCityClosureAnnouncement() {
+  const row = getSelectedCityClosureRow();
+  return Boolean(row && isClosureStopMessage(row.message));
+}
+
+function isDisasterLegendActive(key) {
+  if (key === "closure") {
+    return hasSelectedCityClosureAnnouncement();
+  }
+  return (mapLegendMarkers[key] || []).length > 0;
+}
+
+const legendItemHomes = {};
+
+function rememberLegendItemHome(item) {
+  const key = item?.dataset?.legendKey;
+  if (!key || legendItemHomes[key]) {
+    return;
+  }
+  const row = item.closest("li");
+  if (!row?.parentElement) {
+    return;
+  }
+  legendItemHomes[key] = { list: row.parentElement };
+}
+
+function syncLegendActivePlacement(legend) {
+  const activeList = legend.querySelector("#legendActiveList");
+  const activeBlock = legend.querySelector("#legendActiveBlock");
+  if (!activeList) {
+    return 0;
+  }
+  legend.querySelectorAll("[data-legend-key]").forEach((item) => {
+    if (DISASTER_LEGEND_KEYS.includes(item.dataset.legendKey)) {
+      rememberLegendItemHome(item);
+    }
+  });
+  DISASTER_LEGEND_KEYS.forEach((key) => {
+    const item = legend.querySelector(`[data-legend-key="${key}"]`);
+    const row = item?.closest("li");
+    if (!item || !row) {
+      return;
+    }
+    if (isDisasterLegendActive(key) && isMapCategoryVisible(key)) {
+      if (row.parentElement !== activeList) {
+        activeList.append(row);
+      }
+      return;
+    }
+    const home = legendItemHomes[key];
+    if (home?.list && row.parentElement !== home.list) {
+      home.list.append(row);
+    }
+  });
+  DISASTER_LEGEND_KEYS.forEach((key) => {
+    const item = activeList.querySelector(`[data-legend-key="${key}"]`);
+    const row = item?.closest("li");
+    if (row) {
+      activeList.append(row);
+    }
+  });
+  const activeCount = activeList.children.length;
+  if (activeBlock) {
+    activeBlock.hidden = activeCount === 0;
+  }
+  legend.querySelectorAll("#legendDisasterGroup .legend-group-label").forEach((label) => {
+    const list = label.nextElementSibling;
+    const hasRows = Boolean(list && list.matches("ul") && list.children.length);
+    label.hidden = !hasRows;
+    if (list?.matches("ul")) {
+      list.hidden = !hasRows;
+    }
+  });
+  return activeCount;
+}
+
 function applyAutoDisasterLayerVisibility() {
   DISASTER_LEGEND_KEYS.forEach((key) => {
-    const hasPoints = (mapLegendMarkers[key] || []).length > 0;
     if (mapCategoryUserOff.has(key)) {
       mapCategoryVisibility[key] = false;
       return;
     }
-    mapCategoryVisibility[key] = hasPoints;
+    mapCategoryVisibility[key] = isDisasterLegendActive(key);
   });
   syncMapLayerVisibilityFromCategories();
 }
@@ -11074,58 +11154,66 @@ function syncMapLegendState() {
     const countEl = item.querySelector("[data-legend-count]");
     const placeEl = item.querySelector("[data-legend-place]");
     const isDisaster = DISASTER_LEGEND_KEYS.includes(key);
+    const isActive = isDisaster ? isDisasterLegendActive(key) : markers.length > 0;
+    const cityClosure = key === "closure" ? getSelectedCityClosureRow() : null;
+    const cityClosureDates = cityClosure ? formatClosureDatesText(getClosureRowDates(cityClosure)) : "";
     const placeText =
       key === "shelter"
         ? markers.length
           ? "定位範圍內"
           : "定位範圍內無點位"
-        : markers.length
-          ? describeLegendMarkerPlaces(markers)
-          : "目前無點位";
+        : key === "closure"
+          ? isActive
+            ? cityClosureDates
+              ? `${cityClosure.city}｜${cityClosureDates}`
+              : cityClosure.city
+            : "目前恢復正常上班上課"
+          : markers.length
+            ? describeLegendMarkerPlaces(markers)
+            : "目前無點位";
     const alwaysShowRow = !isDisaster;
     if (countEl) {
-      countEl.textContent = String(markers.length);
+      countEl.textContent = String(isActive || key !== "closure" ? markers.length : 0);
       countEl.removeAttribute("aria-hidden");
     }
     if (placeEl) {
       placeEl.textContent = placeText;
     }
-    item.classList.toggle("legend-item-empty", isDisaster && markers.length === 0);
+    item.classList.toggle("legend-item-empty", isDisaster && !isActive);
     item.classList.toggle("legend-item-fixed", alwaysShowRow);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
     const toggle = ensureLegendLayerSwitch(item);
     if (toggle) {
       toggle.checked = isMapCategoryVisible(key);
-      toggle.disabled = isDisaster && markers.length === 0;
+      toggle.disabled = isDisaster && !isActive;
     }
-    item.setAttribute("aria-disabled", isDisaster && markers.length === 0 ? "true" : "false");
+    item.setAttribute("aria-disabled", isDisaster && !isActive ? "true" : "false");
     const row = item.closest("li");
     if (row) {
       row.hidden = false;
     }
     item.hidden = false;
     const label = item.querySelector(".legend-label")?.textContent?.trim() || key;
-    item.title = markers.length ? `${label}｜位置：${placeText}` : `${label}｜目前無點位`;
+    item.title = isActive ? `${label}｜位置：${placeText}` : `${label}｜${placeText}`;
     item.setAttribute(
       "aria-label",
-      markers.length ? `${label}，${markers.length} 處，位置 ${placeText}` : `${label}，目前無點位`
+      isActive ? `${label}，${markers.length} 處，位置 ${placeText}` : `${label}，${placeText}`
     );
   });
-  const disasterCounts = DISASTER_LEGEND_KEYS.map((key) => ({
-    key,
-    count: (mapLegendMarkers[key] || []).length
-  }));
-  const activeDisasterCount = disasterCounts.filter((item) => item.count > 0).length;
+  const activeDisasterCount = syncLegendActivePlacement(legend);
+  const foldedCount = DISASTER_LEGEND_KEYS.length - activeDisasterCount;
   const disasterGroup = legend.querySelector("#legendDisasterGroup");
   const disasterSummary = legend.querySelector("#legendDisasterSummary");
   if (disasterGroup) {
-    disasterGroup.open = activeDisasterCount > 0;
     disasterGroup.hidden = false;
     disasterGroup.classList.toggle("is-empty", activeDisasterCount === 0);
+    if (activeDisasterCount === 0) {
+      disasterGroup.open = false;
+    }
   }
   if (disasterSummary) {
     disasterSummary.textContent =
-      activeDisasterCount > 0 ? `進行中 ${activeDisasterCount} 類` : "目前無災害";
+      activeDisasterCount > 0 ? `已收入 ${foldedCount} 類` : "目前無災害";
   }
   let emptyNote = legend.querySelector(".map-legend-empty");
   if (!emptyNote) {
@@ -11163,7 +11251,7 @@ function syncMapAlertBadges() {
   container.innerHTML = "";
   ALERT_BADGE_CONFIG.forEach(({ key, label, bg, color }) => {
     const count = (mapLegendMarkers[key] || []).length;
-    if (!count) {
+    if (!count || (key === "closure" && !hasSelectedCityClosureAnnouncement())) {
       return;
     }
     const btn = document.createElement("button");

@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v162-pwa-upgrade";
+const SW_VERSION = "jin-v163-closure-legend-active";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
