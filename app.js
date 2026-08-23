@@ -4637,9 +4637,9 @@ function fitWeeklyForecastSummary() {
   }
   const fieldWidth = Math.floor(node.getBoundingClientRect().width);
   fitSingleLineText(node, {
-    minPx: 11,
-    maxPx: 56,
-    fillRatio: 0.9,
+    minPx: 12,
+    maxPx: 64,
+    fillRatio: 0.98,
     fillLine: true,
     availablePx: fieldWidth || undefined
   });
