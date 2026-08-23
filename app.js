@@ -10557,10 +10557,7 @@ function rememberLegendItemHome(item) {
   legendItemHomes[key] = { list: row.parentElement };
 }
 
-function getLegendPromoteList(legend, key) {
-  if (key === "closure") {
-    return legend.querySelector(".legend-list-always");
-  }
+function getLegendPromoteList(legend) {
   return legend.querySelector("#legendActiveList");
 }
 
@@ -10583,11 +10580,7 @@ function syncLegendActivePlacement(legend) {
     }
     const promoteList = getLegendPromoteList(legend, key);
     if (isDisasterLegendActive(key) && isMapCategoryVisible(key) && promoteList) {
-      if (key === "closure") {
-        if (promoteList.firstElementChild !== row) {
-          promoteList.prepend(row);
-        }
-      } else if (row.parentElement !== promoteList) {
+      if (row.parentElement !== promoteList) {
         promoteList.append(row);
       }
       return;
@@ -11351,7 +11344,7 @@ function syncMapLegendState() {
           : markers.length
             ? describeLegendMarkerPlaces(markers)
             : "目前無點位";
-    const alwaysShowRow = !isDisaster || (key === "closure" && isActive);
+    const alwaysShowRow = !isDisaster;
     if (countEl) {
       countEl.textContent = String(isActive || key !== "closure" ? markers.length : 0);
       countEl.removeAttribute("aria-hidden");
@@ -11365,7 +11358,7 @@ function syncMapLegendState() {
     const toggle = ensureLegendLayerSwitch(item);
     if (toggle) {
       toggle.checked = isMapCategoryVisible(key);
-      toggle.disabled = isDisaster && !isActive;
+      toggle.disabled = isDisaster && !isActive && !isMapCategoryVisible(key);
     }
     item.setAttribute("aria-disabled", isDisaster && !isActive ? "true" : "false");
     const row = item.closest("li");
@@ -11431,7 +11424,10 @@ function syncMapAlertBadges() {
   container.innerHTML = "";
   ALERT_BADGE_CONFIG.forEach(({ key, label, bg, color }) => {
     const count = (mapLegendMarkers[key] || []).length;
-    if (!count || (key === "closure" && !hasSelectedCityClosureAnnouncement())) {
+    if (!count || !isMapCategoryVisible(key)) {
+      return;
+    }
+    if (key === "closure" && !hasSelectedCityClosureAnnouncement()) {
       return;
     }
     const btn = document.createElement("button");
