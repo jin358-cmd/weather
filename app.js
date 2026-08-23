@@ -7707,11 +7707,14 @@ function renderAiAlerts() {
   );
   const nationalQuake = recentQuakes.find((quake) => isNationalEarthquakeAlert(quake));
 
+  const cityName = citySelect?.value || cityClosure?.city || "所選縣市";
   if (cityClosure && cityClosure.message.includes("停止上班")) {
     const dateText = formatClosureDatesText(getClosureRowDates(cityClosure));
     alerts.push(
       `【停班停課】${cityClosure.city}${dateText ? `（${dateText}）` : ""} 最新公告：${cityClosure.message}`
     );
+  } else {
+    alerts.push(`【停班停課】${cityName}：目前無停班停課狀態`);
   }
 
   if (nearbyFlood.length > 0) {
@@ -8295,10 +8298,16 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
   if (titleEl) {
     titleEl.textContent = title;
   }
-  const lines = String(body || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const lines = (() => {
+    const rows = String(body || "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (variant === "subscription" || variant === "refresh-done") {
+      return sortSubscriptionNoticeLines(rows);
+    }
+    return rows;
+  })();
   (lines.length ? lines : [""]).forEach((line) => {
     const row = document.createElement("p");
     row.className = "in-page-alert-line";
@@ -8677,15 +8686,15 @@ function getSubscriptionUpdateLines() {
     .map((text) => String(text || "").trim())
     .filter(Boolean);
     if (recoveryLines.length || messages.length) {
-      return [...recoveryLines, ...messages];
+      return sortSubscriptionNoticeLines([...recoveryLines, ...messages]);
     }
   }
   if (recoveryLines.length) {
-    return recoveryLines;
+    return sortSubscriptionNoticeLines(recoveryLines);
   }
   const alerts = (appState.aiAlerts || []).map((item) => String(item || "").trim()).filter(Boolean);
   if (alerts.length) {
-    return alerts;
+    return sortSubscriptionNoticeLines(alerts);
   }
   return ["目前未觸發重大災害提醒。"];
 }
@@ -9757,25 +9766,37 @@ function hasActiveUtilityAlertStatus() {
   return getNearbyPowerOutages().length > 0 || (appState.waterOutageItems || []).length > 0;
 }
 
+function getSubscriptionNoticeLineRank(line) {
+  const text = String(line || "");
+  if (/【停班停課】/.test(text) && !/停班停課解除|已解除停班停課/.test(text)) {
+    return 0;
+  }
+  if (/【積淹水警示】|【積淹水監測】|【積淹水警戒】/.test(text)) {
+    return 1;
+  }
+  return 2;
+}
+
+function sortSubscriptionNoticeLines(lines = []) {
+  return lines
+    .map((line, index) => ({ line, index }))
+    .sort((a, b) => getSubscriptionNoticeLineRank(a.line) - getSubscriptionNoticeLineRank(b.line) || a.index - b.index)
+    .map((item) => item.line);
+}
+
 function buildAlertStatusDigestMessages() {
   const topics = new Set(getSelectedSubscriptionTopics());
-  const disasterLines = [getSubscriptionTyphoonMessage()];
-  DISASTER_STATUS_TOPICS.forEach((topic) => {
-    if (!topics.has(topic)) {
-      return;
-    }
-    if (topic === "earthquake") {
-      disasterLines.push(getSubscriptionEarthquakeMessage());
-      return;
-    }
-    if (topic === "flood") {
-      disasterLines.push(getSubscriptionFloodMessage());
-      return;
-    }
-    if (topic === "closure") {
-      disasterLines.push(getSubscriptionClosureMessage());
-    }
-  });
+  const disasterLines = [];
+  if (topics.has("closure")) {
+    disasterLines.push(getSubscriptionClosureMessage());
+  }
+  if (topics.has("flood")) {
+    disasterLines.push(getSubscriptionFloodMessage());
+  }
+  disasterLines.push(getSubscriptionTyphoonMessage());
+  if (topics.has("earthquake")) {
+    disasterLines.push(getSubscriptionEarthquakeMessage());
+  }
 
   const utilityLines = [];
   UTILITY_STATUS_TOPICS.forEach((topic) => {
@@ -9803,7 +9824,7 @@ function buildAlertStatusDigestMessages() {
     messages.push("【公有事業】目前恢復正常。");
   }
   messages.push(...utilityLines);
-  return messages.map((text) => String(text || "").trim()).filter(Boolean);
+  return sortSubscriptionNoticeLines(messages.map((text) => String(text || "").trim()).filter(Boolean));
 }
 
 async function notifyManualRefreshAlertStatus() {
@@ -9812,7 +9833,7 @@ async function notifyManualRefreshAlertStatus() {
   return sendSubscriptionNotification({
     force: true,
     inPage: !document.hidden,
-    messages: [...digest, ...extras],
+    messages: sortSubscriptionNoticeLines([...digest, ...extras]),
     title: "災害警戒通知狀態"
   });
 }
@@ -9869,7 +9890,8 @@ async function sendSubscriptionNotification({
   )
     .map((text) => stripDroppedNcdrAlertText(text))
     .filter(Boolean);
-  if (!rawMessages.length) {
+  const orderedMessages = sortSubscriptionNoticeLines(rawMessages);
+  if (!orderedMessages.length) {
     renderSubscriptionStatus("請先勾選至少一項訂閱主題。");
     return false;
   }
@@ -9877,7 +9899,7 @@ async function sendSubscriptionNotification({
     return false;
   }
   const city = citySelect?.value || appState.subscription?.city || "";
-  const messages = filterCooldownMessages(rawMessages, city, { force });
+  const messages = sortSubscriptionNoticeLines(filterCooldownMessages(orderedMessages, city, { force }));
   if (!messages.length) {
     return false;
   }

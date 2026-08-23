@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v182-subscribe-line-colors";
+const SW_VERSION = "jin-v183-flood-under-closure";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
