@@ -726,9 +726,7 @@ const SUBSCRIPTION_TOPIC_ORDER = [
   "flood",
   "power-outage",
   "water-outage",
-  "earthquake",
-  "cwa-warning",
-  "ncdr-alert"
+  "earthquake"
 ];
 const PWA_NOTIFY_HISTORY_KEY = "pwaNotificationHistoryV1";
 const PWA_NOTIFY_COOLDOWN_KEY = "pwaNotificationCooldownV1";
@@ -748,11 +746,9 @@ const SUBSCRIPTION_TOPIC_LABELS = {
   flood: "積淹水監測（20 公里內）",
   "power-outage": "停電區域（10 公里內）",
   "water-outage": "停水公告（定位／所選鄉鎮市區）",
-  earthquake: "地震通報（氣象署／國家級警報同步）",
-  "cwa-warning": "氣象署警特報",
-  "ncdr-alert": "NCDR 民生示警"
+  earthquake: "地震通報（氣象署／國家級警報同步）"
 };
-const DISASTER_STATUS_TOPICS = ["closure", "flood", "earthquake", "cwa-warning", "ncdr-alert"];
+const DISASTER_STATUS_TOPICS = ["closure", "flood", "earthquake"];
 const UTILITY_STATUS_TOPICS = ["power-outage", "water-outage"];
 const EARTHQUAKE_CWA_PAGE = "https://www.cwa.gov.tw/V8/C/E/index.html";
 const EARTHQUAKE_CWA_LIST_MIRROR =
@@ -7789,6 +7785,10 @@ function loadSubscription() {
     appState.subscription = JSON.parse(raw);
     if (appState.subscription?.email) {
       subscriberEmail.value = appState.subscription.email;
+    }
+    const allowedTopics = new Set(SUBSCRIPTION_TOPIC_ORDER);
+    if (Array.isArray(appState.subscription?.topics)) {
+      appState.subscription.topics = appState.subscription.topics.filter((topic) => allowedTopics.has(topic));
     }
     const topics = new Set(appState.subscription?.topics ?? []);
     subscriptionForm.querySelectorAll("input[name='topic']").forEach((checkbox) => {

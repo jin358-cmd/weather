@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v168-restore-map-5km";
+const SW_VERSION = "jin-v169-subscribe-cleanup";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -661,7 +661,9 @@ function isNationalEarthquakeAlert(quake) {
 async function buildBackgroundAlertMessages(prefs) {
   const messages = [];
   const recoveryMessages = [];
-  const topics = new Set(prefs?.topics || []);
+  const topics = new Set(
+    (prefs?.topics || []).filter((topic) => topic !== "cwa-warning" && topic !== "ncdr-alert")
+  );
   const lat = Number(prefs?.lat);
   const lon = Number(prefs?.lon);
   const label = prefs?.label || `${prefs?.city || ""}${prefs?.township || ""}` || "訂閱地區";

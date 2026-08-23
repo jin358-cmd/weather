@@ -332,14 +332,6 @@
               ><input type="checkbox" name="topic" value="earthquake" checked />
               <span class="topic-option-text">地震通報（氣象署／國家級警報同步）</span></label
             >
-            <label class="topic-option"
-              ><input type="checkbox" name="topic" value="cwa-warning" checked />
-              <span class="topic-option-text">氣象署警特報</span></label
-            >
-            <label class="topic-option"
-              ><input type="checkbox" name="topic" value="ncdr-alert" checked />
-              <span class="topic-option-text">NCDR 民生示警</span></label
-            >
             <div class="subscription-actions">
               <button type="submit" class="refresh-btn">儲存訂閱</button>
               <button id="enableNotifyBtn" type="button" class="ghost-btn">允許系統通知</button>
@@ -357,19 +349,6 @@
             <ol id="notifyHistoryList" class="pwa-history-list">
               <li>尚無發送紀錄。</li>
             </ol>
-          </details>
-          <details class="pwa-test-details">
-            <summary>PWA 測試清單</summary>
-            <ul id="pwaTestList" class="pwa-test-list">
-              <li data-pwa-check="secure">HTTPS／安全連線</li>
-              <li data-pwa-check="manifest">manifest 與 192／512 圖示</li>
-              <li data-pwa-check="sw">Service Worker 已註冊並快取首頁</li>
-              <li data-pwa-check="standalone">加到主畫面後以獨立視窗開啟</li>
-              <li data-pwa-check="install">Android 安裝提示／iPhone 加入主畫面說明</li>
-              <li data-pwa-check="permission">通知權限（允許／拒絕皆有對應畫面）</li>
-              <li data-pwa-check="history">測試通知已寫入歷程（含來源與時間）</li>
-              <li data-pwa-check="offline">弱網路／離線時可看到基本畫面</li>
-            </ul>
           </details>
         </article>
         </div>
