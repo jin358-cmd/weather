@@ -353,72 +353,84 @@
           </div>
           <div class="map-legend map-legend-below" aria-label="地圖圖例對照">
             <h4>圖例對照</h4>
-            <p class="map-legend-hint">各圖層有獨立開關。標示點只出現在定位點直徑 5 公里（半徑 2.5 公里）內；縮放或移動地圖會增減可見點數。CCTV 在最上層，標記縮名為路口名稱，點選只顯示交叉路口名稱。</p>
-            <ul class="legend-list">
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="flood-4">
-                  <span class="legend-swatch flood-level-4" aria-hidden="true"></span>
-                  <span class="legend-label">積水 4（嚴重）</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="flood-3">
-                  <span class="legend-swatch flood-level-3" aria-hidden="true"></span>
-                  <span class="legend-label">積水 3（明顯）</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="flood-2">
-                  <span class="legend-swatch flood-level-2" aria-hidden="true"></span>
-                  <span class="legend-label">積水 2（淺層）</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="flood-1">
-                  <span class="legend-swatch flood-level-1" aria-hidden="true"></span>
-                  <span class="legend-label">積水 1（輕微）</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="power-disaster">
-                  <span class="legend-swatch power-outage-disaster" aria-hidden="true"></span>
-                  <span class="legend-label">災害停電</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="power-planned">
-                  <span class="legend-swatch power-outage-planned" aria-hidden="true"></span>
-                  <span class="legend-label">計畫停電</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="water-outage">
-                  <span class="legend-swatch water-outage-point" aria-hidden="true"></span>
-                  <span class="legend-label">停水公告</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn" data-legend-key="earthquake">
-                  <span class="legend-swatch earthquake-point" aria-hidden="true"></span>
-                  <span class="legend-label">地震震央</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
+            <p class="map-legend-hint">圖例依災害分類顯示。無災害的圖層會自動關閉並收入收合層。定位範圍為綠點閃暗，其餘標記維持原色。路口監控以縮影顯示，點選後在縮影上方標示兩個交叉路口名稱。</p>
+            <details id="legendDisasterGroup" class="legend-disaster-group">
+              <summary>災害圖層 <span id="legendDisasterSummary">目前無災害</span></summary>
+              <p class="legend-group-label">積水</p>
+              <ul class="legend-list legend-list-disaster">
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="flood-4">
+                    <span class="legend-swatch flood-level-4" aria-hidden="true"></span>
+                    <span class="legend-label">積水 4（嚴重）</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="flood-3">
+                    <span class="legend-swatch flood-level-3" aria-hidden="true"></span>
+                    <span class="legend-label">積水 3（明顯）</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="flood-2">
+                    <span class="legend-swatch flood-level-2" aria-hidden="true"></span>
+                    <span class="legend-label">積水 2（淺層）</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="flood-1">
+                    <span class="legend-swatch flood-level-1" aria-hidden="true"></span>
+                    <span class="legend-label">積水 1（輕微）</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+              </ul>
+              <p class="legend-group-label">公有事業</p>
+              <ul class="legend-list legend-list-disaster">
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="power-disaster">
+                    <span class="legend-swatch power-outage-disaster" aria-hidden="true"></span>
+                    <span class="legend-label">災害停電</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="power-planned">
+                    <span class="legend-swatch power-outage-planned" aria-hidden="true"></span>
+                    <span class="legend-label">計畫停電</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="water-outage">
+                    <span class="legend-swatch water-outage-point" aria-hidden="true"></span>
+                    <span class="legend-label">停水公告</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+              </ul>
+              <p class="legend-group-label">地震</p>
+              <ul class="legend-list legend-list-disaster">
+                <li>
+                  <button type="button" class="legend-item-btn" data-legend-key="earthquake">
+                    <span class="legend-swatch earthquake-point" aria-hidden="true"></span>
+                    <span class="legend-label">地震震央</span>
+                    <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                    <span class="legend-place" data-legend-place>目前無點位</span>
+                  </button>
+                </li>
+              </ul>
+            </details>
+            <ul class="legend-list legend-list-always">
               <li>
                 <button type="button" class="legend-item-btn legend-item-fixed" data-legend-key="shelter">
                   <span class="legend-swatch shelter-point" aria-hidden="true"></span>
