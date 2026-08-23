@@ -6900,3 +6900,118 @@ body.eq-sheet-open {
     justify-content: center;
   }
 }
+
+/* Desktop-only: floating message/notify boxes scale type with the window.
+   First priority is seeing the full message — wrap and shrink, never clip. */
+@media (min-width: 861px) {
+  .in-page-alert-host {
+    --notify-title: clamp(14px, 1.1vw + 1.1vmin, 28px);
+    --notify-body: clamp(13px, 0.9vw + 0.9vmin, 22px);
+    --notify-close: clamp(13px, 0.85vw + 0.75vmin, 20px);
+    --notify-box-max: min(88dvh, 920px);
+  }
+
+  .in-page-alert-host,
+  .in-page-alert-host.is-fullscreen-mode,
+  .in-page-alert-host.is-fullscreen-mode:has(.in-page-alert-subscription),
+  .in-page-alert-host.is-fullscreen-mode:has(.in-page-alert-refresh-done),
+  .in-page-alert-host:has(.in-page-alert-subscription),
+  .in-page-alert-host:has(.in-page-alert-refresh-done),
+  .in-page-alert-host:has(.in-page-alert-readable-tip) {
+    width: min(90vw, 720px);
+    max-width: min(90vw, 720px);
+    height: auto;
+    max-height: var(--notify-box-max);
+  }
+
+  .in-page-alert,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-fullscreen,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done {
+    height: auto;
+    max-height: var(--notify-box-max);
+    gap: clamp(6px, 0.7vw + 0.4vmin, 14px);
+    padding: clamp(12px, 1.2vw + 0.5vmin, 24px);
+    overflow: visible;
+  }
+
+  .in-page-alert-body,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-body,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-body,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-body {
+    flex: 0 1 auto;
+    min-height: 0;
+    align-content: start;
+    overflow: visible !important;
+    gap: clamp(4px, 0.45vw + 0.25vmin, 10px);
+  }
+
+  .in-page-alert strong,
+  .in-page-alert-title,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-title,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-title,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-title,
+  .in-page-alert-subscribe-tip .in-page-alert-title,
+  .in-page-alert-readable-tip .in-page-alert-title,
+  .in-page-alert-not-open .in-page-alert-title,
+  .in-page-alert-refresh-done .in-page-alert-title {
+    font-size: var(--notify-title);
+    line-height: 1.3;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .in-page-alert p,
+  .in-page-alert-line,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-line,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-line,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-refresh-done .in-page-alert-line,
+  .in-page-alert-subscribe-tip .in-page-alert-line,
+  .in-page-alert-readable-tip .in-page-alert-line,
+  .in-page-alert-not-open .in-page-alert-line,
+  .in-page-alert-refresh-done .in-page-alert-line {
+    font-size: var(--notify-body);
+    line-height: 1.45;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .in-page-alert-close,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-close,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-close,
+  .in-page-alert-readable-tip .in-page-alert-close {
+    min-height: clamp(36px, 4.2vmin, 52px);
+    margin-top: clamp(6px, 0.8vmin, 12px);
+    padding: clamp(8px, 0.8vw, 14px) clamp(10px, 1vw, 16px);
+    font-size: var(--notify-close);
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-title {
+    font-size: clamp(16px, 1.4vw + 1.4vmin, 36px);
+    font-weight: 400;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-locate-done .in-page-alert-line {
+    font-size: clamp(14px, 1.15vw + 1.15vmin, 28px);
+    font-weight: 400;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+
+  .in-page-alert.is-notify-scroll,
+  .in-page-alert-host.is-fullscreen-mode .in-page-alert-fullscreen.is-notify-scroll {
+    overflow: auto;
+  }
+}
