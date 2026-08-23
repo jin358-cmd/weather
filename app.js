@@ -9979,7 +9979,7 @@ subscriptionForm.addEventListener("submit", async (event) => {
       mailStatus = "請至信箱點選確認連結，之後即可收到訂閱成功通知與每日預報。";
     }
   } catch {
-    mailStatus = "訂閱已儲存。若未收到通知信，請查看垃圾郵件或再按一次儲存訂閱。";
+    mailStatus = "若未收到通知信，請查看垃圾郵件或再按一次儲存訂閱。";
   }
   try {
     await enableBackgroundNotifications(appState.subscription);
