@@ -578,6 +578,14 @@ const subscriptionForm = document.querySelector("#subscriptionForm");
 const subscriberEmail = document.querySelector("#subscriberEmail");
 const subscriptionStatus = document.querySelector("#subscriptionStatus");
 const testNotificationBtn = document.querySelector("#testNotificationBtn");
+const enableNotifyBtn = document.querySelector("#enableNotifyBtn");
+const notifyPermissionStatus = document.querySelector("#notifyPermissionStatus");
+const notifyHistoryList = document.querySelector("#notifyHistoryList");
+const pwaInstallBanner = document.querySelector("#pwaInstallBanner");
+const pwaInstallBtn = document.querySelector("#pwaInstallBtn");
+const pwaInstallDismiss = document.querySelector("#pwaInstallDismiss");
+const pwaInstallTitle = document.querySelector("#pwaInstallTitle");
+const pwaInstallText = document.querySelector("#pwaInstallText");
 const notificationHint = document.querySelector("#notificationHint");
 const inPageAlertHost = document.querySelector("#inPageAlertHost");
 const autoRefreshMeta = document.querySelector("#autoRefreshMeta");
@@ -718,8 +726,19 @@ const SUBSCRIPTION_TOPIC_ORDER = [
   "flood",
   "power-outage",
   "water-outage",
-  "earthquake"
+  "earthquake",
+  "cwa-warning",
+  "ncdr-alert"
 ];
+const PWA_NOTIFY_HISTORY_KEY = "pwaNotificationHistoryV1";
+const PWA_NOTIFY_COOLDOWN_KEY = "pwaNotificationCooldownV1";
+const PWA_SUBSCRIBER_RECORDS_KEY = "pwaSubscriberRecordsV1";
+const PWA_INSTALL_DISMISS_KEY = "pwaInstallDismissedV1";
+const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
+const CWA_WARNING_PAGE = "https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
+const CWA_WARNING_MIRROR = `https://r.jina.ai/${CWA_WARNING_PAGE}`;
+const NCDR_ALERT_PAGE = "https://alerts.ncdr.nat.gov.tw/";
+const NCDR_ALERT_MIRROR = `https://r.jina.ai/${NCDR_ALERT_PAGE}`;
 // Canonical public site. Subscribe UI + confirmation emails must use this exact string.
 const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
 const SUBSCRIPTION_TOPIC_LABELS = {
@@ -729,9 +748,11 @@ const SUBSCRIPTION_TOPIC_LABELS = {
   flood: "積淹水監測（20 公里內）",
   "power-outage": "停電區域（10 公里內）",
   "water-outage": "停水公告（定位／所選鄉鎮市區）",
-  earthquake: "地震通報（氣象署／國家級警報同步）"
+  earthquake: "地震通報（氣象署／國家級警報同步）",
+  "cwa-warning": "氣象署警特報",
+  "ncdr-alert": "NCDR 民生示警"
 };
-const DISASTER_STATUS_TOPICS = ["closure", "flood", "earthquake"];
+const DISASTER_STATUS_TOPICS = ["closure", "flood", "earthquake", "cwa-warning", "ncdr-alert"];
 const UTILITY_STATUS_TOPICS = ["power-outage", "water-outage"];
 const EARTHQUAKE_CWA_PAGE = "https://www.cwa.gov.tw/V8/C/E/index.html";
 const EARTHQUAKE_CWA_LIST_MIRROR =
@@ -832,6 +853,9 @@ const appState = {
   autoRefreshRunning: false,
   subscription: null,
   lastNotifiedAt: 0,
+  cwaWarnings: [],
+  ncdrAlerts: [],
+  notifyHistory: [],
   lastWeatherCode: null,
   lastCloudCover: null,
   weeklyForecast: [],
@@ -7650,15 +7674,21 @@ function getSubscriptionEarthquakeMessage() {
   );
   if (recentNational.length) {
     const top = recentNational[0];
-    return top.reportContent || buildCwaEarthquakeReportContent(top);
+    return stampNotifySource("中央氣象署地震", top.reportContent || buildCwaEarthquakeReportContent(top));
   }
   if (quakes.length) {
     const top = quakes[0];
-    return `【地震監測｜中央氣象署】${locationLabel} 最新：規模 ${top.magnitude.toFixed(
-      1
-    )}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${formatDateTime(top.timeMs)}），目前未達國家緊急訊息等級。`;
+    return stampNotifySource(
+      "中央氣象署地震",
+      `【地震監測｜中央氣象署】${locationLabel} 最新：規模 ${top.magnitude.toFixed(
+        1
+      )}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${formatDateTime(top.timeMs)}），目前未達國家緊急訊息等級。`
+    );
   }
-  return `【地震監測｜中央氣象署】${locationLabel} 目前無近期台灣地區有感地震通報。`;
+  return stampNotifySource(
+    "中央氣象署地震",
+    `【地震監測｜中央氣象署】${locationLabel} 目前無近期台灣地區有感地震通報。`
+  );
 }
 
 function renderAiAlerts() {
@@ -7712,6 +7742,17 @@ function renderAiAlerts() {
       `【停班停課】${cityClosure.city}${dateText ? `（${dateText}）` : ""} 最新公告：${cityClosure.message}`
     );
   }
+
+  (appState.cwaWarnings || []).slice(0, 1).forEach((row) => {
+    if (row?.title) {
+      alerts.push(`【氣象署警特報】${row.title}`);
+    }
+  });
+  (appState.ncdrAlerts || []).slice(0, 1).forEach((row) => {
+    if (row?.title) {
+      alerts.push(`【NCDR 示警】${row.title}`);
+    }
+  });
 
   if (!alerts.length) {
     alerts.push("目前未觸發重大災害提醒。");
@@ -7791,6 +7832,303 @@ function isStandaloneDisplay() {
 function isLikelyIosDevice() {
   const ua = navigator.userAgent || "";
   return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function formatTaipeiDateTime(value = Date.now()) {
+  return new Date(value).toLocaleString("zh-TW", { hour12: false, timeZone: "Asia/Taipei" });
+}
+
+function stampNotifySource(source, body) {
+  return `${body}（來源：${source}｜${formatTaipeiDateTime()}）`;
+}
+
+function readJsonStorage(key, fallback) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "");
+    return parsed ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+function loadNotifyHistory() {
+  const rows = readJsonStorage(PWA_NOTIFY_HISTORY_KEY, []);
+  appState.notifyHistory = Array.isArray(rows) ? rows.slice(0, 30) : [];
+  return appState.notifyHistory;
+}
+
+function renderNotifyHistory() {
+  if (!notifyHistoryList) {
+    return;
+  }
+  const rows = appState.notifyHistory || loadNotifyHistory();
+  if (!rows.length) {
+    notifyHistoryList.innerHTML = "<li>尚無發送紀錄。</li>";
+    return;
+  }
+  notifyHistoryList.innerHTML = rows
+    .slice(0, 12)
+    .map((row) => {
+      const time = formatTaipeiDateTime(row.time);
+      const city = row.city ? `｜${row.city}` : "";
+      return `<li><strong>${escapeMapLegendHtml(row.source || "本機")}</strong>${escapeMapLegendHtml(city)}｜${escapeMapLegendHtml(time)}<br/>${escapeMapLegendHtml(row.body || row.title || "")}</li>`;
+    })
+    .join("");
+}
+
+function recordNotifyHistory(entry) {
+  const row = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    time: Date.now(),
+    source: entry.source || "本機",
+    sourceUrl: entry.sourceUrl || "",
+    city: entry.city || citySelect?.value || "",
+    eventKey: entry.eventKey || "",
+    title: entry.title || "災防通知",
+    body: String(entry.body || "").trim(),
+    channel: entry.channel || "in-page"
+  };
+  const next = [row, ...loadNotifyHistory()].slice(0, 30);
+  appState.notifyHistory = next;
+  writeJsonStorage(PWA_NOTIFY_HISTORY_KEY, next);
+  renderNotifyHistory();
+  updatePwaTestChecklist();
+  return row;
+}
+
+function recordSubscriberSnapshot(subscription = appState.subscription, extra = {}) {
+  const email = String(subscription?.email || "").trim().toLowerCase();
+  if (!email) {
+    return;
+  }
+  const records = readJsonStorage(PWA_SUBSCRIBER_RECORDS_KEY, []);
+  const list = Array.isArray(records) ? records : [];
+  const next = {
+    email,
+    topics: Array.isArray(subscription?.topics) ? subscription.topics : [],
+    city: subscription?.city || citySelect?.value || "",
+    township: subscription?.township || townshipSelect?.value || "",
+    permission: typeof Notification === "undefined" ? "unsupported" : Notification.permission,
+    savedAt: list.find((item) => item.email === email)?.savedAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ...extra
+  };
+  writeJsonStorage(PWA_SUBSCRIBER_RECORDS_KEY, [next, ...list.filter((item) => item.email !== email)].slice(0, 40));
+}
+
+function notifyEventKey(message, city = citySelect?.value || "") {
+  const compact = String(message || "")
+    .replace(/\d{4}\/\d{1,2}\/\d{1,2}[^\s]*/g, "")
+    .replace(/\d{1,2}:\d{2}(?::\d{2})?/g, "")
+    .replace(/來源：[^｜|]+[｜|]\s*/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 96);
+  return `${String(city).replace(/臺/g, "台")}|${compact}`;
+}
+
+function filterCooldownMessages(messages, city, { force = false } = {}) {
+  const lines = (messages || []).map((item) => String(item || "").trim()).filter(Boolean);
+  const now = Date.now();
+  const map = readJsonStorage(PWA_NOTIFY_COOLDOWN_KEY, {}) || {};
+  const kept = [];
+  lines.forEach((line) => {
+    const key = notifyEventKey(line, city);
+    if (!force && map[key] && now - Number(map[key]) < NOTIFY_COOLDOWN_MS) {
+      return;
+    }
+    map[key] = now;
+    kept.push(line);
+  });
+  writeJsonStorage(PWA_NOTIFY_COOLDOWN_KEY, map);
+  return kept;
+}
+
+function renderNotifyPermissionStatus() {
+  if (!notifyPermissionStatus) {
+    return;
+  }
+  if (!window.isSecureContext || typeof Notification === "undefined") {
+    notifyPermissionStatus.textContent = "通知權限：此環境改用頁面內提醒";
+    return;
+  }
+  const label =
+    Notification.permission === "granted"
+      ? "已允許系統通知"
+      : Notification.permission === "denied"
+        ? "已被拒絕，改用頁面內提醒"
+        : "尚未詢問";
+  notifyPermissionStatus.textContent = `通知權限：${label}`;
+}
+
+function updatePwaTestChecklist() {
+  const checks = {
+    secure: window.isSecureContext,
+    manifest: Boolean(document.querySelector('link[rel="manifest"]')),
+    sw: Boolean(notificationRegistration || navigator.serviceWorker?.controller),
+    standalone: isStandaloneDisplay(),
+    install: Boolean(deferredPwaPrompt) || (isLikelyIosDevice() && !isStandaloneDisplay()) || isStandaloneDisplay(),
+    permission: typeof Notification === "undefined" ? true : Notification.permission !== "default",
+    history: (appState.notifyHistory || []).length > 0,
+    offline: Boolean(navigator.serviceWorker?.controller)
+  };
+  document.querySelectorAll("[data-pwa-check]").forEach((item) => {
+    const key = item.dataset.pwaCheck;
+    const ok = Boolean(checks[key]);
+    item.classList.toggle("is-ok", ok);
+    item.classList.toggle("is-off", !ok && (key === "permission" || key === "history"));
+    item.classList.toggle("is-warn", !ok && key !== "permission" && key !== "history");
+  });
+}
+
+let deferredPwaPrompt = null;
+
+function shouldShowIosInstallHint() {
+  return isLikelyIosDevice() && !isStandaloneDisplay() && !localStorage.getItem(PWA_INSTALL_DISMISS_KEY);
+}
+
+function renderPwaInstallBanner() {
+  if (!pwaInstallBanner) {
+    return;
+  }
+  if (isStandaloneDisplay() || localStorage.getItem(PWA_INSTALL_DISMISS_KEY)) {
+    pwaInstallBanner.hidden = true;
+    updatePwaTestChecklist();
+    return;
+  }
+  if (deferredPwaPrompt) {
+    pwaInstallBanner.hidden = false;
+    if (pwaInstallTitle) pwaInstallTitle.textContent = "安裝災防通報";
+    if (pwaInstallText) pwaInstallText.textContent = "Android Chrome 可安裝到主畫面，之後以獨立 App 開啟。";
+    if (pwaInstallBtn) pwaInstallBtn.hidden = false;
+    updatePwaTestChecklist();
+    return;
+  }
+  if (shouldShowIosInstallHint()) {
+    pwaInstallBanner.hidden = false;
+    if (pwaInstallTitle) pwaInstallTitle.textContent = "加入 iPhone 主畫面";
+    if (pwaInstallText) pwaInstallText.textContent = "在 Safari 點分享，再選「加入主畫面」。";
+    if (pwaInstallBtn) pwaInstallBtn.hidden = true;
+    updatePwaTestChecklist();
+    return;
+  }
+  pwaInstallBanner.hidden = true;
+  updatePwaTestChecklist();
+}
+
+function initPwaInstallExperience() {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPwaPrompt = event;
+    renderPwaInstallBanner();
+  });
+  window.addEventListener("appinstalled", () => {
+    deferredPwaPrompt = null;
+    localStorage.setItem(PWA_INSTALL_DISMISS_KEY, "1");
+    renderPwaInstallBanner();
+  });
+  pwaInstallBtn?.addEventListener("click", async () => {
+    if (!deferredPwaPrompt) {
+      return;
+    }
+    deferredPwaPrompt.prompt();
+    try {
+      await deferredPwaPrompt.userChoice;
+    } catch {
+      /* ignore */
+    }
+    deferredPwaPrompt = null;
+    renderPwaInstallBanner();
+  });
+  pwaInstallDismiss?.addEventListener("click", () => {
+    localStorage.setItem(PWA_INSTALL_DISMISS_KEY, "1");
+    renderPwaInstallBanner();
+  });
+  renderPwaInstallBanner();
+}
+
+function parseOfficialWarningMarkdown(markdown, cityName, { sourceLabel, keyword, sourceUrl }) {
+  const city = normalizeTaiwanPlaceText(cityName);
+  const lines = String(markdown || "")
+    .split(/\n+/)
+    .map((line) => line.replace(/^#+\s*/, "").trim())
+    .filter((line) => line && !line.startsWith("![") && line.length < 280);
+  const hits = lines.filter((line) => keyword.test(line));
+  const cityHits = city
+    ? hits.filter((line) => normalizeTaiwanPlaceText(line).includes(city) || /全臺|全台|各地/.test(line))
+    : hits;
+  const picked = cityHits.slice(0, 4).map((line) => ({
+    city: cityName,
+    title: line.replace(/\s+/g, " ").slice(0, 140),
+    source: sourceLabel,
+    sourceUrl,
+    fetchedAt: Date.now()
+  }));
+  return picked;
+}
+
+async function fetchCwaWarnings() {
+  const cityName = citySelect?.value || "";
+  try {
+    const response = await fetch(CWA_WARNING_MIRROR, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    appState.cwaWarnings = parseOfficialWarningMarkdown(await response.text(), cityName, {
+      sourceLabel: "中央氣象署警特報",
+      sourceUrl: CWA_WARNING_PAGE,
+      keyword: /特報|警報|注意/
+    });
+  } catch (error) {
+    appState.cwaWarnings = appState.cwaWarnings || [];
+    console.warn("氣象署警特報讀取失敗：", error);
+  }
+  return appState.cwaWarnings;
+}
+
+async function fetchNcdrAlerts() {
+  const cityName = citySelect?.value || "";
+  try {
+    const response = await fetch(NCDR_ALERT_MIRROR, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    appState.ncdrAlerts = parseOfficialWarningMarkdown(await response.text(), cityName, {
+      sourceLabel: "NCDR 民生示警",
+      sourceUrl: NCDR_ALERT_PAGE,
+      keyword: /示警|警戒|警報|淹水|土石流|停電|道路/
+    });
+  } catch (error) {
+    appState.ncdrAlerts = appState.ncdrAlerts || [];
+    console.warn("NCDR 示警讀取失敗：", error);
+  }
+  return appState.ncdrAlerts;
+}
+
+function getSubscriptionCwaWarningMessage() {
+  const locationLabel = getSubscriptionLocationLabel();
+  const top = (appState.cwaWarnings || [])[0];
+  if (!top) {
+    return stampNotifySource("中央氣象署警特報", `【氣象署警特報】${locationLabel} 目前無縣市對應警特報`);
+  }
+  return stampNotifySource(top.source, `【氣象署警特報】${locationLabel}：${top.title}`);
+}
+
+function getSubscriptionNcdrAlertMessage() {
+  const locationLabel = getSubscriptionLocationLabel();
+  const top = (appState.ncdrAlerts || [])[0];
+  if (!top) {
+    return stampNotifySource("NCDR 民生示警", `【NCDR 示警】${locationLabel} 目前無縣市對應示警`);
+  }
+  return stampNotifySource(top.source, `【NCDR 示警】${locationLabel}：${top.title}`);
 }
 
 function getNotificationSupport() {
@@ -8280,9 +8618,18 @@ function armSystemNotificationPermission() {
   const onGesture = () => {
     document.removeEventListener("pointerdown", onGesture, true);
     if (typeof Notification === "undefined" || Notification.permission !== "default") {
+      renderNotifyPermissionStatus();
       return;
     }
-    ensureNotificationPermission().catch(() => {});
+    if (!appState.subscription?.email) {
+      return;
+    }
+    ensureNotificationPermission()
+      .then(() => {
+        renderNotifyPermissionStatus();
+        updatePwaTestChecklist();
+      })
+      .catch(() => {});
   };
   document.addEventListener("pointerdown", onGesture, true);
 }
@@ -8337,7 +8684,7 @@ async function showAppNotification(title, body, { tag, data, skipInPage = false,
 }
 
 function getNotificationDigest(messages) {
-  return messages.join("\n");
+  return (messages || []).map((line) => notifyEventKey(line)).join("\n");
 }
 
 function shouldSendNotificationDigest(messages, { force = false } = {}) {
@@ -8350,34 +8697,77 @@ function shouldSendNotificationDigest(messages, { force = false } = {}) {
 }
 
 async function ensureNotificationPermission() {
+  const finish = (mode) => {
+    renderNotifyPermissionStatus();
+    updatePwaTestChecklist();
+    return mode;
+  };
   const support = getNotificationSupport();
   if (!support.apiAvailable) {
     updateNotificationHint();
     // Fallback mode: allow subscription alerts via in-page reminders.
-    return "fallback";
+    return finish("fallback");
   }
   if (Notification.permission === "granted") {
     await initServiceWorker();
     updateNotificationHint();
-    return "granted";
+    return finish("granted");
   }
   if (Notification.permission === "denied") {
     updateNotificationHint();
-    return "fallback";
+    return finish("fallback");
   }
   try {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       await initServiceWorker();
       updateNotificationHint();
-      return "granted";
+      return finish("granted");
     }
   } catch {
     updateNotificationHint("瀏覽器拒絕通知權限請求，已改用頁面內即時提醒。");
-    return "fallback";
+    return finish("fallback");
   }
   updateNotificationHint("尚未允許系統通知，已改用頁面內即時提醒。");
-  return "fallback";
+  return finish("fallback");
+}
+
+async function sendPwaTestNotification() {
+  const permissionMode = await ensureNotificationPermission();
+  renderNotifyPermissionStatus();
+  updatePwaTestChecklist();
+  const denied = typeof Notification !== "undefined" && Notification.permission === "denied";
+  const city = citySelect?.value || appState.subscription?.city || "";
+  const body = stampNotifySource("PWA 測試", `【測試通知】災防通報測試推播${city ? `｜${city}` : ""}`);
+  const channel = denied ? "denied-in-page" : permissionMode === "granted" ? "system" : "in-page";
+  recordNotifyHistory({
+    source: "PWA 測試",
+    sourceUrl: SITE_PUBLIC_URL,
+    city,
+    eventKey: notifyEventKey(body, city),
+    title: "測試通知",
+    body,
+    channel
+  });
+  if (denied) {
+    showInPageAlert("通知權限已被拒絕", "系統通知無法顯示，已改用頁面內提醒，並寫入推播歷程。", {
+      timeoutMs: 7000,
+      variant: "not-open"
+    });
+    showInPageAlert("測試通知", body, {
+      timeoutMs: 8000,
+      fullscreen: true,
+      variant: "subscription"
+    });
+    renderSubscriptionStatus("通知權限已被拒絕，已改用頁面內提醒。");
+    return "denied";
+  }
+  await showAppNotification("測試通知", body, {
+    tag: `pwa-test-${Date.now()}`,
+    variant: "subscription"
+  });
+  renderSubscriptionStatus("已發送測試通知，並寫入推播歷程。");
+  return permissionMode;
 }
 
 function isForecastNotifyArmedByLocate() {
@@ -8505,17 +8895,23 @@ function getSubscriptionClosureMessage() {
   const locationLabel = getSubscriptionLocationLabel();
   const closure = cityName ? appState.closureRows.find((row) => row.city === cityName) : null;
   if (!closure) {
-    return `【停班停課】${locationLabel}：目前無停班停課狀態`;
+    return stampNotifySource("行政院人事行政總處", `【停班停課】${locationLabel}：目前無停班停課狀態`);
   }
   const dateText = formatClosureDatesText(getClosureRowDates(closure));
-  return `【停班停課】${locationLabel}${dateText ? `（${dateText}）` : ""}：${closure.message}`;
+  return stampNotifySource(
+    "行政院人事行政總處",
+    `【停班停課】${locationLabel}${dateText ? `（${dateText}）` : ""}：${closure.message}`
+  );
 }
 
 function getSubscriptionPowerOutageMessage() {
   const locationLabel = getSubscriptionLocationLabel();
   const nearby = getNearbyPowerOutages();
   if (!nearby.length) {
-    return `【停電區域】${locationLabel} 半徑 ${POWER_OUTAGE_NOTIFY_RADIUS_KM} 公里內目前無停電通報。`;
+    return stampNotifySource(
+      "台電停電資訊",
+      `【停電區域】${locationLabel} 半徑 ${POWER_OUTAGE_NOTIFY_RADIUS_KM} 公里內目前無停電通報。`
+    );
   }
   const summaries = nearby.slice(0, 3).map((point) => {
     const typeLabel = point.type === "disaster" ? "災害性停電" : "計畫性停電";
@@ -8523,7 +8919,10 @@ function getSubscriptionPowerOutageMessage() {
     return `${place}（${typeLabel}，約 ${point.distanceKm.toFixed(1)} km）`;
   });
   const suffix = nearby.length > 3 ? `等共 ${nearby.length} 處` : `共 ${nearby.length} 處`;
-  return `【停電區域】${locationLabel} 半徑 ${POWER_OUTAGE_NOTIFY_RADIUS_KM} 公里內${suffix}：${summaries.join("；")}`;
+  return stampNotifySource(
+    "台電停電資訊",
+    `【停電區域】${locationLabel} 半徑 ${POWER_OUTAGE_NOTIFY_RADIUS_KM} 公里內${suffix}：${summaries.join("；")}`
+  );
 }
 
 function sleep(ms) {
@@ -8544,21 +8943,33 @@ function getSubscriptionFloodMessage() {
   const warningFloods = nearbyFloods.filter((point) => isFloodWarningDepth(point.depthCm));
   if (warningFloods.length) {
     const top = warningFloods[0];
-    return `【積淹水警示】${top.areaName} 距離約 ${top.distanceKm.toFixed(1)} km，水深 ${top.waterDepthCm} cm（等級 ${top.level}）。`;
+    return stampNotifySource(
+      "水利署積淹水",
+      `【積淹水警示】${top.areaName} 距離約 ${top.distanceKm.toFixed(1)} km，水深 ${top.waterDepthCm} cm（等級 ${top.level}）。`
+    );
   }
   if (nearbyFloods.length) {
     const top = nearbyFloods[0];
-    return `【積淹水監測】${locationLabel} 半徑 ${FLOOD_SUBSCRIPTION_RADIUS_KM} 公里內有 ${nearbyFloods.length} 處感測積水，最近 ${top.areaName} 水深 ${top.waterDepthCm} cm（未達警戒）。`;
+    return stampNotifySource(
+      "水利署積淹水",
+      `【積淹水監測】${locationLabel} 半徑 ${FLOOD_SUBSCRIPTION_RADIUS_KM} 公里內有 ${nearbyFloods.length} 處感測積水，最近 ${top.areaName} 水深 ${top.waterDepthCm} cm（未達警戒）。`
+    );
   }
-  return `【積淹水監測】${locationLabel} 半徑 ${FLOOD_SUBSCRIPTION_RADIUS_KM} 公里內目前無積淹水警戒。`;
+  return stampNotifySource(
+    "水利署積淹水",
+    `【積淹水監測】${locationLabel} 半徑 ${FLOOD_SUBSCRIPTION_RADIUS_KM} 公里內目前無積淹水警戒。`
+  );
 }
 
 function getSubscriptionWeatherMessage() {
   const locationLabel = getSubscriptionLocationLabel();
   if (!appState.weather?.current) {
-    return `【即時天氣】${locationLabel} 天氣資料暫時無法讀取。`;
+    return stampNotifySource("即時天氣", `【即時天氣】${locationLabel} 天氣資料暫時無法讀取。`);
   }
-  return `【即時天氣】${appState.weather.label} ${Math.round(appState.weather.current.temperature_2m)}°C，降雨機率 ${Math.round(appState.weather.rainProb ?? 0)}%。`;
+  return stampNotifySource(
+    "即時天氣",
+    `【即時天氣】${appState.weather.label} ${Math.round(appState.weather.current.temperature_2m)}°C，降雨機率 ${Math.round(appState.weather.rainProb ?? 0)}%。`
+  );
 }
 
 function getTaipeiDateKey(date = new Date()) {
@@ -8887,9 +9298,67 @@ async function registerSubscriptionEmailDelivery(subscription) {
 function getSubscriptionAirQualityMessage() {
   const locationLabel = getSubscriptionLocationLabel();
   if (!appState.airQuality) {
-    return `【空氣品質】${locationLabel} 空氣品質資料暫時無法讀取。`;
+    return stampNotifySource("空氣品質", `【空氣品質】${locationLabel} 空氣品質資料暫時無法讀取。`);
   }
-  return `【空氣品質】${locationLabel} AQI ${Math.round(appState.airQuality.aqi)}，${getAqiLabel(appState.airQuality.aqi)}。`;
+  return stampNotifySource(
+    "空氣品質",
+    `【空氣品質】${locationLabel} AQI ${Math.round(appState.airQuality.aqi)}，${getAqiLabel(appState.airQuality.aqi)}。`
+  );
+}
+
+function inferNotifySource(message) {
+  const stamped = String(message || "").match(/來源：([^｜|]+)[｜|]/);
+  if (stamped) {
+    return { source: stamped[1].trim(), url: "" };
+  }
+  if (/停班停課/.test(message)) {
+    return { source: "行政院人事行政總處", url: CLOSURE_OFFICIAL_URL };
+  }
+  if (/氣象署警特報|特報/.test(message)) {
+    return { source: "中央氣象署警特報", url: CWA_WARNING_PAGE };
+  }
+  if (/NCDR/.test(message)) {
+    return { source: "NCDR 民生示警", url: NCDR_ALERT_PAGE };
+  }
+  if (/地震/.test(message)) {
+    return { source: "中央氣象署地震", url: EARTHQUAKE_CWA_PAGE };
+  }
+  if (/積淹水/.test(message)) {
+    return { source: "水利署積淹水", url: "" };
+  }
+  if (/停電/.test(message)) {
+    return { source: "台電停電資訊", url: "" };
+  }
+  if (/停水/.test(message)) {
+    return { source: "台水停水公告", url: "" };
+  }
+  if (/空氣/.test(message)) {
+    return { source: "空氣品質", url: "" };
+  }
+  if (/天氣|降雨/.test(message)) {
+    return { source: "即時天氣", url: "" };
+  }
+  return { source: "本機", url: SITE_PUBLIC_URL };
+}
+
+function recordNotifyHistoryForMessages(messages, { title = "災防通知", channel = "system" } = {}) {
+  const city = citySelect?.value || appState.subscription?.city || "";
+  (messages || []).forEach((body) => {
+    const text = String(body || "").trim();
+    if (!text) {
+      return;
+    }
+    const inferred = inferNotifySource(text);
+    recordNotifyHistory({
+      source: inferred.source,
+      sourceUrl: inferred.url,
+      city,
+      eventKey: notifyEventKey(text, city),
+      title,
+      body: text,
+      channel
+    });
+  });
 }
 
 function buildSubscriptionNotificationMessages() {
@@ -8900,7 +9369,9 @@ function buildSubscriptionNotificationMessages() {
     "water-outage": getSubscriptionWaterOutageMessage,
     weather: getSubscriptionWeatherMessage,
     air: getSubscriptionAirQualityMessage,
-    earthquake: getSubscriptionEarthquakeMessage
+    earthquake: getSubscriptionEarthquakeMessage,
+    "cwa-warning": getSubscriptionCwaWarningMessage,
+    "ncdr-alert": getSubscriptionNcdrAlertMessage
   };
   return getSelectedSubscriptionTopics().map((topic) => topicBuilders[topic]?.()).filter(Boolean);
 }
@@ -8949,6 +9420,10 @@ async function sendRecoveryNotifications(messages) {
     await queueUtilityAlertBurst(message.text, message.kind);
   }
   markRecoveryMessagesSent(unseen);
+  recordNotifyHistoryForMessages(
+    unseen.map((item) => item.text),
+    { title: "災害狀態更新", channel: permissionMode === "granted" ? "system" : "in-page" }
+  );
   return true;
 }
 
@@ -9137,13 +9612,19 @@ function getSubscriptionWaterOutageMessage() {
   const locationLabel = townshipName ? `${cityName}${townshipName}` : getSubscriptionLocationLabel();
   const items = appState.waterOutageItems || [];
   if (!townshipName) {
-    return `【停水監測】${cityName || locationLabel}：請選定鄉鎮市區後再顯示當區停水（不發全縣市通知）。`;
+    return stampNotifySource(
+      "台水停水公告",
+      `【停水監測】${cityName || locationLabel}：請選定鄉鎮市區後再顯示當區停水（不發全縣市通知）。`
+    );
   }
   if (!items.length) {
-    return `【停水監測】${locationLabel} 目前無本鄉鎮停水／降壓公告。`;
+    return stampNotifySource("台水停水公告", `【停水監測】${locationLabel} 目前無本鄉鎮停水／降壓公告。`);
   }
   const top = items[0];
-  return `【停水公告】${locationLabel}：${top.summary || top.area || "有停水案件"}（${top.period || "期間詳見台水"}）。`;
+  return stampNotifySource(
+    "台水停水公告",
+    `【停水公告】${locationLabel}：${top.summary || top.area || "有停水案件"}（${top.period || "期間詳見台水"}）。`
+  );
 }
 
 function getSubscriptionTyphoonMessage() {
@@ -9304,15 +9785,23 @@ async function sendSubscriptionNotification({
     return false;
   }
   const permissionMode = await ensureNotificationPermission();
+  renderNotifyPermissionStatus();
   if (!permissionMode) {
     return false;
   }
-  const messages = buildSubscriptionNotificationMessages();
-  if (!messages.length) {
+  const rawMessages = Array.isArray(customMessages) && customMessages.length
+    ? customMessages
+    : buildSubscriptionNotificationMessages();
+  if (!rawMessages.length) {
     renderSubscriptionStatus("請先勾選至少一項訂閱主題。");
     return false;
   }
   if (!force && Date.now() - appState.lastNotifiedAt < getAutoRefreshIntervalMs() - 5000) {
+    return false;
+  }
+  const city = citySelect?.value || appState.subscription?.city || "";
+  const messages = filterCooldownMessages(rawMessages, city, { force });
+  if (!messages.length) {
     return false;
   }
   if (!shouldSendNotificationDigest(messages, { force })) {
@@ -9330,6 +9819,10 @@ async function sendSubscriptionNotification({
   }
   const deviceShown = await notifySubscriptionMessagesToDevice(messages, { title, persist: true });
   persistSubscriptionForBackground(appState.subscription).catch(() => {});
+  recordNotifyHistoryForMessages(messages, {
+    title,
+    channel: permissionMode === "granted" && deviceShown ? "system" : "in-page"
+  });
 
   localStorage.setItem(NOTIFICATION_DIGEST_STORAGE_KEY, getNotificationDigest(messages));
   appState.lastNotifiedAt = Date.now();
@@ -11200,7 +11693,9 @@ async function performFullRefresh(triggerSource, options = {}) {
             if (earthquakeMeta) {
               earthquakeMeta.textContent = appState.earthquakeMetaText;
             }
-          })
+          }),
+        () => fetchCwaWarnings(),
+        () => fetchNcdrAlerts()
       ],
       { showProgress }
     );
@@ -11374,6 +11869,7 @@ subscriptionForm.addEventListener("submit", async (event) => {
     /* ignore */
   }
   persistSubscriptionForBackground(appState.subscription).catch(() => {});
+  recordSubscriberSnapshot(appState.subscription);
   await publishSubscriptionSavedNotification({ mailStatus });
   if (isForecastNotifyArmedByLocate()) {
     await sendSubscriptionNotification({ force: true, inPage: false });
@@ -11384,17 +11880,34 @@ subscriptionForm.addEventListener("submit", async (event) => {
   clearSubscriptionHint();
 });
 
-testNotificationBtn?.addEventListener("click", async () => {
-  if (!isForecastNotifyArmedByLocate()) {
-    renderSubscriptionStatus(getForecastNotifyGateMessage());
-    updateNotificationHint(getForecastNotifyGateMessage());
-    showInPageAlert("尚未開放通知", getForecastNotifyGateMessage(), {
-      timeoutMs: 5000,
+enableNotifyBtn?.addEventListener("click", async () => {
+  const mode = await ensureNotificationPermission();
+  renderNotifyPermissionStatus();
+  updatePwaTestChecklist();
+  if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+    showInPageAlert("通知權限已被拒絕", "請到瀏覽器網站設定重新允許通知。目前改用頁面內提醒。", {
+      timeoutMs: 7000,
       variant: "not-open"
     });
+    renderSubscriptionStatus("通知權限已被拒絕，改用頁面內提醒。");
     return;
   }
-  await sendSubscriptionNotification({ force: true });
+  if (mode === "granted") {
+    showInPageAlert("已允許系統通知", "之後警戒推播會同步出現在系統通知。", {
+      timeoutMs: 5000,
+      variant: "subscription"
+    });
+    renderSubscriptionStatus("已允許系統通知。");
+    return;
+  }
+  renderSubscriptionStatus("此環境改用頁面內提醒。");
+});
+
+testNotificationBtn?.addEventListener("click", async () => {
+  await sendPwaTestNotification();
+  if (appState.subscription?.email && isForecastNotifyArmedByLocate()) {
+    await sendSubscriptionNotification({ force: true });
+  }
 });
 
 document.addEventListener("visibilitychange", () => {
@@ -11865,16 +12378,25 @@ if (document.fonts?.ready) {
   document.fonts.ready.then(scheduleHeroTextFit).catch(() => {});
 }
 window.matchMedia("(min-width: 861px)").addEventListener("change", syncNoticeDetailsOpen);
+initPwaInstallExperience();
+loadNotifyHistory();
+renderNotifyHistory();
+renderNotifyPermissionStatus();
+updatePwaTestChecklist();
 initServiceWorker()
-  .then(() => ensureNotificationPermission())
   .then(async () => {
+    renderNotifyPermissionStatus();
+    updatePwaTestChecklist();
     updateNotificationHint();
     if (appState.subscription?.email) {
       await enableBackgroundNotifications(appState.subscription).catch(() => {});
     }
     return flushPendingUtilityAlerts();
   })
-  .catch(() => updateNotificationHint());
+  .catch(() => {
+    updateNotificationHint();
+    updatePwaTestChecklist();
+  });
 blackScreenCameraIds = loadBlackScreenCameraIds();
 earthquakeDetailSheetClose?.addEventListener("click", () => {
   closeEarthquakeDetailSheet();

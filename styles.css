@@ -450,6 +450,97 @@ body {
   }
 }
 
+.pwa-install-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 227, 138, 0.35);
+  border-radius: 12px;
+  background: rgba(22, 29, 39, 0.88);
+  color: #f4efe6;
+}
+
+.pwa-install-banner[hidden] {
+  display: none;
+}
+
+.pwa-install-copy {
+  flex: 1 1 220px;
+}
+
+.pwa-install-copy strong,
+.pwa-panel-title {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.pwa-install-copy p {
+  margin: 0;
+  color: #d8cfc0;
+  line-height: 1.45;
+}
+
+.pwa-install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pwa-history-block,
+.pwa-test-details {
+  margin-top: 12px;
+}
+
+.pwa-history-list,
+.pwa-test-list {
+  margin: 6px 0 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 6px;
+  color: inherit;
+}
+
+.pwa-history-list li,
+.pwa-test-list li {
+  line-height: 1.4;
+}
+
+.pwa-test-list li.is-ok::marker {
+  color: #39ff14;
+}
+
+.pwa-test-list li.is-warn::marker {
+  color: #ffba08;
+}
+
+.pwa-test-list li.is-off::marker {
+  color: #e57373;
+}
+
+@media (max-width: 860px) {
+  .pwa-install-banner,
+  .subscription-actions {
+    width: 100%;
+  }
+
+  .pwa-install-actions,
+  .subscription-actions {
+    width: 100%;
+  }
+
+  .pwa-install-actions .refresh-btn,
+  .pwa-install-actions .ghost-btn,
+  .subscription-actions .refresh-btn,
+  .subscription-actions .ghost-btn {
+    flex: 1 1 auto;
+  }
+}
+
 .hero {
   --hero-title-size: clamp(2.1rem, 7.6vw, 3.5rem);
   background:
