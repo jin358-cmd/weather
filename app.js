@@ -3630,21 +3630,8 @@ function updateCameraMetaText() {
   }
   const cityFetchedAt = cityCameraDataset.fetchedAt ? formatDateTime(cityCameraDataset.fetchedAt) : "未提供";
   const nationwide = isNationwideCameraCity(cameraCitySelect);
-  const cityName = nationwide ? "" : getSelectedCameraCityName() || citySelect?.value || "";
-  const district = getSelectedCameraDistrict();
-  const keyword = getCameraKeywordQuery();
-  let scope = "所選位置";
-  if (nationwide) {
-    scope = "全國路口監控";
-  } else if (district?.town) {
-    scope = `選定地區：${cityName}${district.town}`;
-  } else if (cityName) {
-    scope = `定位點縣市：${cityName}｜全部路口監控｜最多 ${CITY_CCTV_PREVIEW_LIMIT} 路`;
-  }
-  if (keyword) {
-    scope += `｜關鍵字：${keyword}`;
-  }
-  cameraMeta.textContent = `${scope}｜快照：${cityFetchedAt}`;
+  const cityName = nationwide ? "全國" : getSelectedCameraCityName() || citySelect?.value || "所選位置";
+  cameraMeta.textContent = `定位點：${cityName}｜快照：${cityFetchedAt}`;
 }
 
 function placeCityCameraMoreAfterLastScreen() {
