@@ -3331,6 +3331,11 @@ input[type="checkbox"] {
   font-size: 12px;
 }
 
+#notifyPermissionStatus {
+  line-height: 1.4;
+  white-space: normal;
+}
+
 .alert-block .subscription-email-note,
 .alert-block .notification-hint {
   font-size: 11px;
