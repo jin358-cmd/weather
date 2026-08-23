@@ -182,13 +182,13 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
-  line-height: 1.22;
+  line-height: 1.18;
   width: 100%;
   max-width: 100%;
-  word-break: normal;
-  overflow-wrap: anywhere;
+  word-break: keep-all;
+  overflow-wrap: normal;
   font-size: var(--hero-title-size);
-  text-align: center;
+  text-align: left;
 }
 
 .theme-elegant .refresh-btn {

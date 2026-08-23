@@ -746,20 +746,20 @@ body {
 }
 
 .hero-content {
-  width: 90%;
+  width: max-content;
   max-width: 90%;
   min-width: 0;
   overflow: hidden;
   position: relative;
   z-index: 1;
   margin-inline: auto;
-  text-align: center;
+  text-align: left;
 }
 
 .hero .eyebrow {
   display: block;
   box-sizing: border-box;
-  width: 100%;
+  width: max-content;
   max-width: 100%;
   margin: 0 0 8px;
   letter-spacing: 0.12em;
@@ -767,7 +767,7 @@ body {
   font-size: var(--hero-heading-size, clamp(1.5rem, 5.4vw, 2.5rem));
   line-height: 1.25;
   opacity: 0.95;
-  white-space: normal;
+  white-space: nowrap;
   overflow: visible;
   color: var(--primary);
   text-shadow: 0 0 10px rgba(0, 245, 255, 0.55);
@@ -794,6 +794,9 @@ body {
 }
 
 .hero h1 {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   margin-bottom: 6px;
   font-family: var(--font-display);
   font-size: var(--hero-title-size, clamp(2.1rem, 7.6vw, 3.5rem));
@@ -803,10 +806,20 @@ body {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
-  line-height: 1.22;
+  line-height: 1.18;
   width: 100%;
   max-width: 100%;
-  text-align: center;
+  text-align: left;
+}
+
+.hero-title-lead,
+.hero-title-tail {
+  display: block;
+  white-space: nowrap;
+}
+
+.hero-title-tail {
+  text-align: right;
 }
 
 .hero .subtitle {
@@ -5897,9 +5910,9 @@ body.eq-sheet-open {
   .hero .eyebrow {
     font-size: var(--hero-heading-size, clamp(1.5rem, 5.4vw, 2.5rem));
     margin-bottom: 6px;
-    width: 100%;
+    width: max-content;
     max-width: 100%;
-    white-space: normal;
+    white-space: nowrap;
     overflow: visible;
     letter-spacing: 0.08em;
   }
@@ -5911,13 +5924,13 @@ body.eq-sheet-open {
     overflow: visible;
     text-overflow: clip;
     letter-spacing: 0;
-    line-height: 1.22;
+    line-height: 1.18;
     width: 100%;
     max-width: 100%;
-    word-break: normal;
-    overflow-wrap: anywhere;
-    line-break: auto;
-    text-align: center;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    line-break: strict;
+    text-align: left;
   }
 
   .hero .subtitle {
@@ -6657,14 +6670,14 @@ body.eq-sheet-open {
 
   .hero h1 {
     max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: normal;
-    line-break: auto;
+    overflow-wrap: normal;
+    word-break: keep-all;
+    line-break: strict;
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
     font-size: var(--hero-title-size, clamp(2.1rem, 7.6vw, 3.5rem));
-    text-align: center;
+    text-align: left;
   }
 
   .hero-fit-text {
