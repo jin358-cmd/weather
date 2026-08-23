@@ -315,7 +315,8 @@ body.theme-elegant[data-legacy-theme="dusk"] .camera-load-progress .refresh-prog
 
 .theme-elegant .in-page-alert-subscription .in-page-alert-line-closure,
 .theme-elegant .in-page-alert-refresh-done .in-page-alert-line-closure {
-  color: #b71c1c !important;
+  color: #fff !important;
+  background: #b71c1c;
 }
 
 .theme-elegant .in-page-alert-subscription .in-page-alert-line-change,

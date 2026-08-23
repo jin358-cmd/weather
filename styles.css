@@ -5640,6 +5640,21 @@ body.eq-sheet-open {
   color: #fff;
 }
 
+.ai-alert-closure-stop {
+  border-color: #7f1d1d;
+  background: #b71c1c;
+  color: #fff;
+}
+
+.ai-alert-closure-stop .ai-alert-tag {
+  background: #7f1010;
+  color: #fff;
+}
+
+.ai-alert-closure-stop .ai-alert-body {
+  color: #fff;
+}
+
 .ai-alert-flood-1 {
   border-color: #c9a227;
   background: #fff8df;
@@ -5782,13 +5797,13 @@ body.eq-sheet-open {
 }
 
 .closure-item.closure-stop {
-  background: #ffcdd2;
-  border: 1px solid #e57373;
+  background: #b71c1c;
+  border: 1px solid #7f1d1d;
 }
 
 .closure-item.closure-stop h3,
 .closure-item.closure-stop p {
-  color: #b71c1c;
+  color: #fff;
 }
 
 .closure-item .closure-date {
@@ -7482,7 +7497,10 @@ body.eq-sheet-open {
 
 .in-page-alert-subscription .in-page-alert-line-closure,
 .in-page-alert-refresh-done .in-page-alert-line-closure {
-  color: #b71c1c;
+  color: #fff;
+  background: #b71c1c;
+  border-radius: 8px;
+  padding: 6px 8px;
   font-weight: 800;
 }
 

@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v185-sync-maps-locate";
+const SW_VERSION = "jin-v186-closure-red-block";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

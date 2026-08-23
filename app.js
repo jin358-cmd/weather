@@ -7015,8 +7015,16 @@ function parseAiAlertPresentation(text) {
     tone = "watch";
   } else if (tag.includes("空品")) {
     tone = "air";
+  } else if (tag.includes("停班停課解除") || /已解除停班停課/.test(raw)) {
+    tone = "general";
+  } else if (
+    tag.includes("停班停課") &&
+    isClosureStopMessage(raw) &&
+    !/目前無停班停課|恢復正常上班/.test(raw)
+  ) {
+    tone = "closure-stop";
   } else if (tag.includes("停班停課")) {
-    tone = "closure";
+    tone = "neutral";
   } else if (tag.includes("一般") || tag.includes("解除") || tag.includes("消退") || tag.includes("回復")) {
     tone = "general";
   } else if (floodLevel >= 1) {
@@ -7742,7 +7750,7 @@ function renderAiAlerts() {
   const nationalQuake = recentQuakes.find((quake) => isNationalEarthquakeAlert(quake));
 
   const cityName = citySelect?.value || cityClosure?.city || "所選縣市";
-  if (cityClosure && cityClosure.message.includes("停止上班")) {
+  if (cityClosure && isClosureStopMessage(cityClosure.message)) {
     const dateText = formatClosureDatesText(getClosureRowDates(cityClosure));
     alerts.push(
       `【停班停課】${cityClosure.city}${dateText ? `（${dateText}）` : ""} 最新公告：${cityClosure.message}`
