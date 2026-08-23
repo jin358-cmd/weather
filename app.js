@@ -10578,7 +10578,7 @@ function syncLegendActivePlacement(legend) {
     if (!item || !row) {
       return;
     }
-    const promoteList = getLegendPromoteList(legend, key);
+    const promoteList = getLegendPromoteList(legend);
     if (isDisasterLegendActive(key) && isMapCategoryVisible(key) && promoteList) {
       if (row.parentElement !== promoteList) {
         promoteList.append(row);
