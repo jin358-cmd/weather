@@ -787,9 +787,6 @@ const CLOSURE_REGION_LABELS = ["北部地區", "中部地區", "南部地區", "
 const MAP_LOCATE_DIAMETER_KM = 5;
 const MAP_LOCATE_RADIUS_KM = MAP_LOCATE_DIAMETER_KM / 2;
 const MAP_FOCUS_CIRCLE_RADIUS_M = MAP_LOCATE_RADIUS_KM * 1000;
-const MAP_DISPLAY_DIAMETER_KM = 1;
-const MAP_DISPLAY_RADIUS_KM = MAP_DISPLAY_DIAMETER_KM / 2;
-const MAP_DISPLAY_CIRCLE_RADIUS_M = MAP_DISPLAY_RADIUS_KM * 1000;
 const LAST_MAP_LOCATE_STORAGE_KEY = "lastMapLocateV1";
 const WINDY_EMBED_HEIGHT = 560;
 const WINDY_EMBED_WIDTH = 560;
@@ -800,7 +797,7 @@ const VISITOR_COUNTER_STORAGE_KEY = "siteVisitCountV1";
 const LIKE_COUNTER_KEY = "likes";
 const LIKE_COUNTER_STORAGE_KEY = "siteLikeCountV1";
 const LIKE_VOTED_STORAGE_KEY = "siteLikedV1";
-const CITY_CCTV_RADIUS_KM = MAP_DISPLAY_RADIUS_KM;
+const CITY_CCTV_RADIUS_KM = 1.5;
 const CITY_CCTV_NEARBY_KM = 8;
 const CITY_CCTV_PREVIEW_LIMIT = 80;
 const CITY_CCTV_MORE_LIMIT = 80;
@@ -1001,7 +998,7 @@ function isWithinMapLocateRange(lat, lon) {
   if (!Number.isFinite(pointLat) || !Number.isFinite(pointLon)) {
     return false;
   }
-  return getDistanceKm(focus.lat, focus.lon, pointLat, pointLon) <= MAP_DISPLAY_RADIUS_KM + 0.0001;
+  return getDistanceKm(focus.lat, focus.lon, pointLat, pointLon) <= MAP_LOCATE_RADIUS_KM + 0.0001;
 }
 
 function getMapDeclutterSeparationKm(zoom) {
@@ -4331,7 +4328,7 @@ function updateCameraMetaText() {
     parts.push(`地區：${cityName}${townName}`);
   } else {
     parts.push(`定位點：${locateLabel}`);
-    parts.push(`直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里`);
+    parts.push(`半徑 ${CITY_CCTV_RADIUS_KM} 公里`);
   }
   parts.push(`快照：${cityFetchedAt}`);
   cameraMeta.textContent = parts.join("｜");
@@ -4525,7 +4522,7 @@ async function renderCameraList() {
       ? `目前沒有符合「${keyword}」的路口監控。`
       : district?.town
         ? `目前沒有符合「${cityName}${district.town}」的路口監控。`
-        : `定位點直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里內目前沒有路口監控。可改選地區或輸入路名關鍵字。`;
+        : `定位點半徑 ${CITY_CCTV_RADIUS_KM} 公里內目前沒有路口監控。可改選地區或輸入路名關鍵字。`;
     showCityCameraListMessage(emptyLabel);
     hideCityCameraLoadProgress();
     return;
@@ -10738,7 +10735,23 @@ function renderMapCategoryFilters() {
 }
 
 function fitMapToFocusArea() {
-  fitMapToLocateRange(false);
+  if (!warningMap || !mapCityFocusLayer) {
+    return;
+  }
+  warningMap.invalidateSize();
+  const location = getActiveWeatherLocation();
+  if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lon)) {
+    return;
+  }
+  warningMap.setView([location.lat, location.lon], 10, { animate: false });
+  const bounds = mapCityFocusLayer.getBounds?.();
+  if (bounds?.isValid?.()) {
+    warningMap.fitBounds(bounds, {
+      padding: [10, 10],
+      maxZoom: 12,
+      animate: false
+    });
+  }
 }
 
 function resolveFocusRadiusMetersForMap() {
@@ -10782,33 +10795,32 @@ function updateCityFocusLayer() {
     return;
   }
 
-  const ringBounds = L.latLng(location.lat, location.lon).toBounds(MAP_LOCATE_DIAMETER_KM * 1000);
+  const radiusM = MAP_FOCUS_CIRCLE_RADIUS_M;
+  const boxBounds = L.latLng(location.lat, location.lon).toBounds(MAP_LOCATE_DIAMETER_KM * 1000);
   mapCityFocusLayer = L.featureGroup();
   mapLegendMarkers["city-focus"] = [];
-  const rangeCircle = L.circle([location.lat, location.lon], {
+  const frame = L.rectangle(boxBounds, {
     pane: "focusPane",
-    className: "leaflet-focus-circle",
-    radius: MAP_FOCUS_CIRCLE_RADIUS_M,
+    className: "leaflet-focus-frame",
     color: "#00d4ff",
-    weight: 5,
+    weight: 4,
     opacity: 1,
-    dashArray: "12 8",
+    dashArray: "10 6",
     fillColor: "#00d4ff",
-    fillOpacity: 0.06,
+    fillOpacity: 0.08,
     interactive: false
   });
-  const displayCircle = L.circle([location.lat, location.lon], {
+  const ring = L.circle([location.lat, location.lon], {
     pane: "focusPane",
-    className: "leaflet-focus-display",
-    radius: MAP_DISPLAY_CIRCLE_RADIUS_M,
-    color: "#39ff14",
-    weight: 3,
-    opacity: 0.95,
-    fillColor: "#39ff14",
-    fillOpacity: 0.12,
+    radius: radiusM,
+    color: "#00d4ff",
+    weight: 4,
+    opacity: 1,
+    fillColor: "#00d4ff",
+    fillOpacity: 0.1,
     interactive: false
   });
-  const north = ringBounds.getNorth();
+  const north = boxBounds.getNorth();
   const label = L.marker([north, location.lon], {
     pane: "focusPane",
     interactive: false,
@@ -10816,7 +10828,7 @@ function updateCityFocusLayer() {
     zIndexOffset: 860,
     icon: L.divIcon({
       className: "map-focus-range-label",
-      html: '<span class="map-focus-range-label-text">定位範圍圈｜直徑 5 公里</span>',
+      html: '<span class="map-focus-range-label-text">定位範圍｜直徑 5 公里</span>',
       iconSize: [0, 0],
       iconAnchor: [0, 10]
     })
@@ -10834,13 +10846,13 @@ function updateCityFocusLayer() {
     })
   });
   center.bindPopup(
-    `定位範圍圈直徑 ${MAP_LOCATE_DIAMETER_KM} 公里<br/>圖層／路口監控顯示直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`,
+    `定位點範圍（直徑 5 公里）<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`,
     getMapPopupOptions()
   );
   center._legendPlace = String(location.label || "").trim();
   center._legendKey = "city-focus";
-  mapCityFocusLayer.addLayer(rangeCircle);
-  mapCityFocusLayer.addLayer(displayCircle);
+  mapCityFocusLayer.addLayer(frame);
+  mapCityFocusLayer.addLayer(ring);
   mapCityFocusLayer.addLayer(label);
   mapCityFocusLayer.addLayer(center);
   mapLegendMarkers["city-focus"].push(center);
@@ -11152,13 +11164,9 @@ function syncMapLegendState() {
     const placeText =
       key === "shelter"
         ? markers.length
-          ? `直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里內`
-          : `直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里內無點位`
-        : key === "city-focus"
-          ? markers.length
-            ? `直徑 ${MAP_LOCATE_DIAMETER_KM} 公里圈｜圖層直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里`
-            : "尚未定位"
-          : key === "closure"
+          ? "定位範圍內"
+          : "定位範圍內無點位"
+        : key === "closure"
           ? isActive
             ? cityClosureDates
               ? `${cityClosure.city}｜${cityClosureDates}`

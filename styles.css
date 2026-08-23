@@ -4387,18 +4387,11 @@ input[type="checkbox"] {
   cursor: default;
 }
 
-.leaflet-focus-frame,
-.leaflet-focus-circle {
+.leaflet-focus-frame {
   stroke: #00d4ff !important;
-  stroke-width: 5px !important;
-  stroke-dasharray: 12 8;
-  fill: rgba(0, 212, 255, 0.08) !important;
-}
-
-.leaflet-focus-display {
-  stroke: #39ff14 !important;
-  stroke-width: 3px !important;
-  fill: rgba(57, 255, 20, 0.14) !important;
+  stroke-width: 4px !important;
+  stroke-dasharray: 10 6;
+  fill: rgba(0, 212, 255, 0.1) !important;
 }
 
 .layer-panel {
@@ -5846,17 +5839,10 @@ body.eq-sheet-open {
   }
 }
 
-.leaflet-focus-frame,
-.leaflet-focus-circle {
+.leaflet-focus-frame {
   stroke: #00d4ff;
-  stroke-width: 5;
-  fill: rgba(0, 212, 255, 0.08);
-}
-
-.leaflet-focus-display {
-  stroke: #39ff14;
   stroke-width: 3;
-  fill: rgba(57, 255, 20, 0.14);
+  fill: rgba(0, 212, 255, 0.08);
 }
 
 .status-ok {
