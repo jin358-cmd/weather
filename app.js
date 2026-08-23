@@ -617,7 +617,7 @@ const mapLayerOrder = [
   "cctv-points"
 ];
 const MAP_PANE_ZINDEX = {
-  "city-focus": 640,
+  "city-focus": 680,
   "flood-warning": 650,
   "power-outage": 655,
   "water-outage": 658,
@@ -921,7 +921,19 @@ function getMapLocatePoint() {
       label: location.label
     };
   }
-  return null;
+  const fallbackCity = CITY_LOCATIONS.find((item) => item.name === "臺南市") || CITY_LOCATIONS[0];
+  if (fallbackCity) {
+    return {
+      lat: fallbackCity.lat,
+      lon: fallbackCity.lon,
+      label: `${fallbackCity.name}（預設範圍）`
+    };
+  }
+  return {
+    lat: TAIWAN_MAP_CENTER[0],
+    lon: TAIWAN_MAP_CENTER[1],
+    label: "預設定位範圍"
+  };
 }
 
 function isWithinMapLocateRange(lat, lon) {
@@ -9520,17 +9532,42 @@ function updateCityFocusLayer() {
   }
 
   const radiusM = MAP_FOCUS_CIRCLE_RADIUS_M;
+  const boxBounds = L.latLng(location.lat, location.lon).toBounds(MAP_LOCATE_DIAMETER_KM * 1000);
   mapCityFocusLayer = L.featureGroup();
   mapLegendMarkers["city-focus"] = [];
+  const frame = L.rectangle(boxBounds, {
+    pane: "focusPane",
+    className: "leaflet-focus-frame",
+    color: "#00d4ff",
+    weight: 4,
+    opacity: 1,
+    dashArray: "10 6",
+    fillColor: "#00d4ff",
+    fillOpacity: 0.08,
+    interactive: false
+  });
   const ring = L.circle([location.lat, location.lon], {
     pane: "focusPane",
     radius: radiusM,
     color: "#00d4ff",
-    weight: 5,
+    weight: 4,
     opacity: 1,
     fillColor: "#00d4ff",
-    fillOpacity: 0.16,
+    fillOpacity: 0.1,
     interactive: false
+  });
+  const north = boxBounds.getNorth();
+  const label = L.marker([north, location.lon], {
+    pane: "focusPane",
+    interactive: false,
+    keyboard: false,
+    zIndexOffset: 860,
+    icon: L.divIcon({
+      className: "map-focus-range-label",
+      html: '<span class="map-focus-range-label-text">定位範圍｜直徑 5 公里</span>',
+      iconSize: [0, 0],
+      iconAnchor: [0, 10]
+    })
   });
   const center = L.marker([location.lat, location.lon], {
     pane: "focusPane",
@@ -9550,7 +9587,9 @@ function updateCityFocusLayer() {
   );
   center._legendPlace = String(location.label || "").trim();
   center._legendKey = "city-focus";
+  mapCityFocusLayer.addLayer(frame);
   mapCityFocusLayer.addLayer(ring);
+  mapCityFocusLayer.addLayer(label);
   mapCityFocusLayer.addLayer(center);
   mapLegendMarkers["city-focus"].push(center);
 

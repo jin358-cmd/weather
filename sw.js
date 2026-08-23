@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v155-map-cctv-shelter";
+const SW_VERSION = "jin-v156-locate-range-frame";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
