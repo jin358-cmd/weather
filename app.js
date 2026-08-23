@@ -376,6 +376,21 @@ const FREEWAY_CAMERA_REGIONS = [
   { id: "all-freeway", label: "全部國道", lat: 23.7, lon: 120.96, radiusKm: 9999, routes: null }
 ];
 
+const FREEWAY_CITY_PLACE_ALIASES = {
+  臺南市: [
+    "大灣",
+    "新吉",
+    "台南端",
+    "臺南端",
+    "台南系統",
+    "臺南系統",
+    "下營系統",
+    "官田系統",
+    "新化系統"
+  ],
+  高雄市: ["高科", "路竹", "岡山"]
+};
+
 const REGION_STORAGE_KEY = "weatherRegionPreferenceV1";
 const KNOWN_CITIES = new Set(CITY_LOCATIONS.map((city) => city.name));
 const WEATHER_CODE_LABEL = {
@@ -1636,63 +1651,145 @@ function cameraMatchesFreewayRoute(camera, region) {
   return region.routes.includes(getCameraRouteCode(camera.id));
 }
 
-function getFreewayInterchangeOptions() {
+function isUsableFreewayCamera(camera) {
+  return Boolean(
+    camera &&
+      isCameraUrlUsable(camera.html) &&
+      !isCameraMarkedBlackScreen(camera) &&
+      !isCameraMaintenanceText(camera)
+  );
+}
+
+function isGenericFreewayDirectionLabel(name = "") {
+  return /^[東西南北][向上下]$/u.test(String(name || "").trim());
+}
+
+function getFreewayPointDisplayName(camera = {}) {
+  const point = parseFreewayCameraPoint(camera);
+  const named = (point.names || []).find((name) => {
+    const text = String(name || "").trim();
+    return text && !text.startsWith("--") && !isGenericFreewayDirectionLabel(text);
+  });
+  if (named) {
+    return named;
+  }
+  const km = formatFreewayKmLabel(point.km);
+  if (km) {
+    return km;
+  }
+  const place = String(point.place || "").trim();
+  if (place && !place.startsWith("--") && !isGenericFreewayDirectionLabel(place)) {
+    return place;
+  }
+  return String(camera.stakenumber || camera.id || "").trim();
+}
+
+function addFreewayInterchangeOption(byKey, camera) {
+  const name = getFreewayPointDisplayName(camera);
+  if (!name) {
+    return;
+  }
+  const point = parseFreewayCameraPoint(camera);
+  const lat = Number(camera.gisy);
+  const lon = Number(camera.gisx);
+  const city = resolveFreewayCameraCity(camera);
+  const dir = point.dir || "";
+  const key = `${dir}|${name}`;
+  if (!byKey.has(key)) {
+    byKey.set(key, {
+      name,
+      dir,
+      km: point.km,
+      lat,
+      lon,
+      city,
+      count: 1
+    });
+    return;
+  }
+  const row = byKey.get(key);
+  row.count += 1;
+  if (Number.isFinite(point.km) && (!Number.isFinite(row.km) || point.km < row.km)) {
+    row.km = point.km;
+    row.lat = lat;
+    row.lon = lon;
+    row.city = city || row.city;
+  }
+}
+
+function collectFreewayInterchangeOptions({ ignoreRoute = false, ignoreCity = false } = {}) {
   const region = getSelectedFreewayRegion();
   const nationwide = isFreewayNationwideScope();
   const selectedCity = getSelectedFreewayCityName();
-  const cameras = (freewayCameraDataset?.cameras || []).filter((camera) => {
-    if (!isCameraUrlUsable(camera.html) || isCameraMarkedBlackScreen(camera) || isCameraMaintenanceText(camera)) {
-      return false;
-    }
-    return nationwide || cameraMatchesFreewayRoute(camera, region);
-  });
   const byKey = new Map();
-  cameras.forEach((camera) => {
-    const point = parseFreewayCameraPoint(camera);
-    const name = point.place || point.names[0];
-    if (!name || String(name).startsWith("--")) {
+  (freewayCameraDataset?.cameras || []).forEach((camera) => {
+    if (!isUsableFreewayCamera(camera)) {
       return;
     }
-    const lat = Number(camera.gisy);
-    const lon = Number(camera.gisx);
-    const city = Number.isFinite(lat) && Number.isFinite(lon)
-      ? findNearestCityName(lat, lon)
-      : "";
-    if (!nationwide && selectedCity) {
-      const selected = CITY_LOCATIONS.find((item) => item.name === selectedCity);
-      const nearSelected =
-        selected &&
-        Number.isFinite(lat) &&
-        Number.isFinite(lon) &&
-        getDistanceKm(lat, lon, selected.lat, selected.lon) <= 35;
-      if (city !== selectedCity && !nearSelected) {
+    if (!ignoreRoute && !nationwide && !cameraMatchesFreewayRoute(camera, region)) {
+      return;
+    }
+    if (!ignoreCity && !nationwide && selectedCity) {
+      if (!sameTaiwanCityName(resolveFreewayCameraCity(camera), selectedCity)) {
         return;
       }
     }
-    const dir = point.dir || "";
-    const key = `${dir}|${name}`;
-    if (!byKey.has(key)) {
-      byKey.set(key, {
-        name,
-        dir,
-        km: point.km,
-        lat,
-        lon,
-        city,
-        count: 1
-      });
+    addFreewayInterchangeOption(byKey, camera);
+  });
+  return [...byKey.values()].sort(compareFreewayItemsByMileage);
+}
+
+function getFreewayNearbyFallbackOptions() {
+  const selectedCity = getSelectedFreewayCityName();
+  const focus = getFreewayBrowseFocus();
+  const cityRec = CITY_LOCATIONS.find((item) => item.name === selectedCity);
+  const lat = Number(focus?.lat ?? cityRec?.lat);
+  const lon = Number(focus?.lon ?? cityRec?.lon);
+  const byKey = new Map();
+  (freewayCameraDataset?.cameras || []).forEach((camera) => {
+    if (!isUsableFreewayCamera(camera)) {
       return;
     }
-    const row = byKey.get(key);
-    row.count += 1;
-    if (Number.isFinite(point.km) && (!Number.isFinite(row.km) || point.km < row.km)) {
-      row.km = point.km;
-      row.lat = lat;
-      row.lon = lon;
+    const city = resolveFreewayCameraCity(camera);
+    const textHit = selectedCity && collectFreewayCityHitsFromText(getFreewayCameraCityText(camera)).has(selectedCity);
+    const clat = Number(camera.gisy);
+    const clon = Number(camera.gisx);
+    const near =
+      Number.isFinite(lat) &&
+      Number.isFinite(lon) &&
+      Number.isFinite(clat) &&
+      Number.isFinite(clon) &&
+      getDistanceKm(clat, clon, lat, lon) <= 45;
+    if (!textHit && !near && !sameTaiwanCityName(city, selectedCity)) {
+      return;
     }
+    addFreewayInterchangeOption(byKey, camera);
   });
-
   return [...byKey.values()].sort(compareFreewayItemsByMileage);
+}
+
+function getFreewayInterchangeOptions() {
+  const selectedCity = getSelectedFreewayCityName();
+  const nationwide = isFreewayNationwideScope();
+  if (!nationwide && selectedCity) {
+    const cityWide = collectFreewayInterchangeOptions({ ignoreRoute: true, ignoreCity: false });
+    if (cityWide.length) {
+      return cityWide;
+    }
+    const nearby = getFreewayNearbyFallbackOptions();
+    if (nearby.length) {
+      return nearby;
+    }
+  }
+  const scoped = collectFreewayInterchangeOptions({ ignoreRoute: false, ignoreCity: false });
+  if (scoped.length) {
+    return scoped;
+  }
+  const cityOnly = collectFreewayInterchangeOptions({ ignoreRoute: true, ignoreCity: false });
+  if (cityOnly.length) {
+    return cityOnly;
+  }
+  return getFreewayNearbyFallbackOptions();
 }
 
 function findNearestCityName(lat, lon) {
@@ -1706,6 +1803,178 @@ function findNearestCityName(lat, lon) {
     }
   });
   return nearestCity;
+}
+
+let freewayCityTextIndex = null;
+
+function getFreewayCityTextIndex() {
+  if (freewayCityTextIndex) {
+    return freewayCityTextIndex;
+  }
+  const cityFull = CITY_LOCATIONS.map((city) => ({
+    key: normalizeTaiwanPlaceText(city.name),
+    city: city.name
+  })).sort((a, b) => b.key.length - a.key.length);
+
+  const bareCount = new Map();
+  CITY_LOCATIONS.forEach((city) => {
+    const bare = normalizeTaiwanPlaceText(city.name).replace(/[市縣]$/u, "");
+    bareCount.set(bare, (bareCount.get(bare) || 0) + 1);
+  });
+  const cityBare = CITY_LOCATIONS.map((city) => ({
+    key: normalizeTaiwanPlaceText(city.name).replace(/[市縣]$/u, ""),
+    city: city.name
+  }))
+    .filter((item) => item.key.length >= 2 && bareCount.get(item.key) === 1)
+    .sort((a, b) => b.key.length - a.key.length);
+
+  const townFull = TOWNSHIP_LOCATIONS.map((item) => ({
+    key: normalizeTaiwanPlaceText(item.town),
+    city: item.city,
+    town: item.town
+  })).sort((a, b) => b.key.length - a.key.length);
+
+  const shortHits = new Map();
+  TOWNSHIP_LOCATIONS.forEach((item) => {
+    const short = normalizeTaiwanPlaceText(item.town).replace(/[區鄉鎮市]$/u, "");
+    if (short.length < 2) {
+      return;
+    }
+    if (!shortHits.has(short)) {
+      shortHits.set(short, item.city);
+      return;
+    }
+    if (shortHits.get(short) !== item.city) {
+      shortHits.set(short, "");
+    }
+  });
+
+  const aliases = [];
+  Object.entries(FREEWAY_CITY_PLACE_ALIASES).forEach(([city, places]) => {
+    places.forEach((place) => {
+      aliases.push({ key: normalizeTaiwanPlaceText(place), city });
+    });
+  });
+  aliases.sort((a, b) => b.key.length - a.key.length);
+
+  freewayCityTextIndex = { cityFull, cityBare, townFull, shortHits, aliases };
+  return freewayCityTextIndex;
+}
+
+function cityFromTownship(townName = "") {
+  const key = normalizeTaiwanPlaceText(townName);
+  if (!key) {
+    return "";
+  }
+  const exact = TOWNSHIP_LOCATIONS.find((item) => normalizeTaiwanPlaceText(item.town) === key);
+  if (exact) {
+    return exact.city;
+  }
+  const short = key.replace(/[區鄉鎮市]$/u, "");
+  const unique = getFreewayCityTextIndex().shortHits.get(short);
+  return unique || "";
+}
+
+function getTownshipFromLocation(text = "") {
+  const blob = normalizeTaiwanPlaceText(text);
+  if (!blob) {
+    return null;
+  }
+  const index = getFreewayCityTextIndex();
+  for (const town of index.townFull) {
+    if (town.key.length >= 2 && blob.includes(town.key)) {
+      return TOWNSHIP_LOCATIONS.find((item) => item.city === town.city && item.town === town.town) || null;
+    }
+  }
+  for (const [short, city] of index.shortHits) {
+    if (!city || short.length < 2 || !blob.includes(short)) {
+      continue;
+    }
+    return (
+      TOWNSHIP_LOCATIONS.find(
+        (item) => item.city === city && normalizeTaiwanPlaceText(item.town).replace(/[區鄉鎮市]$/u, "") === short
+      ) || null
+    );
+  }
+  return null;
+}
+
+function collectFreewayCityHitsFromText(text = "") {
+  const blob = normalizeTaiwanPlaceText(text);
+  const hits = new Set();
+  if (!blob) {
+    return hits;
+  }
+  const index = getFreewayCityTextIndex();
+  index.aliases.forEach((item) => {
+    if (item.key && blob.includes(item.key)) {
+      hits.add(item.city);
+    }
+  });
+  index.cityFull.forEach((item) => {
+    if (item.key && blob.includes(item.key)) {
+      hits.add(item.city);
+    }
+  });
+  index.cityBare.forEach((item) => {
+    if (item.key && blob.includes(item.key)) {
+      hits.add(item.city);
+    }
+  });
+  index.townFull.forEach((item) => {
+    if (item.key.length >= 2 && blob.includes(item.key)) {
+      hits.add(item.city);
+    }
+  });
+  index.shortHits.forEach((city, short) => {
+    if (city && short.length >= 2 && blob.includes(short)) {
+      hits.add(city);
+    }
+  });
+  return hits;
+}
+
+function inferFreewayCityFromText(text = "") {
+  const hits = collectFreewayCityHitsFromText(text);
+  if (hits.size === 1) {
+    return [...hits][0];
+  }
+  return "";
+}
+
+function getFreewayCameraCityText(camera = {}) {
+  return [
+    camera.stakenumber,
+    camera.location,
+    camera.roadName,
+    camera.roadsection,
+    camera.name,
+    camera.description
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function resolveFreewayCameraCity(camera = {}) {
+  const text = getFreewayCameraCityText(camera);
+  const hits = collectFreewayCityHitsFromText(text);
+  if (hits.size === 1) {
+    return [...hits][0];
+  }
+  const lat = Number(camera.gisy);
+  const lon = Number(camera.gisx);
+  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    const township = findNearestTownship(lat, lon);
+    if (township?.city) {
+      return township.city;
+    }
+    return findNearestCityName(lat, lon);
+  }
+  if (hits.size) {
+    return [...hits][0];
+  }
+  const township = getTownshipFromLocation(text);
+  return township?.city || cityFromTownship(text) || "";
 }
 
 function getSelectedCameraCityNameFrom(selectElement) {
@@ -1963,7 +2232,8 @@ function parseFreewayCameraPoint(camera = {}) {
   const dir = match ? match[2].toUpperCase() : getFreewayCameraDirectionCode(camera);
   const km = match ? Number(match[3]) : Number.NaN;
   const names = extractFreewayInterchangeNames(camera.stakenumber);
-  const place = names[0] || getFreewayEntranceExitLabel(camera);
+  const kmLabel = formatFreewayKmLabel(km);
+  const place = names[0] || kmLabel || getFreewayEntranceExitLabel(camera);
   return { route, dir, km, place, names };
 }
 
@@ -2079,10 +2349,13 @@ function syncCameraScopeToLocatorCityForKeyword() {
 
 function getNearestFreewayRegionId(focus = getCctvLocationFocus()) {
   const cameras = freewayCameraDataset?.cameras || [];
+  const preferredCity = getSelectedFreewayCityName() || String(citySelect?.value || "").trim();
   let bestId = "n1";
   let bestDistance = Infinity;
+  let bestInCityId = "";
+  let bestInCityDistance = Infinity;
   cameras.forEach((camera) => {
-    if (!isCameraUrlUsable(camera.html) || isCameraMarkedBlackScreen(camera) || isCameraMaintenanceText(camera)) {
+    if (!isUsableFreewayCamera(camera)) {
       return;
     }
     const lat = Number(camera.gisy);
@@ -2099,8 +2372,16 @@ function getNearestFreewayRegionId(focus = getCctvLocationFocus()) {
       bestDistance = distance;
       bestId = region.id;
     }
+    if (
+      preferredCity &&
+      sameTaiwanCityName(resolveFreewayCameraCity(camera), preferredCity) &&
+      distance < bestInCityDistance
+    ) {
+      bestInCityDistance = distance;
+      bestInCityId = region.id;
+    }
   });
-  return bestId;
+  return bestInCityId || bestId;
 }
 
 function applyLocateDefaultFreewayRegion({ force = false } = {}) {
@@ -2359,7 +2640,7 @@ function syncEarthquakeSummaryLevel(quake) {
 function getFreewayEntranceExitLabel(camera) {
   const text = String(camera?.stakenumber || "").trim();
   const match = text.match(/[（(]([^）)]+)[）)]/);
-  if (match?.[1]) {
+  if (match?.[1] && !isGenericFreewayDirectionLabel(match[1])) {
     return simplifyFreewayOptionLabel(match[1]);
   }
   const names = extractFreewayInterchangeNames(text);
@@ -2441,7 +2722,7 @@ function extractFreewayInterchangeNames(stakenumber = "") {
       names.push(name);
     }
   };
-  const placeMatches = text.matchAll(/([^()到＋+、，,\s]{1,20}?(?:交流道|轉接道|服務區|休息站|系統))/g);
+  const placeMatches = text.matchAll(/([^()到＋+、，,\s]{1,20}?(?:系統交流道|交流道|轉接道|服務區|休息站|系統))/g);
   for (const match of placeMatches) {
     push(match[1]);
   }
@@ -2461,10 +2742,13 @@ function freewayPlaceAliases(name = "") {
     return aliases;
   }
   aliases.add(raw);
-  if (/(交流道|端)$/u.test(raw)) {
-    const key = raw.replace(/(交流道|端)$/u, "");
+  if (/(系統交流道|交流道|端|系統)$/u.test(raw)) {
+    const key = raw.replace(/(系統交流道|交流道|端|系統)$/u, "");
     if (key) {
+      aliases.add(key);
       aliases.add(`${key}交流道`);
+      aliases.add(`${key}系統交流道`);
+      aliases.add(`${key}系統`);
       aliases.add(`${key}端`);
     }
   }
@@ -2474,6 +2758,13 @@ function freewayPlaceAliases(name = "") {
 function cameraMatchesFreewayInterchange(camera, interchangeName) {
   const target = String(interchangeName || "").trim();
   if (!target) {
+    return true;
+  }
+  const point = parseFreewayCameraPoint(camera);
+  if (point.place === target || point.names.includes(target)) {
+    return true;
+  }
+  if (formatFreewayKmLabel(point.km) === target || getFreewayPointDisplayName(camera) === target) {
     return true;
   }
   const stake = String(camera?.stakenumber || "");
@@ -2495,30 +2786,46 @@ function buildFreewayInterchangeIndex(cameras = []) {
       return;
     }
     const names = extractFreewayInterchangeNames(camera.stakenumber);
-    if (!names.length) {
+    const place = getFreewayPointDisplayName(camera);
+    const labels = names.length ? names : place ? [place] : [];
+    if (!labels.length) {
       return;
     }
-    names.forEach((name) => {
+    const city = resolveFreewayCameraCity(camera);
+    labels.forEach((name) => {
       if (!byName.has(name)) {
-        byName.set(name, { name, latSum: 0, lonSum: 0, count: 0 });
+        byName.set(name, { name, latSum: 0, lonSum: 0, count: 0, cityVotes: new Map() });
       }
       const row = byName.get(name);
       row.latSum += lat;
       row.lonSum += lon;
       row.count += 1;
+      if (city) {
+        row.cityVotes.set(city, (row.cityVotes.get(city) || 0) + 1);
+      }
     });
   });
 
   const interchanges = [...byName.values()].map((row) => {
     const lat = row.latSum / row.count;
     const lon = row.lonSum / row.count;
-    let nearestCity = CITY_LOCATIONS[0]?.name || "";
+    let votedCity = "";
+    let votedCount = 0;
+    row.cityVotes.forEach((count, city) => {
+      if (count > votedCount) {
+        votedCount = count;
+        votedCity = city;
+      }
+    });
+    let nearestCity = votedCity || CITY_LOCATIONS[0]?.name || "";
     let best = Infinity;
     CITY_LOCATIONS.forEach((city) => {
       const distance = getDistanceKm(lat, lon, city.lat, city.lon);
       if (distance < best) {
         best = distance;
-        nearestCity = city.name;
+        if (!votedCity) {
+          nearestCity = city.name;
+        }
       }
     });
     return {
@@ -2914,7 +3221,7 @@ function getFilteredSortedFreewayCameras() {
   const attempts = interchangeName
     ? [
         {
-          ignoreRoute: nationwide,
+          ignoreRoute: true,
           ignoreCityRadius: true,
           ignoreInterchange: false,
           radiusKm: 3
@@ -2927,6 +3234,16 @@ function getFilteredSortedFreewayCameras() {
           ignoreInterchange: true,
           radiusKm: selectedCity ? FREEWAY_CCTV_RADIUS_KM : 9999
         },
+        ...(selectedCity
+          ? [
+              {
+                ignoreRoute: true,
+                ignoreCityRadius: false,
+                ignoreInterchange: true,
+                radiusKm: FREEWAY_CCTV_RADIUS_KM
+              }
+            ]
+          : []),
         ...(nationwide
           ? [{ ignoreRoute: true, ignoreCityRadius: true, ignoreInterchange: true, radiusKm: 80 }]
           : [])
