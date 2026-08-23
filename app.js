@@ -4418,23 +4418,23 @@ const VIVID_WEATHER_ICONS = {
 };
 
 function getFlatWeatherIconSvg(code, cloudCover) {
-  return FLAT_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || FLAT_WEATHER_ICONS.clear;
+  return FLAT_WEATHER_ICONS[getWeatherCategory(code)] || FLAT_WEATHER_ICONS.clear;
 }
 
 function getLineWeatherIconSvg(code, cloudCover) {
-  return LINE_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || LINE_WEATHER_ICONS.clear;
+  return LINE_WEATHER_ICONS[getWeatherCategory(code)] || LINE_WEATHER_ICONS.clear;
 }
 
 function getGlassWeatherIconSvg(code, cloudCover) {
-  return GLASS_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || GLASS_WEATHER_ICONS.clear;
+  return GLASS_WEATHER_ICONS[getWeatherCategory(code)] || GLASS_WEATHER_ICONS.clear;
 }
 
 function getVividWeatherIconSvg(code, cloudCover) {
-  return VIVID_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || VIVID_WEATHER_ICONS.clear;
+  return VIVID_WEATHER_ICONS[getWeatherCategory(code)] || VIVID_WEATHER_ICONS.clear;
 }
 
 function getMotionWeatherIconSvg(code, cloudCover) {
-  return MOTION_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || MOTION_WEATHER_ICONS.clear;
+  return MOTION_WEATHER_ICONS[getWeatherCategory(code)] || MOTION_WEATHER_ICONS.clear;
 }
 
 function getWeatherIconTheme() {
