@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v151-subscribe-url-consistent";
+const SW_VERSION = "jin-v152-air-metrics-yellow";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

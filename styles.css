@@ -1136,6 +1136,18 @@ label {
   transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
+.air-metrics dt,
+.weather-block .air-metrics dt,
+.msn-weather-card .air-metrics dt,
+#aqiMetric dt,
+#pm25Metric dt,
+#pm10Metric dt,
+#ozoneMetric dt {
+  color: #ffe38a !important;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(255, 214, 80, 0.45);
+}
+
 .air-level-good {
   background: #b7e4c7 !important;
   border-color: #52b788 !important;
