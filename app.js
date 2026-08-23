@@ -7685,14 +7685,14 @@ function getSubscriptionEarthquakeMessage() {
     const top = quakes[0];
     return stampNotifySource(
       "中央氣象署地震",
-      `【地震監測｜中央氣象署】${locationLabel} 最新：規模 ${top.magnitude.toFixed(
+      `【地震監測】${locationLabel} 最新：規模 ${top.magnitude.toFixed(
         1
       )}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${formatDateTime(top.timeMs)}），目前未達國家緊急訊息等級。`
     );
   }
   return stampNotifySource(
     "中央氣象署地震",
-    `【地震監測｜中央氣象署】${locationLabel} 目前無近期台灣地區有感地震通報。`
+    `【地震監測】${locationLabel} 目前無近期台灣地區有感地震通報。`
   );
 }
 
@@ -7707,12 +7707,19 @@ function renderAiAlerts() {
   );
   const nationalQuake = recentQuakes.find((quake) => isNationalEarthquakeAlert(quake));
 
+  if (cityClosure && cityClosure.message.includes("停止上班")) {
+    const dateText = formatClosureDatesText(getClosureRowDates(cityClosure));
+    alerts.push(
+      `【停班停課】${cityClosure.city}${dateText ? `（${dateText}）` : ""} 最新公告：${cityClosure.message}`
+    );
+  }
+
   if (nationalQuake) {
     alerts.push(nationalQuake.reportContent || buildCwaEarthquakeReportContent(nationalQuake));
   } else if (recentQuakes.length) {
     const top = recentQuakes[0];
     alerts.push(
-      `【地震監測｜中央氣象署】最近有感 ${recentQuakes.length} 筆，最新規模 ${top.magnitude.toFixed(
+      `【地震監測】最近有感 ${recentQuakes.length} 筆，最新規模 ${top.magnitude.toFixed(
         1
       )}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${top.place}）。`
     );
@@ -7739,13 +7746,6 @@ function renderAiAlerts() {
     );
   } else if (appState.floodMetaText) {
     alerts.push(`【積淹水監測】${appState.floodMetaText}`);
-  }
-
-  if (cityClosure && cityClosure.message.includes("停止上班")) {
-    const dateText = formatClosureDatesText(getClosureRowDates(cityClosure));
-    alerts.push(
-      `【停班停課】${cityClosure.city}${dateText ? `（${dateText}）` : ""} 最新公告：${cityClosure.message}`
-    );
   }
 
   (appState.cwaWarnings || []).slice(0, 1).forEach((row) => {

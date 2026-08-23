@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v179-drop-ncdr-field";
+const SW_VERSION = "jin-v180-alert-closure-top-eq";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -955,10 +955,10 @@ async function buildBackgroundAlertMessages(prefs) {
         } else if (rows.length) {
           const top = rows[0];
           messages.push(
-            `【地震監測｜中央氣象署】${label} 最新：規模 ${top.magnitude.toFixed(1)}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${formatDateTime(top.timeMs)}），目前未達國家緊急訊息等級。`
+            `【地震監測】${label} 最新：規模 ${top.magnitude.toFixed(1)}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${formatDateTime(top.timeMs)}），目前未達國家緊急訊息等級。`
           );
         } else {
-          messages.push(`【地震監測｜中央氣象署】${label} 目前無近期台灣地區有感地震通報。`);
+          messages.push(`【地震監測】${label} 目前無近期台灣地區有感地震通報。`);
         }
         const currentEarthquakes = {};
         recentNational.forEach((quake) => {
