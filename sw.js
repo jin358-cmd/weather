@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v160-freeway-tainan";
+const SW_VERSION = "jin-v161-closure-date";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
@@ -165,6 +165,97 @@ function emptyRecoveryState() {
 function isClosureStopMessage(message) {
   const text = String(message || "");
   return text.includes("停止上班") || text.includes("停止上課");
+}
+
+function getTaiwanDateParts(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(Number.isNaN(date.getTime()) ? new Date() : date);
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+    day: Number(parts.find((part) => part.type === "day")?.value)
+  };
+}
+
+function taiwanDateFromYmd(year, month, day) {
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 4, 0, 0));
+}
+
+function addTaiwanDays(value, days) {
+  const { year, month, day } = getTaiwanDateParts(value);
+  return new Date(Date.UTC(year, month - 1, day + Number(days || 0), 4, 0, 0));
+}
+
+function formatClosureDateLabel(value) {
+  const { year, month, day } = getTaiwanDateParts(value);
+  const weekday = ["日", "一", "二", "三", "四", "五", "六"][taiwanDateFromYmd(year, month, day).getUTCDay()];
+  return `${month}月${day}日（${weekday}）`;
+}
+
+function parseDgpaNoticeDate(text) {
+  const raw = String(text || "");
+  const iso = raw.match(/(20\d{2})[/\-](\d{1,2})[/\-](\d{1,2})/);
+  if (iso) {
+    return taiwanDateFromYmd(iso[1], iso[2], iso[3]);
+  }
+  const roc = raw.match(/(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
+  if (roc) {
+    return taiwanDateFromYmd(Number(roc[1]) + 1911, roc[2], roc[3]);
+  }
+  const { year, month, day } = getTaiwanDateParts();
+  return taiwanDateFromYmd(year, month, day);
+}
+
+function extractClosureApplyDates(message, noticeDate) {
+  const text = String(message || "");
+  if (!isClosureStopMessage(text)) {
+    return [];
+  }
+  const base = noticeDate instanceof Date ? noticeDate : parseDgpaNoticeDate(noticeDate);
+  const dates = [];
+  const addDate = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return;
+    }
+    const key = `${getTaiwanDateParts(date).month}/${getTaiwanDateParts(date).day}`;
+    if (!dates.some((item) => `${getTaiwanDateParts(item).month}/${getTaiwanDateParts(item).day}` === key)) {
+      dates.push(date);
+    }
+  };
+  const clauses = text.split(/[。；;\n]/).map((clause) => clause.trim()).filter(Boolean);
+  (clauses.length ? clauses : [text]).forEach((clause) => {
+    if (!clause || (/照常/.test(clause) && !/停止/.test(clause))) {
+      return;
+    }
+    if (!/停止上班|停止上課|已達停止/.test(clause)) {
+      return;
+    }
+    if (/明天|明日/.test(clause)) {
+      addDate(addTaiwanDays(base, 1));
+    }
+    if (/今天|今日|本日|今[（(]|已達停止/.test(clause)) {
+      addDate(base);
+    }
+  });
+  if (!dates.length) {
+    addDate(base);
+  }
+  return dates.sort((a, b) => a.getTime() - b.getTime());
+}
+
+function formatClosureNotifyMessage(markdown, message) {
+  if (!message) {
+    return null;
+  }
+  const noticeDate = parseDgpaNoticeDate(markdown);
+  const dates = extractClosureApplyDates(message, noticeDate);
+  const dateText = dates.map((date) => formatClosureDateLabel(date)).join("、");
+  return dateText ? `${dateText}：${message}` : message;
 }
 
 function isRecoveryNotificationLine(text) {
@@ -471,10 +562,12 @@ async function buildBackgroundAlertMessages(prefs) {
     try {
       const response = await fetch(CLOSURE_OFFICIAL_MIRROR, { cache: "no-store" });
       if (response.ok) {
-        const message = parseClosureCityMessage(await response.text(), city);
+        const markdown = await response.text();
+        const message = parseClosureCityMessage(markdown, city);
+        const datedMessage = formatClosureNotifyMessage(markdown, message);
         messages.push(
-          message
-            ? `【停班停課】${label}：${message}`
+          datedMessage
+            ? `【停班停課】${label}：${datedMessage}`
             : `【停班停課】${label}：目前無停班停課狀態`
         );
         const active = isClosureStopMessage(message);

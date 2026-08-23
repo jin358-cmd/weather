@@ -4406,6 +4406,11 @@ input[type="checkbox"] {
   border-color: #115e59;
 }
 
+.legend-swatch.closure-point {
+  background: #b71c1c;
+  border-color: #7f1d1d;
+}
+
 .earthquake-card {
   display: grid;
   gap: 10px;
@@ -5550,6 +5555,11 @@ body.eq-sheet-open {
   color: #b71c1c;
 }
 
+.closure-item .closure-date {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
 .closure-item.closure-normal {
   background: #bbdefb;
   border: 1px solid #64b5f6;
@@ -5566,10 +5576,45 @@ body.eq-sheet-open {
 }
 
 .leaflet-div-icon.map-focus-pulse,
-.leaflet-div-icon.map-focus-range-label {
+.leaflet-div-icon.map-focus-range-label,
+.leaflet-div-icon.map-closure-marker {
   background: transparent;
   border: 0;
   overflow: visible !important;
+}
+
+.map-closure-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+}
+
+.map-closure-card {
+  display: grid;
+  gap: 1px;
+  min-width: 86px;
+  max-width: 150px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #b71c1c;
+  color: #fff;
+  text-align: center;
+  line-height: 1.2;
+  box-shadow: 0 2px 8px rgba(20, 8, 8, 0.4);
+  border: 1px solid #7f1d1d;
+}
+
+.map-closure-card strong {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.map-closure-card span {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 
 .map-focus-range-label-text {
