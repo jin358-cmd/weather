@@ -2040,6 +2040,21 @@ label {
   text-decoration: none;
 }
 
+.camera-card > .camera-more-details-bottom {
+  display: block;
+  margin-top: 12px;
+}
+
+.camera-card > .camera-more-details-bottom[hidden] {
+  display: none !important;
+}
+
+.camera-card > .camera-more-details-bottom > .camera-more-summary {
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
 .freeway-camera-card {
   margin-top: 0;
 }

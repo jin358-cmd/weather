@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v135-remove-disaster-map";
+const SW_VERSION = "jin-v136-cctv-match-more";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
