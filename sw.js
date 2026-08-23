@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v145-air-round";
+const SW_VERSION = "jin-v146-cctv-labels-metrics";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
