@@ -5797,13 +5797,13 @@ body.eq-sheet-open {
 }
 
 .closure-item.closure-stop {
-  background: #b71c1c;
-  border: 1px solid #7f1d1d;
+  background: #ffcdd2;
+  border: 1px solid #e57373;
 }
 
 .closure-item.closure-stop h3,
 .closure-item.closure-stop p {
-  color: #fff;
+  color: #b71c1c;
 }
 
 .closure-item .closure-date {
@@ -7497,10 +7497,7 @@ body.eq-sheet-open {
 
 .in-page-alert-subscription .in-page-alert-line-closure,
 .in-page-alert-refresh-done .in-page-alert-line-closure {
-  color: #fff;
-  background: #b71c1c;
-  border-radius: 8px;
-  padding: 6px 8px;
+  color: #b71c1c;
   font-weight: 800;
 }
 

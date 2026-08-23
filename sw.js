@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v186-closure-red-block";
+const SW_VERSION = "jin-v188-alert-card-red-only";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
