@@ -11148,8 +11148,8 @@ function syncMapLegendState() {
     const placeText =
       key === "shelter"
         ? markers.length
-          ? "定位範圍內"
-          : "定位範圍內無點位"
+          ? `直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里內`
+          : `直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里內無點位`
         : key === "city-focus"
           ? markers.length
             ? `直徑 ${MAP_LOCATE_DIAMETER_KM} 公里圈｜圖層直徑 ${MAP_DISPLAY_DIAMETER_KM} 公里`
