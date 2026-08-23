@@ -381,11 +381,36 @@
           </div>
           <div class="map-legend map-legend-below" aria-label="地圖圖例對照">
             <h4>圖例對照</h4>
-            <p class="map-legend-hint">圖例依災害分類顯示。定位縣市若有停班停課公告，該圖層會自動開啟，仍可用開關手動關閉。沒有停班停課資訊時預設關閉並收入災害圖層。無災害的圖層會自動關閉並收入收合層。停班停課以縣市標示並寫出適用日期。定位範圍為紅點閃暗，其餘標記維持原色。路口監控以青色環點與橘色路名標籤顯示，點選後顯示監控畫面及路段或交叉路口名稱。</p>
             <div id="legendActiveBlock" class="legend-active-block" hidden>
               <p class="legend-group-label">開啟中的圖層</p>
               <ul id="legendActiveList" class="legend-list legend-list-active"></ul>
             </div>
+            <ul class="legend-list legend-list-always">
+              <li>
+                <button type="button" class="legend-item-btn legend-item-fixed" data-legend-key="shelter">
+                  <span class="legend-swatch shelter-point" aria-hidden="true"></span>
+                  <span class="legend-label">避難場所</span>
+                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                  <span class="legend-place" data-legend-place>定位範圍內</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="legend-item-btn legend-item-fixed" data-legend-key="cctv">
+                  <span class="legend-swatch cctv-point" aria-hidden="true"></span>
+                  <span class="legend-label">路口監控</span>
+                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                  <span class="legend-place" data-legend-place>目前無點位</span>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="legend-item-btn legend-item-fixed" data-legend-key="city-focus">
+                  <span class="legend-swatch city-focus-swatch" aria-hidden="true"></span>
+                  <span class="legend-label">定位範圍（直徑 5 公里）</span>
+                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
+                  <span class="legend-place" data-legend-place>目前無點位</span>
+                </button>
+              </li>
+            </ul>
             <details id="legendDisasterGroup" class="legend-disaster-group">
               <summary>災害圖層 <span id="legendDisasterSummary">目前無災害</span></summary>
               <p class="legend-group-label">積水</p>
@@ -473,32 +498,6 @@
                 </li>
               </ul>
             </details>
-            <ul class="legend-list legend-list-always">
-              <li>
-                <button type="button" class="legend-item-btn legend-item-fixed" data-legend-key="shelter">
-                  <span class="legend-swatch shelter-point" aria-hidden="true"></span>
-                  <span class="legend-label">避難場所</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>定位範圍內</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn legend-item-fixed" data-legend-key="cctv">
-                  <span class="legend-swatch cctv-point" aria-hidden="true"></span>
-                  <span class="legend-label">路口監控</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="legend-item-btn legend-item-fixed" data-legend-key="city-focus">
-                  <span class="legend-swatch city-focus-swatch" aria-hidden="true"></span>
-                  <span class="legend-label">定位範圍（直徑 5 公里）</span>
-                  <span class="legend-count" data-legend-count aria-hidden="true">0</span>
-                  <span class="legend-place" data-legend-place>目前無點位</span>
-                </button>
-              </li>
-            </ul>
           </div>
         </div>
       </section>

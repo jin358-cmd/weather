@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v190-windy-taiwan-pin";
+const SW_VERSION = "jin-v191-legend-disaster-below";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
