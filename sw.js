@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v152-air-metrics-yellow";
+const SW_VERSION = "jin-v153-weather-place-oneline";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
