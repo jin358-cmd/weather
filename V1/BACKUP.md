@@ -7,3 +7,5 @@
 - 內容：當時的 HTML／CSS／JS、資料檔、圖示與相關腳本
 
 線上正式版仍在網站根目錄。此資料夾僅作還原與對照用。
+
+下載檔：`../weather-v1.zip` 或 https://jin358-cmd.github.io/weather/weather-v1.zip
