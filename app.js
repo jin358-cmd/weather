@@ -4168,8 +4168,8 @@ function formatEarthquakeMagnitudeLabel(magnitude) {
   return `<span class="earthquake-mag-value">${number}</span><span class="earthquake-mag-unit">(級)</span>`;
 }
 
-function getKawaiiWeatherIconSvg(code, cloudCover) {
-  const category = getWeatherCategory(code, cloudCover);
+function getKawaiiWeatherIconSvg(code) {
+  const category = getWeatherCategory(code);
   // Kawaii eyes: oversized sparkly eyes, blush, soft smile.
   if (category === "thunder") {
     return `
@@ -4319,9 +4319,7 @@ const WEATHER_ICON_THEMES = {
   motion: { label: "暮光動態", className: "weather-icon-theme-motion" }
 };
 
-const CLOUDY_OVERRIDE_CLOUD_COVER = 60;
-
-function getWeatherCategory(code, cloudCover) {
+function getWeatherCategory(code) {
   const weatherCode = Number(code);
   if ([95, 96, 99].includes(weatherCode)) {
     return "thunder";
@@ -4330,17 +4328,16 @@ function getWeatherCategory(code, cloudCover) {
     return "snow";
   }
   if ([61, 63, 65, 80, 81, 82, 51, 53, 55, 56, 57, 66, 67].includes(weatherCode)) {
-    const clouds = Number(cloudCover);
-    if (Number.isFinite(clouds) && clouds >= CLOUDY_OVERRIDE_CLOUD_COVER) {
-      return "partly";
-    }
     return "rain";
   }
   if ([45, 48, 3].includes(weatherCode)) {
     return "overcast";
   }
-  if ([1, 2].includes(weatherCode)) {
+  if (weatherCode === 2) {
     return "partly";
+  }
+  if (weatherCode === 1) {
+    return "clear";
   }
   return "clear";
 }
@@ -4421,23 +4418,23 @@ const VIVID_WEATHER_ICONS = {
 };
 
 function getFlatWeatherIconSvg(code, cloudCover) {
-  return FLAT_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || FLAT_WEATHER_ICONS.clear;
+  return FLAT_WEATHER_ICONS[getWeatherCategory(code)] || FLAT_WEATHER_ICONS.clear;
 }
 
 function getLineWeatherIconSvg(code, cloudCover) {
-  return LINE_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || LINE_WEATHER_ICONS.clear;
+  return LINE_WEATHER_ICONS[getWeatherCategory(code)] || LINE_WEATHER_ICONS.clear;
 }
 
 function getGlassWeatherIconSvg(code, cloudCover) {
-  return GLASS_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || GLASS_WEATHER_ICONS.clear;
+  return GLASS_WEATHER_ICONS[getWeatherCategory(code)] || GLASS_WEATHER_ICONS.clear;
 }
 
 function getVividWeatherIconSvg(code, cloudCover) {
-  return VIVID_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || VIVID_WEATHER_ICONS.clear;
+  return VIVID_WEATHER_ICONS[getWeatherCategory(code)] || VIVID_WEATHER_ICONS.clear;
 }
 
 function getMotionWeatherIconSvg(code, cloudCover) {
-  return MOTION_WEATHER_ICONS[getWeatherCategory(code, cloudCover)] || MOTION_WEATHER_ICONS.clear;
+  return MOTION_WEATHER_ICONS[getWeatherCategory(code)] || MOTION_WEATHER_ICONS.clear;
 }
 
 function getWeatherIconTheme() {
