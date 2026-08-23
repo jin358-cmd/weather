@@ -7714,6 +7714,15 @@ function renderAiAlerts() {
     );
   }
 
+  if (nearbyFlood.length > 0) {
+    const top = nearbyFlood[0];
+    alerts.push(
+      `【積淹水警示】${top.areaName} 距離約 ${top.distanceKm.toFixed(1)} km，水深 ${top.waterDepthCm} cm（等級 ${top.level}）。`
+    );
+  } else if (appState.floodMetaText) {
+    alerts.push(`【積淹水監測】${appState.floodMetaText}`);
+  }
+
   if (nationalQuake) {
     alerts.push(nationalQuake.reportContent || buildCwaEarthquakeReportContent(nationalQuake));
   } else if (recentQuakes.length) {
@@ -7737,15 +7746,6 @@ function renderAiAlerts() {
 
   if (air && air.aqi > 100) {
     alerts.push(`【空品提醒】目前 AQI ${Math.round(air.aqi)}，敏感族群請減少戶外活動。`);
-  }
-
-  if (nearbyFlood.length > 0) {
-    const top = nearbyFlood[0];
-    alerts.push(
-      `【積淹水警示】${top.areaName} 距離約 ${top.distanceKm.toFixed(1)} km，水深 ${top.waterDepthCm} cm（等級 ${top.level}）。`
-    );
-  } else if (appState.floodMetaText) {
-    alerts.push(`【積淹水監測】${appState.floodMetaText}`);
   }
 
   (appState.cwaWarnings || []).slice(0, 1).forEach((row) => {

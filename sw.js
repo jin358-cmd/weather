@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v180-alert-closure-top-eq";
+const SW_VERSION = "jin-v181-flood-below-closure";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
