@@ -171,6 +171,7 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   white-space: normal;
   overflow: visible;
   font-size: var(--hero-heading-size);
+  text-align: center;
 }
 
 .theme-elegant .hero h1 {
@@ -188,7 +189,7 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   word-break: keep-all;
   overflow-wrap: normal;
   font-size: var(--hero-title-size);
-  text-align: left;
+  text-align: center;
 }
 
 .theme-elegant .refresh-btn {
