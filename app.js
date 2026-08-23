@@ -679,6 +679,8 @@ const SUBSCRIPTION_TOPIC_LABELS = {
   "water-outage": "停水公告（定位／所選鄉鎮市區）",
   earthquake: "地震通報（氣象署／國家級警報同步）"
 };
+const DISASTER_STATUS_TOPICS = ["closure", "flood", "earthquake"];
+const UTILITY_STATUS_TOPICS = ["power-outage", "water-outage"];
 const EARTHQUAKE_CWA_PAGE = "https://www.cwa.gov.tw/V8/C/E/index.html";
 const EARTHQUAKE_CWA_LIST_MIRROR =
   "https://r.jina.ai/https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
@@ -696,8 +698,6 @@ const SUBSCRIBE_OWNER_INBOX = "jin358@gmail.com";
 const VAPID_PUBLIC_KEY =
   "BJXXT1l-q5eu0Obt6DDDndh1NeVqGL9jR3mS8aoH1-cB6W3Cqk_UM9jLLF9PLyc1RguSVPmki1bxbOsNcYeOVbI";
 const RECOVERY_STATE_STORAGE_KEY = "subscriptionRecoveryStateV1";
-const RECOVERY_SENT_STORAGE_KEY = "subscriptionRecoverySentV1";
-const RECOVERY_SENT_TTL_MS = 48 * 60 * 60 * 1000;
 const FORECAST_NOTIFY_ARM_KEY = "jinForecastNotifyArmedByLocateV1";
 const FLOOD_LATEST_API =
   "https://opendata.wra.gov.tw/api/v2/1b991bbb-ad85-4e7a-b931-06ce8749d3ed?format=JSON";
@@ -761,7 +761,6 @@ const appState = {
   waterOutageItems: [],
   waterOutageMetaText: "",
   waterOutageDataOk: true,
-  closureDataOk: true,
   lastRecoveryMessages: [],
   earthquakes: [],
   earthquakeMetaText: "",
@@ -4954,17 +4953,12 @@ function renderClosureMeta(updateAt, sourceLabel, { cacheSuffix = false } = {}) 
   });
 }
 
-function isClosureStopMessage(message) {
-  const text = String(message || "");
-  return text.includes("停止上班") || text.includes("停止上課");
-}
-
 function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
   closureList.innerHTML = "";
   closureList.classList.remove("is-empty");
   const sorted = [...(data.rows || [])].sort((a, b) => {
-    const aStop = Number(isClosureStopMessage(a.message));
-    const bStop = Number(isClosureStopMessage(b.message));
+    const aStop = Number(a.message.includes("停止上班") || a.message.includes("停止上課"));
+    const bStop = Number(b.message.includes("停止上班") || b.message.includes("停止上課"));
     return bStop - aStop;
   });
 
@@ -4975,13 +4969,15 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
     closureList.classList.add("is-empty");
     closureList.innerHTML = `<p class="status-ok closure-empty-msg">${okText}</p>`;
     appState.closureRows = [];
-    appState.closureDataOk = true;
     renderClosureMeta(data.updateAt, sourceLabel, { cacheSuffix });
     window.requestAnimationFrame(() => {
       fitClosureEmptyMessage();
     });
     return;
   }
+
+  const isClosureStopMessage = (message) =>
+    message.includes("停止上班") || message.includes("停止上課");
 
   const appendClosureGroup = (rows, groupClass, groupLabel) => {
     if (!rows.length) {
@@ -5017,7 +5013,6 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
   );
 
   appState.closureRows = sorted;
-  appState.closureDataOk = true;
   renderClosureMeta(data.updateAt, sourceLabel, { cacheSuffix });
 }
 
@@ -5044,7 +5039,6 @@ async function fetchClosureNotices() {
     }
     closureMeta.textContent = `停班停課資料暫時無法更新：${error.message}`;
     appState.closureRows = [];
-    appState.closureDataOk = false;
     closureList.classList.remove("is-empty");
     closureList.innerHTML = `
       <p class="status-warn">
@@ -5731,7 +5725,6 @@ function createDefaultRecoveryState() {
     powerOutages: {},
     waterOutages: {},
     earthquakes: {},
-    cityClosures: {},
     hasLandTyphoonWarning: false
   };
 }
@@ -5748,7 +5741,6 @@ function loadRecoveryState() {
       powerOutages: parsed.powerOutages ?? {},
       waterOutages: parsed.waterOutages ?? {},
       earthquakes: parsed.earthquakes ?? {},
-      cityClosures: parsed.cityClosures ?? {},
       hasLandTyphoonWarning: Boolean(parsed.hasLandTyphoonWarning)
     };
   } catch {
@@ -5758,60 +5750,6 @@ function loadRecoveryState() {
 
 function saveRecoveryState(state) {
   localStorage.setItem(RECOVERY_STATE_STORAGE_KEY, JSON.stringify(state));
-}
-
-function isRecoveryNotificationKind(kind) {
-  return String(kind || "").includes("recovery");
-}
-
-function getRecoverySentKey(item) {
-  return `${item?.kind || "recovery"}::${String(item?.text || "").trim()}`;
-}
-
-function loadRecoverySentMap() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(RECOVERY_SENT_STORAGE_KEY) || "{}");
-    return raw && typeof raw === "object" ? raw : {};
-  } catch {
-    return {};
-  }
-}
-
-function pruneRecoverySentMap(map) {
-  const cutoff = Date.now() - RECOVERY_SENT_TTL_MS;
-  const next = {};
-  Object.entries(map || {}).forEach(([key, timestamp]) => {
-    if (Number(timestamp) >= cutoff) {
-      next[key] = timestamp;
-    }
-  });
-  return next;
-}
-
-function filterUnsentRecoveryMessages(messages) {
-  const sent = pruneRecoverySentMap(loadRecoverySentMap());
-  return (messages || []).filter((item) => {
-    if (!isRecoveryNotificationKind(item?.kind)) {
-      return true;
-    }
-    return !sent[getRecoverySentKey(item)];
-  });
-}
-
-function markRecoveryMessagesSent(messages) {
-  const sent = pruneRecoverySentMap(loadRecoverySentMap());
-  const now = Date.now();
-  (messages || []).forEach((item) => {
-    if (!isRecoveryNotificationKind(item?.kind)) {
-      return;
-    }
-    sent[getRecoverySentKey(item)] = now;
-  });
-  try {
-    localStorage.setItem(RECOVERY_SENT_STORAGE_KEY, JSON.stringify(sent));
-  } catch {
-    /* ignore */
-  }
 }
 
 function updateRecoveryTrackingState() {
@@ -5877,8 +5815,7 @@ function updateRecoveryTrackingState() {
   if (appState.powerOutageDataOk === false) {
     next.powerOutages = prev.powerOutages || {};
   } else {
-    const wantsPowerRecovery =
-      isSubscribed && (topics.has("power-outage") || isForecastNotifyArmedByLocate());
+    const wantsPowerRecovery = topics.has("power-outage") || isForecastNotifyArmedByLocate();
     if (wantsPowerRecovery) {
       Object.entries(prev.powerOutages).forEach(([key, point]) => {
         if (currentOutages[key]) {
@@ -5916,8 +5853,7 @@ function updateRecoveryTrackingState() {
   if (!townshipName || appState.waterOutageDataOk === false) {
     next.waterOutages = prev.waterOutages || {};
   } else {
-    const wantsWaterRecovery =
-      isSubscribed && (topics.has("water-outage") || isForecastNotifyArmedByLocate());
+    const wantsWaterRecovery = topics.has("water-outage") || isForecastNotifyArmedByLocate();
     const prevLocalWater = Object.fromEntries(
       Object.entries(prev.waterOutages || {}).filter(([, item]) => {
         if (item?.township && item.township === townshipName) {
@@ -5990,56 +5926,23 @@ function updateRecoveryTrackingState() {
     }
   });
 
-  if (appState.typhoonOfficial == null) {
-    next.hasLandTyphoonWarning = Boolean(prev.hasLandTyphoonWarning);
-  } else {
-    const hasLandWarning = Boolean(appState.typhoonOfficial.hasLandWarning);
-    if (isSubscribed && prev.hasLandTyphoonWarning && !hasLandWarning) {
-      const typhoonName = appState.typhoonOfficial?.name;
-      messages.push({
-        kind: "typhoon-recovery",
-        text: `【解除颱風警報】中央氣象署已解除陸上颱風警報${typhoonName ? `（${typhoonName}）` : ""}，${locationLabel} 請持續留意後續天氣與防災資訊。`
-      });
-    }
-    next.hasLandTyphoonWarning = hasLandWarning;
+  const hasLandWarning = Boolean(appState.typhoonOfficial?.hasLandWarning);
+  if (isSubscribed && prev.hasLandTyphoonWarning && !hasLandWarning) {
+    const typhoonName = appState.typhoonOfficial?.name;
+    messages.push({
+      kind: "typhoon-recovery",
+      text: `【解除颱風警報】中央氣象署已解除陸上颱風警報${typhoonName ? `（${typhoonName}）` : ""}，${locationLabel} 請持續留意後續天氣與防災資訊。`
+    });
   }
-
-  next.cityClosures = { ...(prev.cityClosures || {}) };
-  if (appState.closureDataOk === false) {
-    next.cityClosures = prev.cityClosures || {};
-  } else if (isSubscribed && topics.has("closure")) {
-    const cityName = getSubscriptionCityName();
-    if (cityName) {
-      const row = (appState.closureRows || []).find((item) => item.city === cityName);
-      const active = Boolean(row && isClosureStopMessage(row.message));
-      const prevCity = prev.cityClosures?.[cityName];
-      if (prevCity?.active && !active) {
-        const place = `${cityName}${getSubscriptionTownshipName() || ""}`;
-        messages.push({
-          kind: "closure-recovery",
-          text: `【停班停課解除】${place} 已解除停班停課警戒${
-            row?.message ? `，目前${row.message}` : "，目前恢復照常上班上課"
-          }。`
-        });
-      }
-      next.cityClosures[cityName] = {
-        active,
-        message: row?.message || ""
-      };
-    }
-  }
+  next.hasLandTyphoonWarning = hasLandWarning;
 
   saveRecoveryState(next);
-  const normalized = messages
-    .map((item) => (typeof item === "string" ? { kind: "generic", text: item } : item))
-    .filter((item) => item?.text);
-  if (!isSubscribed) {
+  if (!isForecastNotifyArmedByLocate()) {
     return [];
   }
-  if (!isForecastNotifyArmedByLocate()) {
-    return normalized.filter((item) => isRecoveryNotificationKind(item.kind));
-  }
-  return normalized;
+  return messages
+    .map((item) => (typeof item === "string" ? { kind: "generic", text: item } : item))
+    .filter((item) => item?.text);
 }
 
 function parseAiAlertPresentation(text) {
@@ -7349,7 +7252,12 @@ function getSubscriptionUpdateLines() {
     .map((text) => String(text || "").trim())
     .filter(Boolean);
   if (appState.subscription?.email && getSelectedSubscriptionTopics().length) {
-    const messages = buildSubscriptionNotificationMessages();
+    const messages = (Array.isArray(customMessages) && customMessages.length
+    ? customMessages
+    : buildSubscriptionNotificationMessages()
+  )
+    .map((text) => String(text || "").trim())
+    .filter(Boolean);
     if (recoveryLines.length || messages.length) {
       return [...recoveryLines, ...messages];
     }
@@ -8264,12 +8172,7 @@ async function sendSubscriptionNotification({
   if (!permissionMode) {
     return false;
   }
-  const messages = (Array.isArray(customMessages) && customMessages.length
-    ? customMessages
-    : buildSubscriptionNotificationMessages()
-  )
-    .map((text) => String(text || "").trim())
-    .filter(Boolean);
+  const messages = buildSubscriptionNotificationMessages();
   if (!messages.length) {
     renderSubscriptionStatus("請先勾選至少一項訂閱主題。");
     return false;
