@@ -7932,14 +7932,15 @@ async function postFormSubmitMail(toEmail, fields) {
   return payload;
 }
 
-async function sendEmailToInbox(toEmail, subject, message) {
+async function sendEmailToInbox(toEmail, subject, message, extraFields = {}) {
   const email = String(toEmail || "").trim().toLowerCase();
   return postFormSubmitMail(email, {
-    name: "停班停課+即時災害通報平台",
+    name: "停班停課＋即時災害通報平台",
     email,
     _replyto: email,
     _subject: subject,
-    message: String(message || "")
+    message: String(message || ""),
+    ...extraFields
   });
 }
 
@@ -7951,18 +7952,37 @@ function formatSubscriptionTopicLines(topics = []) {
   return lines.length ? lines : ["・（未勾選主題）"];
 }
 
+function getSubscriptionConfirmLocation(record) {
+  return `${record?.city || ""}${record?.township || ""}`.trim();
+}
+
+function buildSubscriptionConfirmSubject(record) {
+  const location = getSubscriptionConfirmLocation(record);
+  return location ? `【災防通報】訂閱確認｜${location}` : "【災防通報】訂閱確認";
+}
+
+function buildSubscriptionConfirmCtaBlock() {
+  return [
+    "請點選以下連結確認並返回通報平台：",
+    "點此確認並返回通報平台",
+    SITE_PUBLIC_URL
+  ];
+}
+
 function buildSubscriptionSuccessEmailBody(record) {
-  const location = `${record.city || ""}${record.township || ""}`.trim() || "尚未指定地區";
+  const location = getSubscriptionConfirmLocation(record) || "尚未指定地區";
   const lines = [
-    "【訂閱成功通知】",
+    "您好，",
     "",
     "感謝您訂閱「停班停課＋即時災害通報平台」。",
-    "您的即時訊息訂閱已儲存成功。",
+    "這封信是訂閱確認信，方便您核對訂閱內容並點選連結返回平台。",
     "",
     `訂閱信箱：${record.email}`,
     `訂閱地區：${location}`,
     "訂閱主題：",
     ...formatSubscriptionTopicLines(record.topics),
+    "",
+    ...buildSubscriptionConfirmCtaBlock(),
     "",
     "訂閱確認與災害警戒解除通知會立即發送；預報／警戒通知會在您完成「依設備定位選區」後持續發送。"
   ];
@@ -7971,10 +7991,27 @@ function buildSubscriptionSuccessEmailBody(record) {
   }
   lines.push(
     "",
-    `平台：${SITE_PUBLIC_URL}`,
-    "若要變更或取消訂閱，請回網站調整主題後再次按下「儲存訂閱」。"
+    "若要變更主題或取消訂閱，請回到通報平台調整後再次按下「儲存訂閱」。",
+    SITE_PUBLIC_URL
   );
   return lines.join("\n");
+}
+
+function buildSubscriptionConfirmAutoresponse(record) {
+  const location = getSubscriptionConfirmLocation(record) || "尚未指定地區";
+  return [
+    "您好，感謝您訂閱「停班停課＋即時災害通報平台」。",
+    "這封信是訂閱確認信，請點選下方連結確認並返回通報平台。",
+    "",
+    `訂閱信箱：${record.email}`,
+    `訂閱地區：${location}`,
+    "訂閱主題：",
+    ...formatSubscriptionTopicLines(record.topics),
+    "",
+    ...buildSubscriptionConfirmCtaBlock(),
+    "",
+    "若要變更主題或取消訂閱，請回到通報平台調整後再次按下「儲存訂閱」。"
+  ].join("\n");
 }
 
 function buildSubscriberRecord(subscription = appState.subscription) {
@@ -8059,7 +8096,9 @@ async function notifyOwnerNewSubscriber(record, subscriberMessage = "") {
       email: record.email,
       _replyto: record.email,
       _subject: `【新訂閱】${record.email}`,
-      _autoresponse: subscriberMessage || buildSubscriptionSuccessEmailBody(record),
+      _autoresponse: buildSubscriptionConfirmAutoresponse(record),
+      確認動作: "點此確認並返回通報平台",
+      確認連結: SITE_PUBLIC_URL,
       message: [
         "有新的即時訊息訂閱：",
         `Email：${record.email}`,
@@ -8067,7 +8106,7 @@ async function notifyOwnerNewSubscriber(record, subscriberMessage = "") {
         `主題：${(record.topics || []).join(", ")}`,
         `座標：${record.lat}, ${record.lon}`,
         "",
-        subscriberMessage || "已同步寄出訂閱成功通知給訂閱者。"
+        subscriberMessage || "已同步寄出訂閱確認信給訂閱者。"
       ].join("\n")
     });
   } catch {
@@ -8100,7 +8139,7 @@ async function sendDailyWeatherEmail({ force = false } = {}) {
 async function registerSubscriptionEmailDelivery(subscription) {
   const record = buildSubscriberRecord(subscription);
   const successBody = buildSubscriptionSuccessEmailBody(record);
-  const locationLabel = `${record.city || ""}${record.township || ""}`.trim();
+  const confirmAutoresponse = buildSubscriptionConfirmAutoresponse(record);
   const results = {
     confirmationSent: false,
     dailySent: false,
@@ -8108,7 +8147,17 @@ async function registerSubscriptionEmailDelivery(subscription) {
     activationHint: false
   };
   try {
-    await sendEmailToInbox(record.email, `【訂閱成功】即時訊息通知｜${locationLabel || "通報平台"}`, successBody);
+    await sendEmailToInbox(
+      record.email,
+      buildSubscriptionConfirmSubject(record),
+      successBody,
+      {
+        _autoresponse: confirmAutoresponse,
+        _next: SITE_PUBLIC_URL,
+        確認動作: "點此確認並返回通報平台",
+        確認連結: SITE_PUBLIC_URL
+      }
+    );
     results.confirmationSent = true;
     if ((record.topics || []).includes("weather")) {
       results.dailySent = true;
@@ -10514,9 +10563,9 @@ subscriptionForm.addEventListener("submit", async (event) => {
     }
     const mail = await registerSubscriptionEmailDelivery(appState.subscription);
     if (mail.confirmationSent) {
-      mailStatus = "已寄出訂閱成功通知信到您的信箱。";
+      mailStatus = "已寄出中文訂閱確認信，請至信箱開啟確認信並點選「點此確認並返回通報平台」。";
     } else if (mail.activationHint) {
-      mailStatus = "請至信箱點選確認連結，之後即可收到訂閱成功通知與每日預報。";
+      mailStatus = "請至信箱開啟確認信並點選連結（若為首次收件需先啟用 FormSubmit）。";
     }
   } catch {
     mailStatus = "若未收到通知信，請查看垃圾郵件或再按一次儲存訂閱。";
