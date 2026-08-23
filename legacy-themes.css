@@ -521,7 +521,9 @@ body.theme-elegant[data-legacy-theme="dusk"] .locate-btn.locate-btn-pulse::after
 
 .theme-elegant .weather-metrics dt,
 .theme-elegant .msn-weather-card .weather-metrics dt {
-  color: #f4efe6 !important;
+  color: #ffe38a !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 10px rgba(255, 214, 80, 0.45);
 }
 
 .theme-elegant .metrics dd,
