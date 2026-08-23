@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v163-closure-legend-active";
+const SW_VERSION = "jin-v164-locate-circle-1km";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
