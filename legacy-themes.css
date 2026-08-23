@@ -526,6 +526,17 @@ body.theme-elegant[data-legacy-theme="dusk"] .locate-btn.locate-btn-pulse::after
   text-shadow: 0 0 10px rgba(255, 214, 80, 0.45);
 }
 
+.theme-elegant .air-metrics dt,
+.theme-elegant .msn-weather-card .air-metrics dt,
+.theme-elegant #aqiMetric dt,
+.theme-elegant #pm25Metric dt,
+.theme-elegant #pm10Metric dt,
+.theme-elegant #ozoneMetric dt {
+  color: #ffe38a !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 10px rgba(255, 214, 80, 0.45);
+}
+
 .theme-elegant .metrics dd,
 .theme-elegant .weather-temp-main,
 .theme-elegant .weather-place,
