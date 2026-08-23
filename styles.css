@@ -4244,7 +4244,8 @@ input[type="checkbox"] {
 .leaflet-focus-frame {
   stroke: #00d4ff !important;
   stroke-width: 4px !important;
-  fill: rgba(0, 212, 255, 0.14) !important;
+  stroke-dasharray: 10 6;
+  fill: rgba(0, 212, 255, 0.1) !important;
 }
 
 .layer-panel {
@@ -5564,10 +5565,26 @@ body.eq-sheet-open {
   border-color: #e0f7ff;
 }
 
-.leaflet-div-icon.map-focus-pulse {
+.leaflet-div-icon.map-focus-pulse,
+.leaflet-div-icon.map-focus-range-label {
   background: transparent;
   border: 0;
   overflow: visible !important;
+}
+
+.map-focus-range-label-text {
+  display: inline-block;
+  transform: translate(-50%, -100%);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #00d4ff;
+  background: rgba(8, 18, 28, 0.86);
+  color: #e0f7ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .map-focus-pulse-dot {
