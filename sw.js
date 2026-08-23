@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v136-cctv-match-more";
+const SW_VERSION = "jin-v137-city-cctv-8";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

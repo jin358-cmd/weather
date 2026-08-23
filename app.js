@@ -710,7 +710,7 @@ const LIKE_COUNTER_STORAGE_KEY = "siteLikeCountV1";
 const LIKE_VOTED_STORAGE_KEY = "siteLikedV1";
 const CITY_CCTV_RADIUS_KM = 1;
 const CITY_CCTV_NEARBY_KM = 8;
-const CITY_CCTV_PREVIEW_LIMIT = 6;
+const CITY_CCTV_PREVIEW_LIMIT = 8;
 const CITY_CCTV_MORE_LIMIT = 40;
 const CITY_CCTV_MORE_BOTTOM_LIMIT = 40;
 const CITY_CCTV_VERIFY_EXPAND_SIZE = 100;
@@ -1726,15 +1726,8 @@ function getActiveCityCctvRadiusKm() {
 }
 
 function syncCameraRegionToLocatorArea() {
-  const town = String(townshipSelect?.value || "").trim();
-  fillCameraDistrictSelect(town);
-  if (!cameraRegionSelect) {
-    return;
-  }
-  const townValue = town ? `town:${town}` : "";
-  if (townValue && [...cameraRegionSelect.options].some((option) => option.value === townValue)) {
-    cameraRegionSelect.value = townValue;
-  } else {
+  fillCameraDistrictSelect("");
+  if (cameraRegionSelect) {
     cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
   }
 }
@@ -3637,7 +3630,7 @@ function updateCameraMetaText() {
   } else if (district?.town) {
     scope = `選定地區：${cityName}${district.town}`;
   } else if (cityName) {
-    scope = `選定縣市：${cityName}｜定位點週圍 ${CITY_CCTV_NEARBY_KM} 公里優先`;
+    scope = `定位點縣市：${cityName}｜全部路口監控｜最多 ${CITY_CCTV_PREVIEW_LIMIT} 路`;
   }
   if (keyword) {
     scope += `｜關鍵字：${keyword}`;
@@ -3900,15 +3893,8 @@ async function renderCameraList() {
     setVerifiedCityCameras(confirmedLive);
   }
 
-  const shownIds = new Set(confirmedLive.map((camera) => String(camera?.id || "")));
-  const leftoverCameras = renderQueue.filter((camera) => !shownIds.has(String(camera?.id || "")));
-  const extraCameras = leftoverCameras.slice(0, CITY_CCTV_MORE_LIMIT);
-  const extraBottomCameras = leftoverCameras.slice(
-    CITY_CCTV_MORE_LIMIT,
-    CITY_CCTV_MORE_LIMIT + CITY_CCTV_MORE_BOTTOM_LIMIT
-  );
-  syncCityCameraMorePanel(extraCameras, scopeLabel);
-  syncCityCameraMoreBottomPanel(extraBottomCameras, scopeLabel);
+  syncCityCameraMorePanel([], scopeLabel);
+  syncCityCameraMoreBottomPanel([], scopeLabel);
   updateCameraMetaText();
   if (confirmedLive.length) {
     setVerifiedCityCameras(confirmedLive.slice(0, CITY_CCTV_PREVIEW_LIMIT));
@@ -9865,17 +9851,8 @@ cameraCitySelect?.addEventListener("change", () => {
       cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
     }
   } else {
-    const selectedCity = getSelectedCameraCityName() || citySelect?.value || "";
-    const locatorTown = String(townshipSelect?.value || "").trim();
-    const sameAsLocator =
-      isLocatorFollowCameraCity(cameraCitySelect) || selectedCity === citySelect?.value;
-    fillCameraDistrictSelect(sameAsLocator ? locatorTown : "");
-    if (sameAsLocator && locatorTown) {
-      const townValue = `town:${locatorTown}`;
-      if ([...cameraRegionSelect.options].some((option) => option.value === townValue)) {
-        cameraRegionSelect.value = townValue;
-      }
-    } else if (cameraRegionSelect) {
+    fillCameraDistrictSelect("");
+    if (cameraRegionSelect) {
       cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
     }
   }
