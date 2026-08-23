@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v158-freeway-km-dirs";
+const SW_VERSION = "jin-v159-fix-closure-tdz";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

@@ -5329,9 +5329,6 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
     return;
   }
 
-  const isClosureStopMessage = (message) =>
-    message.includes("停止上班") || message.includes("停止上課");
-
   const appendClosureGroup = (rows, groupClass, groupLabel) => {
     if (!rows.length) {
       return;
