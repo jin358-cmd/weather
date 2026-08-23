@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v147-refresh-alert-status";
+const SW_VERSION = "jin-v148-alert-clear-subscribe";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
@@ -12,6 +12,7 @@ const POWER_OUTAGE_NOTIFY_RADIUS_KM = 10;
 const TAIPOWER_DISASTER_OUTAGE_URL =
   "https://service.taipower.com.tw/data/opendata/apply/file/d006012/001.xml";
 const CLOSURE_OFFICIAL_MIRROR = "https://r.jina.ai/https://www.dgpa.gov.tw/typh/daily/nds.html";
+const TYPHOON_WARN_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_WARN.html";
 const EARTHQUAKE_CWA_LIST_MIRROR =
   "https://r.jina.ai/https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
 const EARTHQUAKE_NATIONAL_INTENSITY = 4;
@@ -156,8 +157,18 @@ function emptyRecoveryState() {
     powerOutages: {},
     waterOutages: {},
     earthquakes: {},
+    cityClosures: {},
     hasLandTyphoonWarning: false
   };
+}
+
+function isClosureStopMessage(message) {
+  const text = String(message || "");
+  return text.includes("停止上班") || text.includes("停止上課");
+}
+
+function isRecoveryNotificationLine(text) {
+  return /消退|解除|已恢復/.test(String(text || ""));
 }
 
 async function fetchNearbyFloodRows(lat, lon) {
@@ -455,6 +466,7 @@ async function buildBackgroundAlertMessages(prefs) {
     }
   }
 
+  next.cityClosures = { ...(prev.cityClosures || {}) };
   if (topics.has("closure")) {
     try {
       const response = await fetch(CLOSURE_OFFICIAL_MIRROR, { cache: "no-store" });
@@ -465,6 +477,19 @@ async function buildBackgroundAlertMessages(prefs) {
             ? `【停班停課】${label}：${message}`
             : `【停班停課】${label}：目前無停班停課狀態`
         );
+        const active = isClosureStopMessage(message);
+        if (city && prev.cityClosures?.[city]?.active && !active) {
+          recoveryMessages.push(
+            `【停班停課解除】${label} 已解除停班停課警戒${
+              message ? `，目前${message}` : "，目前恢復照常上班上課"
+            }。`
+          );
+        }
+        if (city) {
+          next.cityClosures[city] = { active, message: message || "" };
+        }
+      } else {
+        messages.push(`【停班停課】${label}：目前無停班停課狀態`);
       }
     } catch {
       messages.push(`【停班停課】${label}：目前無停班停課狀態`);
@@ -687,8 +712,29 @@ async function buildBackgroundAlertMessages(prefs) {
     next.earthquakes = prev.earthquakes || {};
   }
 
+  try {
+    const response = await fetch(TYPHOON_WARN_MIRROR, { cache: "no-store" });
+    if (response.ok) {
+      const warnText = await response.text();
+      const hasWarning = !/目前無發布颱風警報/.test(warnText);
+      const hasLandWarning =
+        hasWarning && /陸上颱風警報/.test(warnText) && !/解除陸上颱風警報/.test(warnText);
+      if (prev.hasLandTyphoonWarning && !hasLandWarning) {
+        recoveryMessages.push(
+          `【解除颱風警報】中央氣象署已解除陸上颱風警報，${label} 請持續留意後續天氣與防災資訊。`
+        );
+      }
+      next.hasLandTyphoonWarning = hasLandWarning;
+    } else {
+      next.hasLandTyphoonWarning = Boolean(prev.hasLandTyphoonWarning);
+    }
+  } catch {
+    next.hasLandTyphoonWarning = Boolean(prev.hasLandTyphoonWarning);
+  }
+
   return {
-    messages: [...recoveryMessages, ...messages].filter(Boolean),
+    messages: messages.filter(Boolean),
+    recoveryMessages: recoveryMessages.filter(Boolean),
     recoveryState: next
   };
 }
@@ -736,12 +782,18 @@ async function runBackgroundSubscriptionCheck() {
   if (!prefs?.email || !Array.isArray(prefs.topics) || !prefs.topics.length) {
     return { checked: false, reason: "no-prefs" };
   }
-  if (!prefs.notifyArmedByLocate) {
-    return { checked: true, notified: false, reason: "locate-required" };
-  }
-  const { messages, recoveryState } = await buildBackgroundAlertMessages(prefs);
-  if (!messages.length) {
-    return { checked: true, notified: false };
+  const { messages, recoveryMessages, recoveryState } = await buildBackgroundAlertMessages(prefs);
+  const recoveryLines = (recoveryMessages || []).filter((line) => isRecoveryNotificationLine(line));
+  const digestLines = prefs.notifyArmedByLocate
+    ? [
+        ...(recoveryMessages || []).filter((line) => !isRecoveryNotificationLine(line)),
+        ...(messages || [])
+      ]
+    : [];
+  const outgoing = [...recoveryLines, ...digestLines].filter(Boolean);
+  if (!outgoing.length) {
+    await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
+    return { checked: true, notified: false, reason: prefs.notifyArmedByLocate ? "empty" : "recovery-only-empty" };
   }
   const storedMessages = await idbGet(LAST_MESSAGES_KEY);
   const previousMessages = Array.isArray(storedMessages)
@@ -751,16 +803,17 @@ async function runBackgroundSubscriptionCheck() {
         .map((item) => item.trim())
         .filter(Boolean);
   const previousSet = new Set(previousMessages);
-  const fresh = messages.filter((line) => !previousSet.has(line));
+  const fresh = outgoing.filter((line) => !previousSet.has(line));
   if (!fresh.length) {
     await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
     return { checked: true, notified: false, reason: "unchanged" };
   }
   for (const [index, message] of fresh.entries()) {
-    await showSystemNotification("預報訂閱通知", message, `jin-bg-${Date.now()}-${index}`);
+    const title = isRecoveryNotificationLine(message) ? "災害警戒解除" : "預報訂閱通知";
+    await showSystemNotification(title, message, `jin-bg-${Date.now()}-${index}`);
   }
-  await idbSet(LAST_DIGEST_KEY, messages.join("\n"));
-  await idbSet(LAST_MESSAGES_KEY, messages);
+  await idbSet(LAST_DIGEST_KEY, outgoing.join("\n"));
+  await idbSet(LAST_MESSAGES_KEY, outgoing);
   await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
   return { checked: true, notified: true, count: fresh.length };
 }
