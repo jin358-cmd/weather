@@ -594,17 +594,17 @@ const mapLegendMarkers = {
   "city-focus": []
 };
 const MAP_LEGEND_CALLOUT_CONFIG = {
-  "flood-4": { title: "積水 4", color: "#d00000", layer: "flood-warning" },
-  "flood-3": { title: "積水 3", color: "#e85d04", layer: "flood-warning" },
-  "flood-2": { title: "積水 2", color: "#ffba08", layer: "flood-warning" },
-  "flood-1": { title: "積水 1", color: "#ffd166", layer: "flood-warning" },
-  "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage" },
-  "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage" },
-  "water-outage": { title: "停水公告", color: "#0f766e", layer: "water-outage" },
-  earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points" },
+  "flood-4": { title: "積水 4", color: "#d00000", layer: "flood-warning", skipCallout: true },
+  "flood-3": { title: "積水 3", color: "#e85d04", layer: "flood-warning", skipCallout: true },
+  "flood-2": { title: "積水 2", color: "#ffba08", layer: "flood-warning", skipCallout: true },
+  "flood-1": { title: "積水 1", color: "#ffd166", layer: "flood-warning", skipCallout: true },
+  "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage", skipCallout: true },
+  "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage", skipCallout: true },
+  "water-outage": { title: "停水公告", color: "#0f766e", layer: "water-outage", skipCallout: true },
+  earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points", skipCallout: true },
   shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
-  cctv: { title: "路口監控", color: "#0096c7", layer: "cctv-points", nameOnly: true, alwaysShow: true },
-  "city-focus": { title: "定位範圍", color: "#00d4ff", layer: "city-focus", alwaysShow: true }
+  cctv: { title: "路口監控", color: "#0096c7", layer: "cctv-points", skipCallout: true, alwaysShow: true },
+  "city-focus": { title: "定位範圍", color: "#12b76a", layer: "city-focus", skipCallout: true, alwaysShow: true, flash: true }
 };
 let mapLegendLabelLayer = null;
 const mapLayerOrder = [
@@ -8761,10 +8761,10 @@ function getSheltersForMap() {
 let shelterZoomTimer = 0;
 let mapPopupHoldUntil = 0;
 function resizeShelterMarkers() {
-  const radius = getShelterMarkerRadius();
+  const icon = getShelterMarkerIcon();
   (mapLegendMarkers.shelter || []).forEach((marker) => {
-    if (typeof marker.setRadius === "function") {
-      marker.setRadius(radius);
+    if (typeof marker.setIcon === "function") {
+      marker.setIcon(icon);
     }
   });
 }
@@ -8786,14 +8786,13 @@ function scheduleShelterLayerByZoom() {
   }, 160);
 }
 
-function getShelterRenderer() {
-  if (!warningMap || typeof L === "undefined" || typeof L.canvas !== "function") {
-    return undefined;
-  }
-  if (!warningMap._shelterCanvasRenderer) {
-    warningMap._shelterCanvasRenderer = L.canvas({ padding: 0.45, pane: "shelterPane" });
-  }
-  return warningMap._shelterCanvasRenderer;
+function getShelterMarkerIcon() {
+  return L.divIcon({
+    className: "shelter-map-marker",
+    html: '<span class="shelter-map-marker-dot" aria-hidden="true"></span>',
+    iconSize: [18, 18],
+    iconAnchor: [9, 9]
+  });
 }
 
 function updateShelterMapLayer() {
@@ -8805,19 +8804,16 @@ function updateShelterMapLayer() {
   }
   mapShelterLayer.clearLayers();
   mapLegendMarkers.shelter = [];
-  const shelterRenderer = getShelterRenderer();
   getSheltersForMap().forEach((shelter) => {
     if (!Number.isFinite(shelter.lat) || !Number.isFinite(shelter.lon)) {
       return;
     }
-    const marker = L.circleMarker([shelter.lat, shelter.lon], {
+    const marker = L.marker([shelter.lat, shelter.lon], {
       pane: "shelterPane",
-      renderer: shelterRenderer,
-      radius: getShelterMarkerRadius(),
-      color: "#14532d",
-      fillColor: "#15803d",
-      fillOpacity: 0.88,
-      weight: 2
+      keyboard: false,
+      icon: getShelterMarkerIcon(),
+      title: shelter.name || "避難場所",
+      zIndexOffset: 120
     });
     marker.bindPopup(buildShelterPopupHtml(shelter), getMapPopupOptions({ className: "disaster-map-popup" }));
     marker._legendPlace = `${shelter.city || ""}${shelter.town || ""}`.trim() || shelter.name;
@@ -9181,10 +9177,13 @@ function isMapCategoryVisible(key) {
 function applyAutoDisasterLayerVisibility() {
   DISASTER_LEGEND_KEYS.forEach((key) => {
     const hasPoints = (mapLegendMarkers[key] || []).length > 0;
-    if (hasPoints && !mapCategoryUserOff.has(key)) {
-      mapCategoryVisibility[key] = true;
+    if (mapCategoryUserOff.has(key)) {
+      mapCategoryVisibility[key] = false;
+      return;
     }
+    mapCategoryVisibility[key] = hasPoints;
   });
+  syncMapLayerVisibilityFromCategories();
 }
 
 function addVisibleLegendMarkers(layer, keys) {
@@ -9573,6 +9572,43 @@ function getLiveCityCameraIds() {
   );
 }
 
+function getCameraPreviewHtml(camera, className = "cctv-map-popup-media") {
+  const streamUrl = String(camera?.html || "").trim();
+  if (!streamUrl) {
+    return `<span class="cctv-map-thumb-fallback" aria-hidden="true">路口</span>`;
+  }
+  const useImage = isLikelyDirectImageStream(streamUrl);
+  const safeUrl = escapeMapLegendHtml(streamUrl);
+  const alt = escapeMapLegendHtml(formatCameraIntersectionShort(camera));
+  return useImage
+    ? `<img class="${className}" src="${safeUrl}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" />`
+    : `<iframe class="${className} cctv-map-popup-frame" src="${safeUrl}" title="${alt}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+}
+
+function buildCctvMapPopupHtml(camera) {
+  const [roadA, roadB] = getCameraIntersectionRoads(camera, { allowLookup: false });
+  const nameA = escapeMapLegendHtml(roadA || "路口");
+  const nameB = escapeMapLegendHtml(
+    roadB && roadB !== CCTV_CROSS_LOOKUP_LABEL ? roadB : CCTV_MISSING_CROSS_LABEL
+  );
+  return `
+    <div class="cctv-map-popup">
+      <p class="cctv-map-popup-road">${nameA}</p>
+      <p class="cctv-map-popup-road">${nameB}</p>
+      <div class="cctv-map-popup-preview">${getCameraPreviewHtml(camera)}</div>
+    </div>
+  `;
+}
+
+function getCctvThumbIcon(camera) {
+  return L.divIcon({
+    className: "cctv-map-thumb-marker",
+    html: `<span class="cctv-map-thumb">${getCameraPreviewHtml(camera, "cctv-map-thumb-media")}</span>`,
+    iconSize: [44, 34],
+    iconAnchor: [22, 17]
+  });
+}
+
 function updateCameraMapLayer() {
   if (!warningMap) {
     return;
@@ -9590,18 +9626,14 @@ function updateCameraMapLayer() {
       return;
     }
     const intersectionName = formatCameraIntersectionShort(camera);
-    const marker = L.circleMarker([lat, lon], {
+    const marker = L.marker([lat, lon], {
       pane: "cameraPane",
-      radius: 8,
-      color: "#b8f2ff",
-      fillColor: "#0096c7",
-      fillOpacity: 0.95,
-      weight: 3
+      keyboard: false,
+      icon: getCctvThumbIcon(camera),
+      title: intersectionName,
+      zIndexOffset: 400
     });
-    marker.bindPopup(
-      `<div class="cctv-map-popup cctv-map-popup-name-only"><p class="cctv-map-popup-line">${escapeMapLegendHtml(intersectionName)}</p></div>`,
-      getMapPopupOptions({ className: "cctv-popup-wrap disaster-map-popup" })
-    );
+    marker.bindPopup(buildCctvMapPopupHtml(camera), getMapPopupOptions({ className: "cctv-popup-wrap disaster-map-popup" }));
     marker._legendPlace = intersectionName;
     marker._cctvNameOnly = true;
     mapLegendMarkers.cctv.push(marker);
@@ -9774,19 +9806,24 @@ function updateMapLegendLocationPins() {
   pins.forEach((pin) => {
     const stack = pin.slot % 8;
     const cardMax = Math.min(240, getMapMessageMaxWidth());
+    const flashClass = pin.config.flash ? " map-legend-callout-dot-flash" : "";
     const html = pin.config.nameOnly
       ? `
-      <span class="map-legend-callout-dot map-legend-callout-dot-flash" style="--legend-dot:${pin.config.color}"></span>
+      <span class="map-legend-callout-dot${flashClass}" style="--legend-dot:${pin.config.color}"></span>
       <span class="map-legend-callout-card map-legend-callout-name-only" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
         <span class="map-legend-callout-place">${escapeMapLegendHtml(pin.place)}</span>
       </span>
     `
       : `
-      <span class="map-legend-callout-dot map-legend-callout-dot-flash" style="--legend-dot:${pin.config.color}"></span>
-      <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
+      <span class="map-legend-callout-dot${flashClass}" style="--legend-dot:${pin.config.color}"></span>
+      ${
+        pin.config.flash
+          ? ""
+          : `<span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
         <strong>${escapeMapLegendHtml(pin.config.title)}</strong>
         <span class="map-legend-callout-place">${escapeMapLegendHtml(pin.place)}</span>
-      </span>
+      </span>`
+      }
     `;
     const marker = L.marker(pin.center, {
       pane: pin.key === "cctv" ? "cameraPane" : "legendLabelPane",
@@ -9811,11 +9848,13 @@ function syncMapLegendState() {
   if (!legend) {
     return;
   }
+  applyAutoDisasterLayerVisibility();
   legend.querySelectorAll("[data-legend-key]").forEach((item) => {
     const key = item.dataset.legendKey;
     const markers = mapLegendMarkers[key] || [];
     const countEl = item.querySelector("[data-legend-count]");
     const placeEl = item.querySelector("[data-legend-place]");
+    const isDisaster = DISASTER_LEGEND_KEYS.includes(key);
     const placeText =
       key === "shelter"
         ? markers.length
@@ -9824,7 +9863,7 @@ function syncMapLegendState() {
         : markers.length
           ? describeLegendMarkerPlaces(markers)
           : "目前無點位";
-    const alwaysShowRow = true;
+    const alwaysShowRow = !isDisaster;
     if (countEl) {
       countEl.textContent = String(markers.length);
       countEl.removeAttribute("aria-hidden");
@@ -9832,15 +9871,15 @@ function syncMapLegendState() {
     if (placeEl) {
       placeEl.textContent = placeText;
     }
-    item.classList.toggle("legend-item-empty", false);
+    item.classList.toggle("legend-item-empty", isDisaster && markers.length === 0);
     item.classList.toggle("legend-item-fixed", alwaysShowRow);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
     const toggle = ensureLegendLayerSwitch(item);
     if (toggle) {
       toggle.checked = isMapCategoryVisible(key);
-      toggle.disabled = false;
+      toggle.disabled = isDisaster && markers.length === 0;
     }
-    item.setAttribute("aria-disabled", "false");
+    item.setAttribute("aria-disabled", isDisaster && markers.length === 0 ? "true" : "false");
     const row = item.closest("li");
     if (row) {
       row.hidden = false;
@@ -9853,23 +9892,31 @@ function syncMapLegendState() {
       markers.length ? `${label}，${markers.length} 處，位置 ${placeText}` : `${label}，目前無點位`
     );
   });
-  const hasDisasterItems = [
-    "flood-4",
-    "flood-3",
-    "flood-2",
-    "flood-1",
-    "power-disaster",
-    "power-planned",
-    "earthquake"
-  ].some((key) => (mapLegendMarkers[key] || []).length > 0);
+  const disasterCounts = DISASTER_LEGEND_KEYS.map((key) => ({
+    key,
+    count: (mapLegendMarkers[key] || []).length
+  }));
+  const activeDisasterCount = disasterCounts.filter((item) => item.count > 0).length;
+  const disasterGroup = legend.querySelector("#legendDisasterGroup");
+  const disasterSummary = legend.querySelector("#legendDisasterSummary");
+  if (disasterGroup) {
+    disasterGroup.open = activeDisasterCount > 0;
+    disasterGroup.hidden = false;
+    disasterGroup.classList.toggle("is-empty", activeDisasterCount === 0);
+  }
+  if (disasterSummary) {
+    disasterSummary.textContent =
+      activeDisasterCount > 0 ? `進行中 ${activeDisasterCount} 類` : "目前無災害";
+  }
   let emptyNote = legend.querySelector(".map-legend-empty");
   if (!emptyNote) {
     emptyNote = document.createElement("p");
     emptyNote.className = "map-legend-empty";
     legend.append(emptyNote);
   }
-  emptyNote.textContent = "目前無災害點位";
-  emptyNote.hidden = hasDisasterItems;
+  emptyNote.textContent = "目前無災害點位，相關圖層已收入收合層。";
+  emptyNote.hidden = activeDisasterCount > 0;
+  mapLayerOrder.forEach((layerKey) => syncMapLayerVisibility(layerKey));
   syncMapFloodCountBadge(getFloodMarkersOnMap().length);
   syncMapAlertBadges();
   renderMapCategoryFilters();
@@ -10111,8 +10158,8 @@ function initWarningMap() {
   updateCityFocusLayer();
   updateCameraMapLayer();
   updateWaterOutageMapLayer();
-  loadShelterDataset().catch(() => {
-    /* shelter layer is optional if the snapshot is missing */
+  loadShelterDataset().catch((error) => {
+    console.warn("避難場所圖層載入失敗：", error);
   });
   warningMap.on("zoomend", () => {
     scheduleMapLayersByView();

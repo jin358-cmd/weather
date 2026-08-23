@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v154-desktop-notify-fluid";
+const SW_VERSION = "jin-v155-map-cctv-shelter";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
