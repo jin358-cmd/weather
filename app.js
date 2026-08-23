@@ -1417,14 +1417,14 @@ function fillTownshipSelect(cityName, preferredTown) {
   }
 }
 
-function setWindyLocateFocus(lat, lon, accuracy) {
+function setWindyLocateFocus(lat, lon) {
   if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) {
     return;
   }
   windyLocateFocus = {
     lat: Number(lat),
     lon: Number(lon),
-    zoom: Math.max(8, resolveWindyLocateZoom(accuracy)),
+    zoom: WINDY_TAIWAN_VIEW.zoom,
     precision: 6
   };
 }
@@ -1453,7 +1453,7 @@ function applyDeviceCoordinatesToMaps(latitude, longitude, accuracy, nearest = n
     fromDevice: true
   };
   persistMapLocatePoint(cctvLocateFocus);
-  setWindyLocateFocus(latitude, longitude, accuracy);
+  setWindyLocateFocus(latitude, longitude);
   lockWindyWrapSize();
   updateWindyTrackEmbed({ force: true });
   pendingMapLocateSync = true;
@@ -6162,15 +6162,17 @@ function unlockWindyWrapSize() {
   wrap.style.aspectRatio = "";
 }
 
-function buildWindyEmbedUrl(lat, lon, zoom = 5, { precision = 3 } = {}) {
+function buildWindyEmbedUrl(lat, lon, zoom = 5, { precision = 3, markerLat, markerLon } = {}) {
   const digits = Math.min(6, Math.max(3, Number(precision) || 3));
   const fmt = (value) => Number(value).toFixed(digits);
   const box = getWindyEmbedPixelSize();
+  const pinLat = Number.isFinite(Number(markerLat)) ? Number(markerLat) : lat;
+  const pinLon = Number.isFinite(Number(markerLon)) ? Number(markerLon) : lon;
   const params = new URLSearchParams({
     lat: fmt(lat),
     lon: fmt(lon),
-    detailLat: fmt(lat),
-    detailLon: fmt(lon),
+    detailLat: fmt(pinLat),
+    detailLon: fmt(pinLon),
     width: String(box.width),
     height: String(box.height),
     zoom: String(zoom),
@@ -6202,9 +6204,9 @@ function getWindyFocusPoint() {
     Number.isFinite(windyLocateFocus.lon)
   ) {
     return {
-      lat: windyLocateFocus.lat,
-      lon: windyLocateFocus.lon,
-      zoom: windyLocateFocus.zoom || 11,
+      ...WINDY_TAIWAN_VIEW,
+      markerLat: windyLocateFocus.lat,
+      markerLon: windyLocateFocus.lon,
       precision: windyLocateFocus.precision || 6,
       hasTyphoonCenter
     };
@@ -6222,7 +6224,9 @@ function updateWindyTrackEmbed({ force = false } = {}) {
   }
   const focus = getWindyFocusPoint();
   const embedUrl = buildWindyEmbedUrl(focus.lat, focus.lon, focus.zoom, {
-    precision: focus.precision || 3
+    precision: focus.precision || 3,
+    markerLat: focus.markerLat,
+    markerLon: focus.markerLon
   });
   const normalizeSrc = (src) => {
     try {

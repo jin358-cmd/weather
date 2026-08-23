@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v189-closure-layer-toggle";
+const SW_VERSION = "jin-v190-windy-taiwan-pin";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
