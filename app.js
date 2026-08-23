@@ -7252,7 +7252,20 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     inPageAlertHost.classList.add("is-fullscreen-mode");
   }
   inPageAlertHost.append(alert);
-  if (variant === "refresh-done" && fullscreen) {
+  if (isDesktopNotifyLayout()) {
+    scheduleDesktopNotifyFit(alert);
+    window.addEventListener(
+      "resize",
+      () => {
+        if (isDesktopNotifyLayout()) {
+          scheduleDesktopNotifyFit(alert);
+        } else {
+          clearDesktopNotifyFitStyles(alert);
+        }
+      },
+      { passive: true, signal: fitAbort.signal }
+    );
+  } else if (variant === "refresh-done" && fullscreen) {
     scheduleRefreshDoneAlertFit(alert);
     window.addEventListener(
       "resize",
@@ -10628,6 +10641,131 @@ function syncNoticeDetailsOpen() {
     return;
   }
   noticeDetails.open = window.matchMedia("(min-width: 861px)").matches;
+}
+
+const DESKTOP_NOTIFY_MQ = "(min-width: 861px)";
+const DESKTOP_NOTIFY_MIN_PX = 13;
+
+function isDesktopNotifyLayout() {
+  return window.matchMedia(DESKTOP_NOTIFY_MQ).matches;
+}
+
+function clearDesktopNotifyFitStyles(alert) {
+  if (!alert) {
+    return;
+  }
+  alert.classList.remove("is-notify-scroll");
+  alert.style.fontSize = "";
+  alert.style.overflow = "";
+  alert.style.maxHeight = "";
+  alert.style.height = "";
+  alert
+    .querySelectorAll(".in-page-alert-title, .in-page-alert-body, .in-page-alert-line, .in-page-alert-close")
+    .forEach((el) => {
+      el.style.fontSize = "";
+      el.style.overflow = "";
+      el.style.whiteSpace = "";
+      el.style.textOverflow = "";
+      el.style.lineHeight = "";
+      el.style.gap = "";
+    });
+}
+
+function scheduleDesktopNotifyFit(alert) {
+  if (!alert) {
+    return;
+  }
+  let tries = 0;
+  const run = () => {
+    if (!alert.isConnected) {
+      return;
+    }
+    const fitted = fitDesktopNotifyBox(alert);
+    tries += 1;
+    if (!fitted && tries < 10) {
+      window.requestAnimationFrame(run);
+    }
+  };
+  window.requestAnimationFrame(run);
+}
+
+function fitDesktopNotifyBox(alert) {
+  if (!alert || !isDesktopNotifyLayout()) {
+    return false;
+  }
+  const titleEl = alert.querySelector(".in-page-alert-title");
+  const bodyHost = alert.querySelector(".in-page-alert-body");
+  const closeBtn = alert.querySelector(".in-page-alert-close");
+  const lines = [...(bodyHost?.querySelectorAll(".in-page-alert-line") || [])];
+
+  clearDesktopNotifyFitStyles(alert);
+
+  const limit = Math.min(window.innerHeight * 0.88, 920);
+
+  const titleStart = Math.round(parseFloat(getComputedStyle(titleEl || alert).fontSize) || 18);
+  const bodyStart = Math.round(parseFloat(getComputedStyle(lines[0] || titleEl || alert).fontSize) || 15);
+  const closeStart = Math.round(parseFloat(getComputedStyle(closeBtn || alert).fontSize) || 14);
+
+  const applySizes = (titlePx, bodyPx, closePx) => {
+    if (titleEl) {
+      titleEl.style.fontSize = `${titlePx}px`;
+    }
+    lines.forEach((lineEl) => {
+      lineEl.style.fontSize = `${bodyPx}px`;
+    });
+    if (closeBtn) {
+      closeBtn.style.fontSize = `${closePx}px`;
+    }
+  };
+
+  const fits = () => {
+    if (!alert.clientWidth) {
+      return false;
+    }
+    return alert.scrollHeight <= limit + 2;
+  };
+
+  if (!alert.clientWidth) {
+    return false;
+  }
+
+  if (fits()) {
+    return true;
+  }
+
+  let low = DESKTOP_NOTIFY_MIN_PX;
+  let high = Math.max(DESKTOP_NOTIFY_MIN_PX, bodyStart);
+  let best = DESKTOP_NOTIFY_MIN_PX;
+  const titleRatio = titleStart / Math.max(bodyStart, 1);
+  const closeRatio = closeStart / Math.max(bodyStart, 1);
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    applySizes(
+      Math.max(DESKTOP_NOTIFY_MIN_PX, Math.min(titleStart, Math.round(mid * titleRatio))),
+      mid,
+      Math.max(DESKTOP_NOTIFY_MIN_PX, Math.min(closeStart, Math.round(mid * closeRatio)))
+    );
+    if (fits()) {
+      best = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+  applySizes(
+    Math.max(DESKTOP_NOTIFY_MIN_PX, Math.min(titleStart, Math.round(best * titleRatio))),
+    best,
+    Math.max(DESKTOP_NOTIFY_MIN_PX, Math.min(closeStart, Math.round(best * closeRatio)))
+  );
+
+  if (!fits()) {
+    alert.classList.add("is-notify-scroll");
+    alert.style.overflow = "auto";
+    if (bodyHost) {
+      bodyHost.style.overflow = "auto";
+    }
+  }
+  return true;
 }
 
 function refreshDoneAlertFits(alert, bodyHost) {
