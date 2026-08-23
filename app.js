@@ -7903,6 +7903,10 @@ function recordNotifyHistory(entry) {
   appState.notifyHistory = next;
   writeJsonStorage(PWA_NOTIFY_HISTORY_KEY, next);
   renderNotifyHistory();
+  const historyDetails = notifyHistoryList?.closest("details.pwa-history-details");
+  if (historyDetails) {
+    historyDetails.open = true;
+  }
   updatePwaTestChecklist();
   return row;
 }

@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v166-weekly-rain-type";
+const SW_VERSION = "jin-v167-notify-history-collapse";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

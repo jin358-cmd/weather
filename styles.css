@@ -496,6 +496,39 @@ body {
   margin-top: 12px;
 }
 
+.pwa-history-details > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pwa-history-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pwa-history-details > summary::marker {
+  content: "";
+}
+
+.pwa-history-details > summary .pwa-panel-title {
+  display: inline;
+  margin: 0;
+}
+
+.pwa-history-details > summary::after {
+  content: "▾";
+  font-size: 0.85em;
+  font-weight: 800;
+  line-height: 1;
+  color: inherit;
+}
+
+.pwa-history-details[open] > summary::after {
+  content: "▴";
+}
+
 .pwa-history-list,
 .pwa-test-list {
   margin: 6px 0 0;

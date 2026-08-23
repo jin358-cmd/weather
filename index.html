@@ -350,12 +350,14 @@
           <p id="notifyPermissionStatus" class="timestamp">通知權限：尚未詢問</p>
           <p class="timestamp subscription-email-note">儲存訂閱後，請先完成「依設備定位選區」才會開始發送警戒通知。測試通知不受此限制。</p>
           <p id="notificationHint" class="timestamp notification-hint" hidden></p>
-          <div class="pwa-history-block">
-            <h3 class="pwa-panel-title">推播歷程</h3>
+          <details class="pwa-history-block pwa-history-details">
+            <summary>
+              <span class="pwa-panel-title">推播歷程</span>
+            </summary>
             <ol id="notifyHistoryList" class="pwa-history-list">
               <li>尚無發送紀錄。</li>
             </ol>
-          </div>
+          </details>
           <details class="pwa-test-details">
             <summary>PWA 測試清單</summary>
             <ul id="pwaTestList" class="pwa-test-list">
