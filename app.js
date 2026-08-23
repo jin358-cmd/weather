@@ -736,7 +736,6 @@ const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
 const CWA_WARNING_PAGE = "https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
 const CWA_WARNING_MIRROR = `https://r.jina.ai/${CWA_WARNING_PAGE}`;
 const NCDR_ALERT_PAGE = "https://alerts.ncdr.nat.gov.tw/";
-const NCDR_ALERT_MIRROR = `https://r.jina.ai/${NCDR_ALERT_PAGE}`;
 // Canonical public site. Subscribe UI + confirmation emails must use this exact string.
 const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
 const SUBSCRIPTION_TOPIC_LABELS = {
@@ -850,7 +849,6 @@ const appState = {
   subscription: null,
   lastNotifiedAt: 0,
   cwaWarnings: [],
-  ncdrAlerts: [],
   notifyHistory: [],
   lastWeatherCode: null,
   lastCloudCover: null,
@@ -7756,12 +7754,13 @@ function renderAiAlerts() {
     }
   });
 
-  if (!alerts.length) {
-    alerts.push("目前未觸發重大災害提醒。");
+  const visibleAlerts = alerts.filter((text) => !isDroppedNcdrAlertText(text));
+  if (!visibleAlerts.length) {
+    visibleAlerts.push("目前未觸發重大災害提醒。");
   }
-  appState.aiAlerts = alerts;
+  appState.aiAlerts = visibleAlerts;
   aiAlertList.innerHTML = "";
-  alerts.forEach((text, index) => {
+  visibleAlerts.forEach((text, index) => {
     const presentation = parseAiAlertPresentation(text);
     const item = document.createElement("li");
     item.className = `ai-alert-item ai-alert-${presentation.tone}`;
@@ -7875,7 +7874,12 @@ function renderNotifyHistory() {
   if (!notifyHistoryList) {
     return;
   }
-  const rows = appState.notifyHistory || loadNotifyHistory();
+  const rows = (appState.notifyHistory || loadNotifyHistory())
+    .map((row) => ({
+      ...row,
+      body: stripDroppedNcdrAlertText(row.body || "")
+    }))
+    .filter((row) => row.body || !isDroppedNcdrAlertText(row.title));
   if (!rows.length) {
     notifyHistoryList.innerHTML = "<li>尚無發送紀錄。</li>";
     return;
@@ -7885,7 +7889,11 @@ function renderNotifyHistory() {
     .map((row) => {
       const time = formatTaipeiDateTime(row.time);
       const city = row.city ? `｜${row.city}` : "";
-      return `<li><strong>${escapeMapLegendHtml(row.source || "本機")}</strong>${escapeMapLegendHtml(city)}｜${escapeMapLegendHtml(time)}<br/>${escapeMapLegendHtml(row.body || row.title || "")}</li>`;
+      const body = row.body || stripDroppedNcdrAlertText(row.title || "");
+      if (!body) {
+        return "";
+      }
+      return `<li><strong>${escapeMapLegendHtml(row.source || "本機")}</strong>${escapeMapLegendHtml(city)}｜${escapeMapLegendHtml(time)}<br/>${escapeMapLegendHtml(body)}</li>`;
     })
     .join("");
 }
@@ -7899,9 +7907,12 @@ function recordNotifyHistory(entry) {
     city: entry.city || citySelect?.value || "",
     eventKey: entry.eventKey || "",
     title: entry.title || "災防通知",
-    body: String(entry.body || "").trim(),
+    body: stripDroppedNcdrAlertText(entry.body || ""),
     channel: entry.channel || "in-page"
   };
+  if (!row.body && isDroppedNcdrAlertText(entry.body || entry.title || "")) {
+    return null;
+  }
   const next = [row, ...loadNotifyHistory()].slice(0, 30);
   appState.notifyHistory = next;
   writeJsonStorage(PWA_NOTIFY_HISTORY_KEY, next);
@@ -8095,6 +8106,18 @@ function isOfficialWarningCatalogLine(line) {
   return /資料提供\s*:|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(line);
 }
 
+function isDroppedNcdrAlertText(text) {
+  return /【NCDR\s*示警】|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(String(text || ""));
+}
+
+function stripDroppedNcdrAlertText(text) {
+  return String(text || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => line && !isDroppedNcdrAlertText(line))
+    .join("\n");
+}
+
 function parseOfficialWarningMarkdown(markdown, cityName, { sourceLabel, keyword, sourceUrl }) {
   const city = normalizeTaiwanPlaceText(cityName);
   const lines = String(markdown || "")
@@ -8134,25 +8157,6 @@ async function fetchCwaWarnings() {
   return appState.cwaWarnings;
 }
 
-async function fetchNcdrAlerts() {
-  const cityName = citySelect?.value || "";
-  try {
-    const response = await fetch(NCDR_ALERT_MIRROR, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    appState.ncdrAlerts = parseOfficialWarningMarkdown(await response.text(), cityName, {
-      sourceLabel: "NCDR 民生示警",
-      sourceUrl: NCDR_ALERT_PAGE,
-      keyword: /示警|警戒|警報|淹水|土石流|停電|道路/
-    });
-  } catch (error) {
-    appState.ncdrAlerts = appState.ncdrAlerts || [];
-    console.warn("NCDR 示警讀取失敗：", error);
-  }
-  return appState.ncdrAlerts;
-}
-
 function getSubscriptionCwaWarningMessage() {
   const locationLabel = getSubscriptionLocationLabel();
   const top = (appState.cwaWarnings || [])[0];
@@ -8160,15 +8164,6 @@ function getSubscriptionCwaWarningMessage() {
     return stampNotifySource("中央氣象署警特報", `【氣象署警特報】${locationLabel} 目前無縣市對應警特報`);
   }
   return stampNotifySource(top.source, `【氣象署警特報】${locationLabel}：${top.title}`);
-}
-
-function getSubscriptionNcdrAlertMessage() {
-  const locationLabel = getSubscriptionLocationLabel();
-  const top = (appState.ncdrAlerts || [])[0];
-  if (!top) {
-    return stampNotifySource("NCDR 民生示警", `【NCDR 示警】${locationLabel} 目前無縣市對應示警`);
-  }
-  return stampNotifySource(top.source, `【NCDR 示警】${locationLabel}：${top.title}`);
 }
 
 function getNotificationSupport() {
@@ -9411,10 +9406,12 @@ function buildSubscriptionNotificationMessages() {
     weather: getSubscriptionWeatherMessage,
     air: getSubscriptionAirQualityMessage,
     earthquake: getSubscriptionEarthquakeMessage,
-    "cwa-warning": getSubscriptionCwaWarningMessage,
-    "ncdr-alert": getSubscriptionNcdrAlertMessage
+    "cwa-warning": getSubscriptionCwaWarningMessage
   };
-  return getSelectedSubscriptionTopics().map((topic) => topicBuilders[topic]?.()).filter(Boolean);
+  return getSelectedSubscriptionTopics()
+    .map((topic) => topicBuilders[topic]?.())
+    .map((text) => stripDroppedNcdrAlertText(text))
+    .filter(Boolean);
 }
 
 async function sendRecoveryNotifications(messages) {
@@ -9842,9 +9839,12 @@ async function sendSubscriptionNotification({
   if (!permissionMode) {
     return false;
   }
-  const rawMessages = Array.isArray(customMessages) && customMessages.length
+  const rawMessages = (Array.isArray(customMessages) && customMessages.length
     ? customMessages
-    : buildSubscriptionNotificationMessages();
+    : buildSubscriptionNotificationMessages()
+  )
+    .map((text) => stripDroppedNcdrAlertText(text))
+    .filter(Boolean);
   if (!rawMessages.length) {
     renderSubscriptionStatus("請先勾選至少一項訂閱主題。");
     return false;
