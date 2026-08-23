@@ -7956,21 +7956,51 @@ function filterCooldownMessages(messages, city, { force = false } = {}) {
   return kept;
 }
 
+function getNotifyPermissionExplain() {
+  const support = getNotificationSupport();
+  if (!support.secure) {
+    return {
+      status: "此環境改用頁面內提醒",
+      detail: "系統通知需在 HTTPS 網站才能開啟。"
+    };
+  }
+  if (support.isIos && !support.isStandalone) {
+    return {
+      status: "iPhone 請先加入主畫面",
+      detail: "Safari 分頁不能發系統通知。請用分享 → 加入主畫面後再開，再按「允許系統通知」。"
+    };
+  }
+  if (!support.apiAvailable) {
+    return {
+      status: "此瀏覽器改用頁面內提醒",
+      detail: "目前裝置不支援系統通知。"
+    };
+  }
+  if (Notification.permission === "granted") {
+    return { status: "已允許系統通知", detail: "" };
+  }
+  if (Notification.permission === "denied") {
+    return {
+      status: "已被拒絕，改用頁面內提醒",
+      detail: support.isIos
+        ? "請到設定 → 通知 → 災防通報改為允許；或刪除主畫面圖示後重新加入。"
+        : "瀏覽器已封鎖本站通知（先前點過拒絕，或把權限彈窗關掉）。請點網址列左側圖示 → 網站設定 → 通知 → 允許，再按「允許系統通知」。"
+    };
+  }
+  return {
+    status: "尚未詢問",
+    detail: "請按「允許系統通知」，在彈窗選允許。"
+  };
+}
+
 function renderNotifyPermissionStatus() {
   if (!notifyPermissionStatus) {
     return;
   }
-  if (!window.isSecureContext || typeof Notification === "undefined") {
-    notifyPermissionStatus.textContent = "通知權限：此環境改用頁面內提醒";
-    return;
-  }
-  const label =
-    Notification.permission === "granted"
-      ? "已允許系統通知"
-      : Notification.permission === "denied"
-        ? "已被拒絕，改用頁面內提醒"
-        : "尚未詢問";
-  notifyPermissionStatus.textContent = `通知權限：${label}`;
+  const explain = getNotifyPermissionExplain();
+  notifyPermissionStatus.textContent = explain.detail
+    ? `通知權限：${explain.status}。${explain.detail}`
+    : `通知權限：${explain.status}`;
 }
 
 function updatePwaTestChecklist() {
@@ -8619,23 +8649,7 @@ function getSubscriptionUpdateLines() {
 }
 
 function armSystemNotificationPermission() {
-  const onGesture = () => {
-    document.removeEventListener("pointerdown", onGesture, true);
-    if (typeof Notification === "undefined" || Notification.permission !== "default") {
-      renderNotifyPermissionStatus();
-      return;
-    }
-    if (!appState.subscription?.email) {
-      return;
-    }
-    ensureNotificationPermission()
-      .then(() => {
-        renderNotifyPermissionStatus();
-        updatePwaTestChecklist();
-      })
-      .catch(() => {});
-  };
-  document.addEventListener("pointerdown", onGesture, true);
+  renderNotifyPermissionStatus();
 }
 
 async function showAppNotification(title, body, { tag, data, skipInPage = false, variant = "" } = {}) {
@@ -11981,8 +11995,8 @@ enableNotifyBtn?.addEventListener("click", async () => {
   renderNotifyPermissionStatus();
   updatePwaTestChecklist();
   if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-    showInPageAlert("通知權限已被拒絕", "請到瀏覽器網站設定重新允許通知。目前改用頁面內提醒。", {
-      timeoutMs: 7000,
+    showInPageAlert("通知權限已被拒絕", getNotifyPermissionExplain().detail || "請到瀏覽器網站設定重新允許通知。目前改用頁面內提醒。", {
+      timeoutMs: 9000,
       variant: "not-open"
     });
     renderSubscriptionStatus("通知權限已被拒絕，改用頁面內提醒。");
@@ -12023,7 +12037,6 @@ function applyAutoRefreshIntervalSelection() {
   appState.autoRefreshIntervalMinutes = minutes;
   localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(minutes));
   beginAutoRefreshCountdown();
-  ensureNotificationPermission().catch(() => {});
 }
 
 autoRefreshIntervalSelect?.addEventListener("change", applyAutoRefreshIntervalSelection);
