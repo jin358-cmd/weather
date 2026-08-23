@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v174-hero-title-stack";
+const SW_VERSION = "jin-v175-cctv-ring-labels";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

@@ -3090,7 +3090,7 @@ function setVerifiedCityCameras(cameras = []) {
   updateCameraMapLayer();
 }
 
-function formatCameraIntersectionShort(camera) {
+function getCameraDisplayRoads(camera) {
   const [roadA, roadB] = getCameraIntersectionRoads(camera, { allowLookup: false });
   const cleanA =
     roadA && roadA !== "未提供路名" && !looksLikeCameraCode(roadA) ? roadA : "";
@@ -3101,6 +3101,11 @@ function formatCameraIntersectionShort(camera) {
     !looksLikeCameraCode(roadB)
       ? roadB
       : "";
+  return [cleanA, cleanB];
+}
+
+function formatCameraIntersectionShort(camera) {
+  const [cleanA, cleanB] = getCameraDisplayRoads(camera);
   if (cleanA && cleanB) {
     return `${cleanA} × ${cleanB}`;
   }
@@ -3112,6 +3117,12 @@ function formatCameraIntersectionShort(camera) {
   }
   const fallback = normalizeRoadToken(camera?.roadName || camera?.stakenumber || camera?.description || "");
   return fallback || "路口";
+}
+
+function formatCctvMapPinLabel(camera) {
+  const [cleanA, cleanB] = getCameraDisplayRoads(camera);
+  const label = cleanA || cleanB || formatCameraIntersectionShort(camera);
+  return label.length > 10 ? `${label.slice(0, 10)}…` : label;
 }
 
 function getCityCamerasForDisasterMap() {
@@ -10083,6 +10094,7 @@ function applyMapLayerOrder() {
   const cameraPane = warningMap.getPane("cameraPane");
   if (cameraPane) {
     cameraPane.style.zIndex = String(MAP_PANE_ZINDEX["cctv-points"]);
+    cameraPane.style.overflow = "visible";
   }
 }
 
@@ -10913,26 +10925,29 @@ function getCameraPreviewHtml(camera, className = "cctv-map-popup-media") {
 }
 
 function buildCctvMapPopupHtml(camera) {
-  const [roadA, roadB] = getCameraIntersectionRoads(camera, { allowLookup: false });
-  const nameA = escapeMapLegendHtml(roadA || "路口");
-  const nameB = escapeMapLegendHtml(
-    roadB && roadB !== CCTV_CROSS_LOOKUP_LABEL ? roadB : CCTV_MISSING_CROSS_LABEL
-  );
+  const [cleanA, cleanB] = getCameraDisplayRoads(camera);
+  const nameHtml =
+    cleanA && cleanB
+      ? `<p class="cctv-map-popup-road">${escapeMapLegendHtml(cleanA)}</p>
+      <p class="cctv-map-popup-road">${escapeMapLegendHtml(cleanB)}</p>`
+      : `<p class="cctv-map-popup-road">${escapeMapLegendHtml(
+          cleanA || cleanB || formatCameraIntersectionShort(camera)
+        )}</p>`;
   return `
     <div class="cctv-map-popup">
-      <p class="cctv-map-popup-road">${nameA}</p>
-      <p class="cctv-map-popup-road">${nameB}</p>
+      ${nameHtml}
       <div class="cctv-map-popup-preview">${getCameraPreviewHtml(camera)}</div>
     </div>
   `;
 }
 
 function getCctvThumbIcon(camera) {
+  const label = escapeMapLegendHtml(formatCctvMapPinLabel(camera));
   return L.divIcon({
     className: "cctv-map-thumb-marker",
-    html: `<span class="cctv-map-thumb">${getCameraPreviewHtml(camera, "cctv-map-thumb-media")}</span>`,
-    iconSize: [44, 34],
-    iconAnchor: [22, 17]
+    html: `<span class="cctv-map-pin"><span class="cctv-map-ring" aria-hidden="true"></span><span class="cctv-map-label"><span class="cctv-map-label-bar" aria-hidden="true"></span><span class="cctv-map-label-text">${label}</span></span></span>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0]
   });
 }
 
@@ -11479,6 +11494,10 @@ function initWarningMap() {
   warningMap.createPane("earthquakePane");
   warningMap.createPane("shelterPane");
   warningMap.createPane("cameraPane");
+  const cameraPane = warningMap.getPane("cameraPane");
+  if (cameraPane) {
+    cameraPane.style.overflow = "visible";
+  }
   warningMap.createPane("focusPane");
   warningMap.createPane("legendLabelPane");
   const focusPane = warningMap.getPane("focusPane");

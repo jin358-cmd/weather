@@ -4555,8 +4555,9 @@ input[type="checkbox"] {
 }
 
 .legend-swatch.cctv-point {
-  background: #0096c7;
-  border-color: #66d9ff;
+  background: transparent;
+  border: 2px solid #00d4ff;
+  box-shadow: inset 0 0 0 1px rgba(0, 212, 255, 0.25);
 }
 
 .legend-swatch.earthquake-point {
@@ -4851,6 +4852,18 @@ body.eq-sheet-open {
   word-break: break-word;
 }
 
+.leaflet-container .cctv-popup-wrap .leaflet-popup-content-wrapper,
+.leaflet-container .cctv-popup-wrap .leaflet-popup-tip {
+  background: #0b1220;
+  color: #ffb020;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.leaflet-container .cctv-popup-wrap .leaflet-popup-content-wrapper {
+  border: 1px solid #00d4ff;
+  border-radius: 10px;
+}
+
 .leaflet-container .cctv-popup-wrap .leaflet-popup-content {
   margin: 10px 12px;
   max-width: 100% !important;
@@ -4893,7 +4906,7 @@ body.eq-sheet-open {
   font-size: 14px;
   line-height: 1.45;
   word-break: break-word;
-  color: #1f2a44;
+  color: #ffb020;
 }
 
 .cctv-map-popup-name-only {
@@ -4904,7 +4917,7 @@ body.eq-sheet-open {
   margin: 0;
   font-size: 16px;
   font-weight: 800;
-  color: #0b3fad;
+  color: #ffb020;
 }
 
 .cctv-map-popup-road {
@@ -4912,7 +4925,7 @@ body.eq-sheet-open {
   font-size: 16px;
   font-weight: 800;
   line-height: 1.25;
-  color: #0b3fad;
+  color: #ffb020;
   text-align: center;
 }
 
@@ -4920,11 +4933,59 @@ body.eq-sheet-open {
   margin-top: 8px;
 }
 
+.leaflet-pane.leaflet-cameraPane-pane {
+  overflow: visible !important;
+}
+
 .leaflet-div-icon.cctv-map-thumb-marker,
 .leaflet-div-icon.shelter-map-marker {
   background: transparent;
   border: 0;
   overflow: visible !important;
+}
+
+.cctv-map-pin {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transform: translate(-8px, -50%);
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.cctv-map-ring {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 50%;
+  border: 2.5px solid #00d4ff;
+  background: rgba(8, 18, 28, 0.35);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 8px rgba(0, 212, 255, 0.35);
+}
+
+.cctv-map-label {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 148px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #0b1220;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.cctv-map-label-bar {
+  width: 4px;
+  flex: 0 0 4px;
+  background: #00d4ff;
+}
+
+.cctv-map-label-text {
+  padding: 3px 8px 3px 7px;
+  color: #ff9f1c;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 .cctv-map-thumb {
@@ -4980,7 +5041,7 @@ body.eq-sheet-open {
   font-size: 16px;
   font-weight: 800;
   margin-bottom: 6px;
-  color: #0b3fad;
+  color: #ffb020;
 }
 
 .cctv-map-popup-line {
