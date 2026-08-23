@@ -581,6 +581,7 @@ let mapCameraLayer = null;
 let mapCityFocusLayer = null;
 let mapPowerOutageLayer = null;
 let mapWaterOutageLayer = null;
+let mapClosureLayer = null;
 let mapEarthquakeLayer = null;
 let mapShelterLayer = null;
 const mapLegendMarkers = {
@@ -591,6 +592,7 @@ const mapLegendMarkers = {
   "power-disaster": [],
   "power-planned": [],
   "water-outage": [],
+  closure: [],
   earthquake: [],
   shelter: [],
   cctv: [],
@@ -604,6 +606,7 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage", skipCallout: true },
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage", skipCallout: true },
   "water-outage": { title: "停水公告", color: "#0f766e", layer: "water-outage", skipCallout: true },
+  closure: { title: "停班停課", color: "#b71c1c", layer: "closure-points", skipCallout: true },
   earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points", skipCallout: true },
   shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
   cctv: { title: "路口監控", color: "#0096c7", layer: "cctv-points", skipCallout: true, alwaysShow: true },
@@ -612,6 +615,7 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
 let mapLegendLabelLayer = null;
 const mapLayerOrder = [
   "city-focus",
+  "closure-points",
   "flood-warning",
   "power-outage",
   "water-outage",
@@ -621,6 +625,7 @@ const mapLayerOrder = [
 ];
 const MAP_PANE_ZINDEX = {
   "city-focus": 680,
+  "closure-points": 662,
   "flood-warning": 650,
   "power-outage": 655,
   "water-outage": 658,
@@ -632,6 +637,7 @@ const mapLayerVisibility = {
   "power-outage": true,
   "flood-warning": true,
   "water-outage": true,
+  "closure-points": true,
   "earthquake-points": true,
   "shelter-points": true,
   "cctv-points": true,
@@ -645,6 +651,7 @@ const mapCategoryVisibility = {
   "power-disaster": true,
   "power-planned": true,
   "water-outage": true,
+  closure: true,
   earthquake: true,
   shelter: true,
   cctv: true,
@@ -658,6 +665,7 @@ const DISASTER_LEGEND_KEYS = [
   "power-disaster",
   "power-planned",
   "water-outage",
+  "closure",
   "earthquake"
 ];
 const mapCategoryUserOff = new Set();
@@ -671,6 +679,7 @@ const mapLayerConfig = {
   "power-outage": { label: "停電區域標示", pane: "outagePane", hiddenInControl: true },
   "flood-warning": { label: "即時積淹水感測", pane: "floodPane", hiddenInControl: true },
   "water-outage": { label: "停水公告", pane: "waterPane", hiddenInControl: true },
+  "closure-points": { label: "停班停課", pane: "closurePane", hiddenInControl: true },
   "earthquake-points": { label: "地震震央", pane: "earthquakePane", hiddenInControl: true },
   "shelter-points": { label: "避難場所", pane: "shelterPane", hiddenInControl: true },
   "cctv-points": { label: "路口監控", pane: "cameraPane", hiddenInControl: true },
@@ -784,6 +793,7 @@ const appState = {
   weather: null,
   airQuality: null,
   closureRows: [],
+  closureNoticeDate: "",
   floodStations: [],
   floodLivePoints: [],
   floodFeatures: [],
@@ -5171,11 +5181,13 @@ function parseClosureMarkdown(markdownText) {
   const text = String(markdownText ?? "");
   const lines = text.split("\n").map((line) => line.trim());
   const updateLine = lines.find((line) => /更新時間：/.test(line)) ?? "";
+  const titleLine = lines.find((line) => /\d{2,3}\s*年/.test(line) && /停止上班/.test(line)) ?? "";
   const updateAt = updateLine.replace(/^#+\s*/, "").replace(/更新時間：/, "").trim();
+  const noticeDate = parseDgpaNoticeDate(updateLine || titleLine || updateAt);
   const noClosure = /無停班停課訊息/.test(text);
 
   if (noClosure) {
-    return { updateAt, rows: [], noClosure: true };
+    return { updateAt, noticeDate: noticeDate.toISOString(), rows: [], noClosure: true };
   }
 
   const rows = [];
@@ -5212,7 +5224,7 @@ function parseClosureMarkdown(markdownText) {
         continue;
       }
       seenCities.add(city);
-      rows.push({ city, message });
+      rows.push(enrichClosureRow({ city, message }, noticeDate));
       continue;
     }
 
@@ -5221,11 +5233,12 @@ function parseClosureMarkdown(markdownText) {
       continue;
     }
     seenCities.add(parsed.city);
-    rows.push(parsed);
+    rows.push(enrichClosureRow(parsed, noticeDate));
   }
 
   return {
     updateAt,
+    noticeDate: noticeDate.toISOString(),
     rows,
     noClosure: rows.length === 0 ? noClosure : false
   };
@@ -5241,7 +5254,13 @@ function readClosureCache() {
     return null;
   }
   try {
-    return JSON.parse(text);
+    const data = JSON.parse(text);
+    const noticeDate = parseDgpaNoticeDate(data.noticeDate || data.updateAt || "");
+    return {
+      ...data,
+      noticeDate: noticeDate.toISOString(),
+      rows: (data.rows || []).map((row) => enrichClosureRow(row, noticeDate))
+    };
   } catch {
     return null;
   }
@@ -5305,6 +5324,142 @@ function isClosureStopMessage(message) {
   return text.includes("停止上班") || text.includes("停止上課");
 }
 
+const TAIWAN_WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
+
+function getTaiwanDateParts(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(Number.isNaN(date.getTime()) ? new Date() : date);
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+    day: Number(parts.find((part) => part.type === "day")?.value)
+  };
+}
+
+function taiwanDateFromYmd(year, month, day) {
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 4, 0, 0));
+}
+
+function addTaiwanDays(value, days) {
+  const { year, month, day } = getTaiwanDateParts(value);
+  return new Date(Date.UTC(year, month - 1, day + Number(days || 0), 4, 0, 0));
+}
+
+function formatClosureDateLabel(value, { weekday = true } = {}) {
+  const { year, month, day } = getTaiwanDateParts(value);
+  const weekdayLabel = TAIWAN_WEEKDAY_LABELS[taiwanDateFromYmd(year, month, day).getUTCDay()];
+  return weekday ? `${month}月${day}日（${weekdayLabel}）` : `${month}月${day}日`;
+}
+
+function formatClosureDateShort(value) {
+  const { month, day } = getTaiwanDateParts(value);
+  return `${month}/${day}`;
+}
+
+function formatClosureDatesText(dates, { short = false } = {}) {
+  return (dates || [])
+    .map((date) => (short ? formatClosureDateShort(date) : formatClosureDateLabel(date)))
+    .filter(Boolean)
+    .join("、");
+}
+
+function parseDgpaNoticeDate(text) {
+  const raw = String(text || "");
+  const iso = raw.match(/(20\d{2})[/\-](\d{1,2})[/\-](\d{1,2})/);
+  if (iso) {
+    return taiwanDateFromYmd(iso[1], iso[2], iso[3]);
+  }
+  const roc = raw.match(/(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
+  if (roc) {
+    return taiwanDateFromYmd(Number(roc[1]) + 1911, roc[2], roc[3]);
+  }
+  const { year, month, day } = getTaiwanDateParts();
+  return taiwanDateFromYmd(year, month, day);
+}
+
+function extractClosureApplyDates(message, noticeDate) {
+  const text = String(message || "");
+  if (!isClosureStopMessage(text)) {
+    return [];
+  }
+  const base = noticeDate instanceof Date ? noticeDate : parseDgpaNoticeDate(noticeDate);
+  const dates = [];
+  const addDate = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return;
+    }
+    const key = formatClosureDateShort(date);
+    if (!dates.some((item) => formatClosureDateShort(item) === key)) {
+      dates.push(date);
+    }
+  };
+  const clauses = text.split(/[。；;\n]/).map((clause) => clause.trim()).filter(Boolean);
+  (clauses.length ? clauses : [text]).forEach((clause) => {
+    if (!clause || (/照常/.test(clause) && !/停止/.test(clause))) {
+      return;
+    }
+    if (!/停止上班|停止上課|已達停止/.test(clause)) {
+      return;
+    }
+    for (const match of clause.matchAll(/(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/g)) {
+      addDate(taiwanDateFromYmd(Number(match[1]) + 1911, match[2], match[3]));
+    }
+    for (const match of clause.matchAll(/(\d{1,2})\s*月\s*(\d{1,2})\s*日/g)) {
+      if (new RegExp(`${match[1]}\\s*年\\s*${match[2]}\\s*月`).test(clause)) {
+        continue;
+      }
+      addDate(taiwanDateFromYmd(getTaiwanDateParts(base).year, match[1], match[2]));
+    }
+    for (const match of clause.matchAll(/(20\d{2})[/\-](\d{1,2})[/\-](\d{1,2})/g)) {
+      addDate(taiwanDateFromYmd(match[1], match[2], match[3]));
+    }
+    const tomorrowNum = clause.match(/明[（(](\d{1,2})[)）]日/);
+    if (tomorrowNum) {
+      const { year, month } = getTaiwanDateParts(base);
+      addDate(taiwanDateFromYmd(year, month, tomorrowNum[1]));
+    }
+    const todayNum = clause.match(/今[（(](\d{1,2})[)）]日/);
+    if (todayNum) {
+      const { year, month } = getTaiwanDateParts(base);
+      addDate(taiwanDateFromYmd(year, month, todayNum[1]));
+    }
+    if (/明天|明日/.test(clause)) {
+      addDate(addTaiwanDays(base, 1));
+    }
+    if (/今天|今日|本日|今[（(]|已達停止/.test(clause)) {
+      addDate(base);
+    }
+  });
+  if (!dates.length) {
+    addDate(base);
+  }
+  return dates.sort((a, b) => a.getTime() - b.getTime());
+}
+
+function enrichClosureRow(row, noticeDate) {
+  const message = String(row?.message || "");
+  const dates = isClosureStopMessage(message) ? extractClosureApplyDates(message, noticeDate) : [];
+  return {
+    city: row?.city || "",
+    message,
+    noticeDate: noticeDate instanceof Date ? noticeDate.toISOString() : String(noticeDate || ""),
+    dates: dates.map((date) => date.toISOString())
+  };
+}
+
+function getClosureRowDates(row) {
+  if (Array.isArray(row?.dates) && row.dates.length) {
+    return row.dates.map((value) => new Date(value)).filter((date) => !Number.isNaN(date.getTime()));
+  }
+  const notice = row?.noticeDate ? new Date(row.noticeDate) : parseDgpaNoticeDate("");
+  return isClosureStopMessage(row?.message) ? extractClosureApplyDates(row.message, notice) : [];
+}
+
 function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
   closureList.innerHTML = "";
   closureList.classList.remove("is-empty");
@@ -5321,8 +5476,10 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
     closureList.classList.add("is-empty");
     closureList.innerHTML = `<p class="status-ok closure-empty-msg">${okText}</p>`;
     appState.closureRows = [];
+    appState.closureNoticeDate = data.noticeDate || "";
     appState.closureDataOk = true;
     renderClosureMeta(data.updateAt, sourceLabel, { cacheSuffix });
+    updateClosureMapLayer();
     window.requestAnimationFrame(() => {
       fitClosureEmptyMessage();
     });
@@ -5342,8 +5499,10 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
     rows.forEach((item) => {
       const entry = document.createElement("article");
       entry.className = `closure-item ${groupClass}`;
+      const dateText = formatClosureDatesText(getClosureRowDates(item));
       entry.innerHTML = `
         <h3>${item.city}</h3>
+        ${dateText ? `<p class="closure-date">適用日期：${dateText}</p>` : ""}
         <p>${item.message}</p>
       `;
       group.append(entry);
@@ -5363,8 +5522,10 @@ function renderClosure(data, sourceLabel, { cacheSuffix = false } = {}) {
   );
 
   appState.closureRows = sorted;
+  appState.closureNoticeDate = data.noticeDate || "";
   appState.closureDataOk = true;
   renderClosureMeta(data.updateAt, sourceLabel, { cacheSuffix });
+  updateClosureMapLayer();
 }
 
 async function fetchClosureNotices() {
@@ -5386,11 +5547,14 @@ async function fetchClosureNotices() {
     if (cache) {
       renderClosure(cache, "本機快取", { cacheSuffix: true });
       appState.closureRows = cache.rows || [];
+      appState.closureNoticeDate = cache.noticeDate || "";
       return;
     }
     closureMeta.textContent = `停班停課資料暫時無法更新：${error.message}`;
     appState.closureRows = [];
+    appState.closureNoticeDate = "";
     appState.closureDataOk = false;
+    updateClosureMapLayer();
     closureList.classList.remove("is-empty");
     closureList.innerHTML = `
       <p class="status-warn">
@@ -5400,6 +5564,67 @@ async function fetchClosureNotices() {
       </p>
     `;
   }
+}
+
+function getActiveClosureMapRows() {
+  return (appState.closureRows || []).filter((row) => isClosureStopMessage(row.message));
+}
+
+function updateClosureMapLayer() {
+  if (!warningMap) {
+    return;
+  }
+  if (!mapClosureLayer) {
+    mapClosureLayer = L.layerGroup();
+  }
+  mapClosureLayer.clearLayers();
+  mapLegendMarkers.closure = [];
+
+  getActiveClosureMapRows().forEach((row) => {
+    const city = CITY_LOCATIONS.find((item) => item.name === row.city);
+    if (!city || !Number.isFinite(city.lat) || !Number.isFinite(city.lon)) {
+      return;
+    }
+    const dates = getClosureRowDates(row);
+    const dateLabel = formatClosureDatesText(dates);
+    const dateShort = formatClosureDatesText(dates, { short: true });
+    const marker = L.marker([city.lat, city.lon], {
+      pane: "closurePane",
+      keyboard: false,
+      title: dateLabel ? `${row.city}｜${dateLabel}停班停課` : `${row.city}停班停課`,
+      zIndexOffset: 520,
+      icon: L.divIcon({
+        className: "map-closure-marker",
+        html: `
+          <span class="map-closure-pin">
+            <span class="map-closure-card">
+              <strong>${escapeMapLegendHtml(row.city)}</strong>
+              <span>${escapeMapLegendHtml(dateShort || dateLabel || "停班停課")}</span>
+            </span>
+          </span>
+        `,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      })
+    });
+    const popupHtml = `
+      <strong>停班停課</strong><br/>
+      ${escapeMapLegendHtml(row.city)}<br/>
+      ${dateLabel ? `適用日期：${escapeMapLegendHtml(dateLabel)}<br/>` : ""}
+      ${escapeMapLegendHtml(row.message)}<br/>
+      來源：行政院人事行政總處
+    `;
+    marker.bindPopup(popupHtml, getMapPopupOptions({ className: "disaster-map-popup closure-map-popup" }));
+    marker._legendPlace = dateLabel ? `${row.city}｜${dateLabel}` : row.city;
+    marker._popupHtml = popupHtml;
+    marker._closureDates = dates.map((date) => date.toISOString());
+    marker._legendKey = "closure";
+    mapLegendMarkers.closure.push(marker);
+  });
+
+  addVisibleLegendMarkers(mapClosureLayer, ["closure"]);
+  syncMapLayerVisibility("closure-points");
+  syncMapLegendState();
 }
 
 async function fetchAirQuality() {
@@ -7165,7 +7390,10 @@ function renderAiAlerts() {
   }
 
   if (cityClosure && cityClosure.message.includes("停止上班")) {
-    alerts.push(`【停班停課】${cityClosure.city} 最新公告：${cityClosure.message}`);
+    const dateText = formatClosureDatesText(getClosureRowDates(cityClosure));
+    alerts.push(
+      `【停班停課】${cityClosure.city}${dateText ? `（${dateText}）` : ""} 最新公告：${cityClosure.message}`
+    );
   }
 
   if (!alerts.length) {
@@ -7962,7 +8190,8 @@ function getSubscriptionClosureMessage() {
   if (!closure) {
     return `【停班停課】${locationLabel}：目前無停班停課狀態`;
   }
-  return `【停班停課】${locationLabel}：${closure.message}`;
+  const dateText = formatClosureDatesText(getClosureRowDates(closure));
+  return `【停班停課】${locationLabel}${dateText ? `（${dateText}）` : ""}：${closure.message}`;
 }
 
 function getSubscriptionPowerOutageMessage() {
@@ -8992,6 +9221,9 @@ function getMapLayerInstance(layerKey) {
   if (layerKey === "water-outage") {
     return mapWaterOutageLayer;
   }
+  if (layerKey === "closure-points") {
+    return mapClosureLayer;
+  }
   if (layerKey === "earthquake-points") {
     return mapEarthquakeLayer;
   }
@@ -9439,6 +9671,7 @@ function ensureMarkerOnMap(marker) {
     mapFloodLayer ||
     mapPowerOutageLayer ||
     mapWaterOutageLayer ||
+    mapClosureLayer ||
     mapEarthquakeLayer ||
     mapShelterLayer ||
     mapCameraLayer ||
@@ -9468,6 +9701,9 @@ function getLegendLayerForKey(key) {
   }
   if (key === "water-outage") {
     return mapWaterOutageLayer;
+  }
+  if (key === "closure") {
+    return mapClosureLayer;
   }
   if (key === "earthquake") {
     return mapEarthquakeLayer;
@@ -9557,6 +9793,7 @@ function syncMapLayerVisibilityFromCategories() {
     isMapCategoryVisible(key)
   );
   mapLayerVisibility["water-outage"] = isMapCategoryVisible("water-outage");
+  mapLayerVisibility["closure-points"] = isMapCategoryVisible("closure");
   mapLayerVisibility["earthquake-points"] = isMapCategoryVisible("earthquake");
   mapLayerVisibility["shelter-points"] = isMapCategoryVisible("shelter");
   mapLayerVisibility["cctv-points"] = isMapCategoryVisible("cctv");
@@ -9568,6 +9805,7 @@ function refreshDisasterMapLayers() {
   updateFloodMapLayer();
   updatePowerOutageMapLayer();
   updateWaterOutageMapLayer();
+  updateClosureMapLayer();
   updateEarthquakeMapLayer();
   updateShelterMapLayer();
   updateCameraMapLayer();
@@ -10102,6 +10340,7 @@ const ALERT_BADGE_CONFIG = [
   { key: "power-disaster", label: "災害停電", bg: "#6d28d9" },
   { key: "power-planned", label: "計畫停電", bg: "#7c3aed" },
   { key: "water-outage", label: "停水公告", bg: "#0f766e" },
+  { key: "closure", label: "停班停課", bg: "#b71c1c" },
   { key: "earthquake", label: "地震震央", bg: "#dc2626" },
   { key: "shelter", label: "避難場所", bg: "#15803d" },
   { key: "cctv", label: "路口監控", bg: "#0096c7" },
@@ -10123,8 +10362,18 @@ function syncMapAlertBadges() {
     btn.style.background = bg;
     if (color) btn.style.color = color;
     btn.dataset.empty = "false";
-    btn.textContent = `${label} ${count}`;
-    btn.title = `定位${label}點位`;
+    const dateSummary =
+      key === "closure"
+        ? Array.from(
+            new Set(
+              (mapLegendMarkers.closure || []).flatMap((marker) =>
+                (marker._closureDates || []).map((iso) => formatClosureDateShort(iso))
+              )
+            )
+          ).join("、")
+        : "";
+    btn.textContent = key === "closure" && dateSummary ? `${label} ${dateSummary}` : `${label} ${count}`;
+    btn.title = dateSummary ? `定位${label}點位｜適用 ${dateSummary}` : `定位${label}點位`;
     btn.addEventListener("click", () => focusMapLegendMarkers(key));
     container.append(btn);
   });
@@ -10153,7 +10402,7 @@ function focusMapLegendMarkers(legendKey) {
   }
   try {
     fitMapToMarkerLatLngs(getMarkersLatLngs(markers), {
-      maxZoom: legendKey === "city-focus" ? 12 : 14
+      maxZoom: legendKey === "closure" ? 8 : legendKey === "city-focus" ? 12 : 14
     });
   } catch {
     /* keep going so the popup can still open */
@@ -10223,6 +10472,7 @@ function updateMapForCityChange() {
   updateEarthquakeMapLayer();
   updateShelterMapLayer();
   updateWaterOutageMapLayer();
+  updateClosureMapLayer();
   updateFloodMapLayer();
   fetchPowerOutageData().catch((error) => {
     appState.powerOutageMetaText = `停電區域資料暫時無法更新：${error.message}`;
@@ -10270,6 +10520,7 @@ function scheduleMapLayersByView() {
     updateFloodMapLayer();
     updatePowerOutageMapLayer();
     updateWaterOutageMapLayer();
+    updateClosureMapLayer();
     updateEarthquakeMapLayer();
     updateShelterMapLayer();
     updateCameraMapLayer();
@@ -10298,6 +10549,7 @@ function initWarningMap() {
   warningMap.createPane("outagePane");
   warningMap.createPane("floodPane");
   warningMap.createPane("waterPane");
+  warningMap.createPane("closurePane");
   warningMap.createPane("earthquakePane");
   warningMap.createPane("shelterPane");
   warningMap.createPane("cameraPane");
@@ -10329,6 +10581,7 @@ function initWarningMap() {
   updateCityFocusLayer();
   updateCameraMapLayer();
   updateWaterOutageMapLayer();
+  updateClosureMapLayer();
   loadShelterDataset().catch((error) => {
     console.warn("避難場所圖層載入失敗：", error);
   });
