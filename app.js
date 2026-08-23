@@ -8535,19 +8535,31 @@ async function notifySubscriptionMessagesToDevice(messages, { title = "預報訂
     return false;
   }
   const stamp = Date.now();
-  const items = lines.map((line, index) => ({
-    title,
-    body: line,
-    tag: `subscription-bg-${stamp}-${index}`
-  }));
-  await postToServiceWorker({
-    type: "SHOW_NOTIFICATION_BATCH",
-    payload: { items }
-  });
-  for (const [index, item] of items.entries()) {
-    await showWindowsSystemNotification(item.title, item.body, { tag: item.tag });
-    if (index < items.length - 1) {
-      await sleep(220);
+  const items = isDesktopNotifyLayout()
+    ? [
+        {
+          title,
+          body: lines.join("\n"),
+          tag: `subscription-bg-${stamp}`
+        }
+      ]
+    : lines.map((line, index) => ({
+        title,
+        body: line,
+        tag: `subscription-bg-${stamp}-${index}`
+      }));
+  if (isDesktopNotifyLayout()) {
+    await showWindowsSystemNotification(items[0].title, items[0].body, { tag: items[0].tag });
+  } else {
+    await postToServiceWorker({
+      type: "SHOW_NOTIFICATION_BATCH",
+      payload: { items }
+    });
+    for (const [index, item] of items.entries()) {
+      await showWindowsSystemNotification(item.title, item.body, { tag: item.tag });
+      if (index < items.length - 1) {
+        await sleep(220);
+      }
     }
   }
   if (persist) {
@@ -8623,10 +8635,14 @@ async function notifyAutoRefreshComplete() {
     fullscreen: true,
     variant: "refresh-done"
   });
-  await showWindowsSystemNotification(title, intro, { tag: "jin-auto-refresh-intro" });
-  const unseen = updates.filter((line) => !wasDeviceNotifiedThisRefresh(line));
-  if (unseen.length) {
-    await notifySubscriptionMessagesToDevice(unseen, { title: "預報訂閱通知" });
+  if (isDesktopNotifyLayout()) {
+    await showWindowsSystemNotification(title, body, { tag: "jin-auto-refresh-digest" });
+  } else {
+    await showWindowsSystemNotification(title, intro, { tag: "jin-auto-refresh-intro" });
+    const unseen = updates.filter((line) => !wasDeviceNotifiedThisRefresh(line));
+    if (unseen.length) {
+      await notifySubscriptionMessagesToDevice(unseen, { title: "預報訂閱通知" });
+    }
   }
   await persistSubscriptionDigestForBackground(updates);
   clearDeviceNotifiedThisRefresh();
@@ -9432,16 +9448,28 @@ async function sendRecoveryNotifications(messages) {
   const utilityMessages = unseen.filter((item) => utilityKinds.has(item.kind));
   const otherMessages = unseen.filter((item) => !utilityKinds.has(item.kind));
 
-  for (const message of otherMessages) {
+  if (isDesktopNotifyLayout() && otherMessages.length) {
+    const hasRecovery = otherMessages.some((item) => isRecoveryNotificationKind(item.kind));
     await showAppNotification(
-      isRecoveryNotificationKind(message.kind) ? "災害警戒解除" : "災害狀態更新",
-      message.text,
+      hasRecovery ? "災害警戒解除" : "災害狀態更新",
+      otherMessages.map((item) => item.text).join("\n"),
       {
-        tag: `recovery-${message.kind || "status"}-${Date.now()}`,
+        tag: `recovery-digest-${Date.now()}`,
         variant: "subscription"
       }
     );
-    await sleep(700);
+  } else {
+    for (const message of otherMessages) {
+      await showAppNotification(
+        isRecoveryNotificationKind(message.kind) ? "災害警戒解除" : "災害狀態更新",
+        message.text,
+        {
+          tag: `recovery-${message.kind || "status"}-${Date.now()}`,
+          variant: "subscription"
+        }
+      );
+      await sleep(700);
+    }
   }
 
   for (const message of utilityMessages) {
