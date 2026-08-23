@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v168-restore-map-5km";
+const SW_VERSION = "jin-v169-subscribe-cleanup";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

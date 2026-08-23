@@ -515,6 +515,7 @@ body {
 .pwa-history-details > summary .pwa-panel-title {
   display: inline;
   margin: 0;
+  font-size: 0.88rem;
 }
 
 .pwa-history-details > summary::after {
@@ -538,9 +539,13 @@ body {
   color: inherit;
 }
 
+.pwa-history-list {
+  font-size: 12px;
+}
+
 .pwa-history-list li,
 .pwa-test-list li {
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .pwa-test-list li.is-ok::marker {
