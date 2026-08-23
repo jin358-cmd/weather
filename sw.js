@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v148-alert-clear-subscribe";
+const SW_VERSION = "jin-v149-disaster-map-layers";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

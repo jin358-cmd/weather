@@ -4305,6 +4305,11 @@ input[type="checkbox"] {
   border-color: #14532d;
 }
 
+.legend-swatch.water-outage-point {
+  background: #0f766e;
+  border-color: #115e59;
+}
+
 .earthquake-card {
   display: grid;
   gap: 10px;
@@ -4619,6 +4624,21 @@ body.eq-sheet-open {
   line-height: 1.45;
   word-break: break-word;
   color: #1f2a44;
+}
+
+.cctv-map-popup-name-only {
+  min-width: 0;
+}
+
+.cctv-map-popup-name-only .cctv-map-popup-line {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0b3fad;
+}
+
+.map-legend-callout-name-only strong {
+  display: none;
 }
 
 .cctv-map-popup-title {
@@ -5381,8 +5401,8 @@ body.eq-sheet-open {
 }
 
 .legend-swatch.city-focus-swatch {
-  background: #12b76a;
-  border-color: #ecfdf3;
+  background: #00d4ff;
+  border-color: #e0f7ff;
 }
 
 .leaflet-div-icon.map-focus-pulse {

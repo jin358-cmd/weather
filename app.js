@@ -577,6 +577,7 @@ let mapFloodLayer = null;
 let mapCameraLayer = null;
 let mapCityFocusLayer = null;
 let mapPowerOutageLayer = null;
+let mapWaterOutageLayer = null;
 let mapEarthquakeLayer = null;
 let mapShelterLayer = null;
 const mapLegendMarkers = {
@@ -586,6 +587,7 @@ const mapLegendMarkers = {
   "flood-1": [],
   "power-disaster": [],
   "power-planned": [],
+  "water-outage": [],
   earthquake: [],
   shelter: [],
   cctv: [],
@@ -598,16 +600,35 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "flood-1": { title: "積水 1", color: "#ffd166", layer: "flood-warning" },
   "power-disaster": { title: "災害停電", color: "#6d28d9", layer: "power-outage" },
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage" },
+  "water-outage": { title: "停水公告", color: "#0f766e", layer: "water-outage" },
   earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points" },
-  shelter: { title: "全台避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
-  cctv: { title: "CCTV位置", color: "#0096c7", layer: "cctv-points", alwaysShow: true },
-  "city-focus": { title: "焦點範圍", color: "#00d4ff", layer: "city-focus", alwaysShow: true }
+  shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
+  cctv: { title: "路口監控", color: "#0096c7", layer: "cctv-points", nameOnly: true, alwaysShow: true },
+  "city-focus": { title: "定位範圍", color: "#00d4ff", layer: "city-focus", alwaysShow: true }
 };
 let mapLegendLabelLayer = null;
-const mapLayerOrder = ["city-focus", "flood-warning", "power-outage", "earthquake-points", "shelter-points", "cctv-points"];
+const mapLayerOrder = [
+  "city-focus",
+  "flood-warning",
+  "power-outage",
+  "water-outage",
+  "earthquake-points",
+  "shelter-points",
+  "cctv-points"
+];
+const MAP_PANE_ZINDEX = {
+  "city-focus": 640,
+  "flood-warning": 650,
+  "power-outage": 655,
+  "water-outage": 658,
+  "earthquake-points": 660,
+  "shelter-points": 670,
+  "cctv-points": 740
+};
 const mapLayerVisibility = {
   "power-outage": true,
   "flood-warning": true,
+  "water-outage": true,
   "earthquake-points": true,
   "shelter-points": true,
   "cctv-points": true,
@@ -620,6 +641,7 @@ const mapCategoryVisibility = {
   "flood-1": true,
   "power-disaster": true,
   "power-planned": true,
+  "water-outage": true,
   earthquake: true,
   shelter: true,
   cctv: true,
@@ -632,6 +654,7 @@ const DISASTER_LEGEND_KEYS = [
   "flood-1",
   "power-disaster",
   "power-planned",
+  "water-outage",
   "earthquake"
 ];
 const mapCategoryUserOff = new Set();
@@ -644,10 +667,11 @@ const TAIWAN_MAP_ZOOM = 7;
 const mapLayerConfig = {
   "power-outage": { label: "停電區域標示", pane: "outagePane", hiddenInControl: true },
   "flood-warning": { label: "即時積淹水感測", pane: "floodPane", hiddenInControl: true },
+  "water-outage": { label: "停水公告", pane: "waterPane", hiddenInControl: true },
   "earthquake-points": { label: "地震震央", pane: "earthquakePane", hiddenInControl: true },
-  "shelter-points": { label: "全台避難場所", pane: "shelterPane", hiddenInControl: true },
-  "cctv-points": { label: "定位中心點區域CCTV", pane: "cameraPane", hiddenInControl: true },
-  "city-focus": { label: "所選位置焦點範圍", pane: "focusPane", hiddenInControl: true }
+  "shelter-points": { label: "避難場所", pane: "shelterPane", hiddenInControl: true },
+  "cctv-points": { label: "路口監控", pane: "cameraPane", hiddenInControl: true },
+  "city-focus": { label: "定位範圍（直徑 5 公里）", pane: "focusPane", hiddenInControl: true }
 };
 const AUTO_REFRESH_OPTIONS = {
   5: { ms: 5 * 60 * 1000, label: "5 分鐘" },
@@ -711,7 +735,10 @@ const TYPHOON_NEWS_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Typ
 const TYPHOON_WARN_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_WARN.html";
 const CLOSURE_OFFICIAL_URL = "https://www.dgpa.gov.tw/typh/daily/nds.html";
 const CLOSURE_REGION_LABELS = ["北部地區", "中部地區", "南部地區", "東部地區", "外島地區"];
-const MAP_FOCUS_CIRCLE_RADIUS_M = 28000;
+const MAP_LOCATE_DIAMETER_KM = 5;
+const MAP_LOCATE_RADIUS_KM = MAP_LOCATE_DIAMETER_KM / 2;
+const MAP_FOCUS_CIRCLE_RADIUS_M = MAP_LOCATE_RADIUS_KM * 1000;
+const LAST_MAP_LOCATE_STORAGE_KEY = "lastMapLocateV1";
 const WINDY_EMBED_HEIGHT = 560;
 const WINDY_EMBED_WIDTH = 560;
 const RAIN_FORECAST_HOURS = 8;
@@ -811,7 +838,65 @@ function getActiveWeatherLocation() {
     : null;
 }
 
-function getCctvLocationFocus() {
+function persistMapLocatePoint(point) {
+  if (!point || !Number.isFinite(Number(point.lat)) || !Number.isFinite(Number(point.lon))) {
+    return;
+  }
+  try {
+    localStorage.setItem(
+      LAST_MAP_LOCATE_STORAGE_KEY,
+      JSON.stringify({
+        lat: Number(point.lat),
+        lon: Number(point.lon),
+        label: String(point.label || "").trim(),
+        savedAt: new Date().toISOString()
+      })
+    );
+  } catch {
+    /* ignore storage errors */
+  }
+}
+
+function readPersistedMapLocatePoint() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LAST_MAP_LOCATE_STORAGE_KEY) || "null");
+    const lat = Number(parsed?.lat);
+    const lon = Number(parsed?.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      return null;
+    }
+    return {
+      lat,
+      lon,
+      label: String(parsed.label || "").trim() || "上次定位點"
+    };
+  } catch {
+    return null;
+  }
+}
+
+function restoreMapLocateFocus() {
+  if (
+    cctvLocateFocus &&
+    Number.isFinite(cctvLocateFocus.lat) &&
+    Number.isFinite(cctvLocateFocus.lon)
+  ) {
+    return cctvLocateFocus;
+  }
+  const last = readPersistedMapLocatePoint();
+  if (last) {
+    cctvLocateFocus = last;
+    return last;
+  }
+  const location = getActiveWeatherLocation();
+  if (location && Number.isFinite(location.lat) && Number.isFinite(location.lon)) {
+    persistMapLocatePoint(location);
+    return location;
+  }
+  return null;
+}
+
+function getMapLocatePoint() {
   if (
     cctvLocateFocus &&
     Number.isFinite(cctvLocateFocus.lat) &&
@@ -823,6 +908,10 @@ function getCctvLocationFocus() {
       label: cctvLocateFocus.label || "裝置定位點"
     };
   }
+  const last = readPersistedMapLocatePoint();
+  if (last) {
+    return last;
+  }
   const location = getActiveWeatherLocation();
   if (location && Number.isFinite(location.lat) && Number.isFinite(location.lon)) {
     return {
@@ -830,6 +919,93 @@ function getCctvLocationFocus() {
       lon: location.lon,
       label: location.label
     };
+  }
+  return null;
+}
+
+function isWithinMapLocateRange(lat, lon) {
+  const focus = getMapLocatePoint();
+  if (!focus) {
+    return false;
+  }
+  const pointLat = Number(lat);
+  const pointLon = Number(lon);
+  if (!Number.isFinite(pointLat) || !Number.isFinite(pointLon)) {
+    return false;
+  }
+  return getDistanceKm(focus.lat, focus.lon, pointLat, pointLon) <= MAP_LOCATE_RADIUS_KM + 0.0001;
+}
+
+function getMapDeclutterSeparationKm(zoom) {
+  const z = Number(zoom);
+  if (!Number.isFinite(z) || z >= 17) {
+    return 0;
+  }
+  if (z >= 16) {
+    return 0.05;
+  }
+  if (z >= 15) {
+    return 0.09;
+  }
+  if (z >= 14) {
+    return 0.15;
+  }
+  if (z >= 13) {
+    return 0.24;
+  }
+  if (z >= 12) {
+    return 0.36;
+  }
+  if (z >= 11) {
+    return 0.55;
+  }
+  return 0.85;
+}
+
+function declutterMapItems(items, getLatLng) {
+  const focus = getMapLocatePoint();
+  const zoom = warningMap?.getZoom?.();
+  const bounds = warningMap?.getBounds?.();
+  const sepKm = getMapDeclutterSeparationKm(zoom);
+  const scored = (items || [])
+    .map((item) => {
+      const point = getLatLng(item) || {};
+      const lat = Number(point.lat);
+      const lon = Number(point.lon ?? point.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || !isWithinMapLocateRange(lat, lon)) {
+        return null;
+      }
+      if (bounds?.isValid?.() && !bounds.contains([lat, lon])) {
+        return null;
+      }
+      return {
+        item,
+        lat,
+        lon,
+        dist: focus ? getDistanceKm(focus.lat, focus.lon, lat, lon) : 0
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.dist - b.dist);
+  if (sepKm <= 0) {
+    return scored.map((entry) => entry.item);
+  }
+  const kept = [];
+  scored.forEach((entry) => {
+    const tooClose = kept.some(
+      (other) => getDistanceKm(entry.lat, entry.lon, other.lat, other.lon) < sepKm
+    );
+    if (!tooClose) {
+      kept.push(entry);
+    }
+  });
+  return kept.map((entry) => entry.item);
+}
+
+function getCctvLocationFocus() {
+  const mapped = getMapLocatePoint();
+  if (mapped) {
+    return mapped;
   }
   const city = CITY_LOCATIONS.find((item) => item.name === citySelect.value);
   if (city) {
@@ -1082,7 +1258,12 @@ function updatePowerOutageMapLayer() {
   mapLegendMarkers["power-planned"] = [];
   const grouped = new Map();
 
-  appState.powerOutagePoints.forEach((point) => {
+  declutterMapItems(
+    appState.powerOutagePoints.filter(
+      (point) => Number.isFinite(point.lat) && Number.isFinite(point.lon)
+    ),
+    (point) => ({ lat: point.lat, lon: point.lon })
+  ).forEach((point) => {
     const key = `${point.type}|${point.lat.toFixed(4)}|${point.lon.toFixed(4)}`;
     if (!grouped.has(key)) {
       grouped.set(key, []);
@@ -1184,6 +1365,7 @@ function applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy)
     label: `${nearest.city}${nearest.town}｜裝置定位`,
     accuracy
   };
+  persistMapLocatePoint(cctvLocateFocus);
   syncCityCameraScopeToLocator();
   syncFreewayCameraScopeToLocator();
   setLocateCompleteMeta(nearest.city, nearest.town);
@@ -2450,35 +2632,49 @@ function setVerifiedCityCameras(cameras = []) {
   updateCameraMapLayer();
 }
 
+function formatCameraIntersectionShort(camera) {
+  const [roadA, roadB] = getCameraIntersectionRoads(camera, { allowLookup: false });
+  const cleanA =
+    roadA && roadA !== "未提供路名" && !looksLikeCameraCode(roadA) ? roadA : "";
+  const cleanB =
+    roadB &&
+    roadB !== CCTV_MISSING_CROSS_LABEL &&
+    roadB !== CCTV_CROSS_LOOKUP_LABEL &&
+    !looksLikeCameraCode(roadB)
+      ? roadB
+      : "";
+  if (cleanA && cleanB) {
+    return `${cleanA} × ${cleanB}`;
+  }
+  if (cleanA) {
+    return cleanA;
+  }
+  if (cleanB) {
+    return cleanB;
+  }
+  const fallback = normalizeRoadToken(camera?.roadName || camera?.stakenumber || camera?.description || "");
+  return fallback || "路口";
+}
+
 function getCityCamerasForDisasterMap() {
   if (!cityCameraDataset || !Array.isArray(cityCameraDataset.cameras)) {
     return [];
   }
-
-  const focusPoint = getCityCameraFocusPoint();
-  const focus = getCctvLocationFocus();
-  const enrichCamera = (camera) => enrichCityCameraForMap(camera, focusPoint, focus);
-
-  const verified = Array.isArray(appState.verifiedCityCameras) ? appState.verifiedCityCameras : [];
-  if (verified.length > 0) {
-    return dedupeCamerasByIdentity(verified.map(enrichCamera)).sort((a, b) => a.distanceKm - b.distanceKm);
+  const focus = getMapLocatePoint();
+  if (!focus) {
+    return [];
   }
-
-  const liveIds = getLiveCityCameraIds();
-  if (liveIds.size > 0) {
-    return dedupeCamerasByIdentity(
+  const focusPoint = { lat: focus.lat, lon: focus.lon };
+  return declutterMapItems(
+    dedupeCamerasByIdentity(
       cityCameraDataset.cameras
-        .filter((camera) => liveIds.has(String(camera.id)))
-        .filter((camera) => isCameraUrlUsable(camera.html))
         .filter((camera) => Number.isFinite(Number(camera.gisy)) && Number.isFinite(Number(camera.gisx)))
-        .map(enrichCamera)
+        .map((camera) => enrichCityCameraForMap(camera, focusPoint, focus))
+        .filter((camera) => isWithinMapLocateRange(Number(camera.gisy), Number(camera.gisx)))
         .sort((a, b) => a.distanceKm - b.distanceKm)
-    ).slice(0, CITY_CCTV_PREVIEW_LIMIT);
-  }
-
-  return getFilteredSortedCityCameras({ forMap: false })
-    .filter((camera) => Number.isFinite(Number(camera.gisy)) && Number.isFinite(Number(camera.gisx)))
-    .slice(0, CITY_CCTV_PREVIEW_LIMIT);
+    ),
+    (camera) => ({ lat: Number(camera.gisy), lon: Number(camera.gisx) })
+  );
 }
 
 function dedupeCamerasByIdentity(cameras = []) {
@@ -6618,7 +6814,10 @@ function updateEarthquakeMapLayer() {
   mapEarthquakeLayer.clearLayers();
   mapLegendMarkers.earthquake = [];
 
-  (appState.earthquakes || []).forEach((quake) => {
+  declutterMapItems(appState.earthquakes || [], (quake) => ({
+    lat: quake.lat,
+    lon: quake.lon
+  })).forEach((quake) => {
     if (!Number.isFinite(quake.lat) || !Number.isFinite(quake.lon)) {
       return;
     }
@@ -8086,12 +8285,14 @@ async function fetchWaterOutageData() {
     appState.waterOutageItems = [];
     appState.waterOutageDataOk = true;
     appState.waterOutageMetaText = "";
+    updateWaterOutageMapLayer();
     return [];
   }
   if (!townshipName) {
     appState.waterOutageItems = [];
     appState.waterOutageDataOk = true;
     appState.waterOutageMetaText = `${cityName}：請選定鄉鎮市區後顯示當區停水（不發全縣市通知）`;
+    updateWaterOutageMapLayer();
     return [];
   }
   const encodedCity = encodeURIComponent(cityName);
@@ -8129,12 +8330,53 @@ async function fetchWaterOutageData() {
     appState.waterOutageItems = localItems;
     appState.waterOutageDataOk = true;
     appState.waterOutageMetaText = `${cityName}${townshipName} 停水公告 ${localItems.length} 筆（僅本鄉鎮｜全市抓取 ${items.length} 筆）`;
+    updateWaterOutageMapLayer();
     return localItems;
   } catch (error) {
     appState.waterOutageDataOk = false;
     appState.waterOutageMetaText = `停水資料暫時無法更新：${error.message}`;
+    updateWaterOutageMapLayer();
     return appState.waterOutageItems || [];
   }
+}
+
+function updateWaterOutageMapLayer() {
+  if (!warningMap) {
+    return;
+  }
+  if (!mapWaterOutageLayer) {
+    mapWaterOutageLayer = L.layerGroup();
+  }
+  mapWaterOutageLayer.clearLayers();
+  mapLegendMarkers["water-outage"] = [];
+  const township = getSelectedTownship();
+  const items = appState.waterOutageItems || [];
+  if (township && items.length && isWithinMapLocateRange(township.lat, township.lon)) {
+    const visible = declutterMapItems([township], (point) => ({ lat: point.lat, lon: point.lon }));
+    visible.forEach((point) => {
+      const marker = L.circleMarker([point.lat, point.lon], {
+        pane: "waterPane",
+        radius: 8,
+        color: "#115e59",
+        fillColor: "#0f766e",
+        fillOpacity: 0.88,
+        weight: 2
+      });
+      const lines = items
+        .slice(0, 4)
+        .map((item) => `<strong>${escapeMapLegendHtml(item.area || "停水公告")}</strong><br/>${escapeMapLegendHtml(item.period || "")}<br/>${escapeMapLegendHtml(item.reason || "")}`)
+        .join("<hr/>");
+      marker.bindPopup(
+        `${lines}<br/>來源：台灣自來水公司停水公告`,
+        getMapPopupOptions({ className: "disaster-map-popup" })
+      );
+      marker._legendPlace = `${point.city || ""}${point.town || ""}`.trim() || "停水公告";
+      mapLegendMarkers["water-outage"].push(marker);
+    });
+  }
+  addVisibleLegendMarkers(mapWaterOutageLayer, ["water-outage"]);
+  syncMapLayerVisibility("water-outage");
+  syncMapLegendState();
 }
 
 function getSubscriptionWaterOutageMessage() {
@@ -8445,8 +8687,11 @@ function getShelterMarkerRadius() {
 }
 
 function getSheltersForMap() {
-  return (shelterDataset?.shelters || []).filter(
-    (shelter) => Number.isFinite(shelter.lat) && Number.isFinite(shelter.lon)
+  return declutterMapItems(
+    (shelterDataset?.shelters || []).filter(
+      (shelter) => Number.isFinite(shelter.lat) && Number.isFinite(shelter.lon)
+    ),
+    (shelter) => ({ lat: shelter.lat, lon: shelter.lon })
   );
 }
 
@@ -8541,6 +8786,9 @@ function getMapLayerInstance(layerKey) {
   if (layerKey === "flood-warning") {
     return mapFloodLayer;
   }
+  if (layerKey === "water-outage") {
+    return mapWaterOutageLayer;
+  }
   if (layerKey === "earthquake-points") {
     return mapEarthquakeLayer;
   }
@@ -8560,7 +8808,6 @@ function applyMapLayerOrder() {
   if (!warningMap) {
     return;
   }
-  let zIndex = 660;
   mapLayerOrder.forEach((layerKey) => {
     const paneName = mapLayerConfig[layerKey]?.pane;
     if (!paneName) {
@@ -8568,11 +8815,13 @@ function applyMapLayerOrder() {
     }
     const pane = warningMap.getPane(paneName);
     if (pane) {
-      // Keep focus frame on top so the selection range stays visible.
-      pane.style.zIndex = layerKey === "city-focus" ? "680" : String(zIndex);
-      zIndex -= 20;
+      pane.style.zIndex = String(MAP_PANE_ZINDEX[layerKey] || 650);
     }
   });
+  const cameraPane = warningMap.getPane("cameraPane");
+  if (cameraPane) {
+    cameraPane.style.zIndex = String(MAP_PANE_ZINDEX["cctv-points"]);
+  }
 }
 
 function syncMapLayerVisibility(layerKey) {
@@ -8648,8 +8897,11 @@ function updateFloodMapLayer() {
   mapLegendMarkers["flood-2"] = [];
   mapLegendMarkers["flood-1"] = [];
 
-  // Only plot live flooded sensors so legend/badge counts match on-map points.
-  appState.floodLivePoints.forEach((point) => {
+  // Only plot live flooded sensors inside the locate range so legend/badge counts match on-map points.
+  declutterMapItems(appState.floodLivePoints, (point) => ({
+    lat: point.lat,
+    lon: point.lon
+  })).forEach((point) => {
     const marker = L.circleMarker([point.lat, point.lon], {
       pane: "floodPane",
       ...buildFloodPointStyle(point.depthCm)
@@ -8840,6 +9092,25 @@ function fitMapToTaiwan(animate = false) {
   }, 450);
 }
 
+function fitMapToLocateRange(animate = false) {
+  const focus = getMapLocatePoint();
+  if (!warningMap || !focus) {
+    fitMapToTaiwan(animate);
+    return;
+  }
+  ignoreShelterZoomEvents += 1;
+  warningMap.invalidateSize();
+  const bounds = L.latLng(focus.lat, focus.lon).toBounds(MAP_FOCUS_CIRCLE_RADIUS_M * 2);
+  warningMap.fitBounds(bounds, {
+    padding: [28, 28],
+    maxZoom: 15,
+    animate
+  });
+  window.setTimeout(() => {
+    ignoreShelterZoomEvents = Math.max(0, ignoreShelterZoomEvents - 1);
+  }, 450);
+}
+
 function isMapCategoryVisible(key) {
   return mapCategoryVisibility[key] !== false;
 }
@@ -8961,6 +9232,7 @@ function ensureMarkerOnMap(marker) {
     (marker._legendKey && getLegendLayerForKey(marker._legendKey)) ||
     mapFloodLayer ||
     mapPowerOutageLayer ||
+    mapWaterOutageLayer ||
     mapEarthquakeLayer ||
     mapShelterLayer ||
     mapCameraLayer ||
@@ -8987,6 +9259,9 @@ function getLegendLayerForKey(key) {
   }
   if (key === "power-disaster" || key === "power-planned") {
     return mapPowerOutageLayer;
+  }
+  if (key === "water-outage") {
+    return mapWaterOutageLayer;
   }
   if (key === "earthquake") {
     return mapEarthquakeLayer;
@@ -9075,6 +9350,7 @@ function syncMapLayerVisibilityFromCategories() {
   mapLayerVisibility["power-outage"] = ["power-disaster", "power-planned"].some((key) =>
     isMapCategoryVisible(key)
   );
+  mapLayerVisibility["water-outage"] = isMapCategoryVisible("water-outage");
   mapLayerVisibility["earthquake-points"] = isMapCategoryVisible("earthquake");
   mapLayerVisibility["shelter-points"] = isMapCategoryVisible("shelter");
   mapLayerVisibility["cctv-points"] = isMapCategoryVisible("cctv");
@@ -9085,6 +9361,7 @@ function refreshDisasterMapLayers() {
   syncMapLayerVisibilityFromCategories();
   updateFloodMapLayer();
   updatePowerOutageMapLayer();
+  updateWaterOutageMapLayer();
   updateEarthquakeMapLayer();
   updateShelterMapLayer();
   updateCameraMapLayer();
@@ -9165,7 +9442,7 @@ function updateCityFocusLayer() {
   if (!warningMap) {
     return;
   }
-  const location = getCctvLocationFocus();
+  const location = getMapLocatePoint();
   if (mapCityFocusLayer) {
     try {
       warningMap.removeLayer(mapCityFocusLayer);
@@ -9175,6 +9452,8 @@ function updateCityFocusLayer() {
     mapCityFocusLayer = null;
   }
   if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lon)) {
+    mapLegendMarkers["city-focus"] = [];
+    syncMapLegendState();
     return;
   }
 
@@ -9182,6 +9461,7 @@ function updateCityFocusLayer() {
   mapCityFocusLayer = L.featureGroup();
   mapLegendMarkers["city-focus"] = [];
   const ring = L.circle([location.lat, location.lon], {
+    pane: "focusPane",
     radius: radiusM,
     color: "#00d4ff",
     weight: 5,
@@ -9191,6 +9471,7 @@ function updateCityFocusLayer() {
     interactive: false
   });
   const center = L.marker([location.lat, location.lon], {
+    pane: "focusPane",
     interactive: true,
     keyboard: false,
     zIndexOffset: 850,
@@ -9202,7 +9483,7 @@ function updateCityFocusLayer() {
     })
   });
   center.bindPopup(
-    `所選位置焦點範圍<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`,
+    `定位點範圍（直徑 5 公里）<br/>${location.label || `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`}`,
     getMapPopupOptions()
   );
   center._legendPlace = String(location.label || "").trim();
@@ -9245,51 +9526,21 @@ function updateCameraMapLayer() {
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
       return;
     }
-    const [roadA, roadB] = getCameraIntersectionRoads(camera);
-    const distanceText = Number.isFinite(camera.distanceKm)
-      ? `約 ${camera.distanceKm.toFixed(2)} km`
-      : "--";
-    const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}&z=18`;
-    const areaText = camera.city || camera.areaLabel || "";
-    const scopeNote = camera.locateFallback
-      ? `範圍外最近鏡頭（定位點 ${CITY_CCTV_NEARBY_KM} 公里內無點）`
-      : camera.withinNearby
-        ? `定位點週圍路口監控（約 ${Number(camera.distanceKm).toFixed(1)} km）`
-        : "最近可檢視路口監控（點選檢視）";
-    const useImage = isLikelyDirectImageStream(camera.html);
-    const previewHtml = useImage
-      ? `<img class="cctv-map-popup-media" src="${camera.html}" alt="${camera.id} 路口監控預覽" loading="lazy" referrerpolicy="no-referrer-when-downgrade" />`
-      : `<iframe class="cctv-map-popup-media cctv-map-popup-frame" src="${camera.html}" title="${camera.id} 路口監控預覽" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    const intersectionName = formatCameraIntersectionShort(camera);
     const marker = L.circleMarker([lat, lon], {
       pane: "cameraPane",
-      radius: camera.withinLocateRadius ? 8 : 6,
+      radius: 8,
       color: "#b8f2ff",
-      fillColor: camera.withinLocateRadius ? "#0096c7" : "#5b8ea6",
+      fillColor: "#0096c7",
       fillOpacity: 0.95,
       weight: 3
     });
     marker.bindPopup(
-      `
-        <div class="cctv-map-popup">
-          <strong class="cctv-map-popup-title">${camera.id}</strong>
-          <p class="cctv-map-popup-line">交叉路口：${roadA} × ${roadB}</p>
-          ${areaText ? `<p class="cctv-map-popup-line">所在縣市：${areaText}</p>` : ""}
-          <p class="cctv-map-popup-line">距離定位點：${distanceText}</p>
-          <p class="cctv-map-popup-note">${scopeNote}</p>
-          <div class="cctv-map-popup-preview">${previewHtml}</div>
-          <div class="cctv-map-popup-links">
-            <a href="${camera.html}" target="_blank" rel="noopener noreferrer">開啟監控鏡頭</a>
-            <span aria-hidden="true">｜</span>
-            <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer">地圖位置</a>
-          </div>
-        </div>
-      `,
+      `<div class="cctv-map-popup cctv-map-popup-name-only"><p class="cctv-map-popup-line">${escapeMapLegendHtml(intersectionName)}</p></div>`,
       getMapPopupOptions({ className: "cctv-popup-wrap disaster-map-popup" })
     );
-    const township = findNearestTownship(lat, lon);
-    marker._legendPlace = township
-      ? `${township.city}${township.town}`
-      : String(areaText || "").trim();
+    marker._legendPlace = intersectionName;
+    marker._cctvNameOnly = true;
     mapLegendMarkers.cctv.push(marker);
   });
   addVisibleLegendMarkers(mapCameraLayer, ["cctv"]);
@@ -9460,7 +9711,14 @@ function updateMapLegendLocationPins() {
   pins.forEach((pin) => {
     const stack = pin.slot % 8;
     const cardMax = Math.min(240, getMapMessageMaxWidth());
-    const html = `
+    const html = pin.config.nameOnly
+      ? `
+      <span class="map-legend-callout-dot map-legend-callout-dot-flash" style="--legend-dot:${pin.config.color}"></span>
+      <span class="map-legend-callout-card map-legend-callout-name-only" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
+        <span class="map-legend-callout-place">${escapeMapLegendHtml(pin.place)}</span>
+      </span>
+    `
+      : `
       <span class="map-legend-callout-dot map-legend-callout-dot-flash" style="--legend-dot:${pin.config.color}"></span>
       <span class="map-legend-callout-card" style="--callout-color:${pin.config.color}; max-width:${cardMax}px; transform: translateY(${stack * 22}px)">
         <strong>${escapeMapLegendHtml(pin.config.title)}</strong>
@@ -9468,7 +9726,7 @@ function updateMapLegendLocationPins() {
       </span>
     `;
     const marker = L.marker(pin.center, {
-      pane: "legendLabelPane",
+      pane: pin.key === "cctv" ? "cameraPane" : "legendLabelPane",
       interactive: true,
       keyboard: false,
       zIndexOffset: 700 + stack,
@@ -9498,13 +9756,12 @@ function syncMapLegendState() {
     const placeText =
       key === "shelter"
         ? markers.length
-          ? "全台"
-          : "目前無點位"
+          ? "定位範圍內"
+          : "定位範圍內無點位"
         : markers.length
           ? describeLegendMarkerPlaces(markers)
           : "目前無點位";
-    const alwaysShowRow = key === "cctv" || key === "city-focus" || key === "shelter";
-    const userOff = mapCategoryUserOff.has(key);
+    const alwaysShowRow = true;
     if (countEl) {
       countEl.textContent = String(markers.length);
       countEl.removeAttribute("aria-hidden");
@@ -9512,21 +9769,20 @@ function syncMapLegendState() {
     if (placeEl) {
       placeEl.textContent = placeText;
     }
-    item.classList.toggle("legend-item-empty", markers.length === 0 && !alwaysShowRow);
+    item.classList.toggle("legend-item-empty", false);
     item.classList.toggle("legend-item-fixed", alwaysShowRow);
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
     const toggle = ensureLegendLayerSwitch(item);
     if (toggle) {
       toggle.checked = isMapCategoryVisible(key);
-      toggle.disabled = !alwaysShowRow && markers.length === 0;
+      toggle.disabled = false;
     }
-    item.setAttribute("aria-disabled", alwaysShowRow || markers.length > 0 ? "false" : "true");
+    item.setAttribute("aria-disabled", "false");
     const row = item.closest("li");
-    const hideRow = !alwaysShowRow && markers.length === 0 && !userOff;
     if (row) {
-      row.hidden = hideRow;
+      row.hidden = false;
     }
-    item.hidden = hideRow;
+    item.hidden = false;
     const label = item.querySelector(".legend-label")?.textContent?.trim() || key;
     item.title = markers.length ? `${label}｜位置：${placeText}` : `${label}｜目前無點位`;
     item.setAttribute(
@@ -9564,10 +9820,11 @@ const ALERT_BADGE_CONFIG = [
   { key: "flood-1", label: "積水 等級1", bg: "#ffd166", color: "#333" },
   { key: "power-disaster", label: "災害停電", bg: "#6d28d9" },
   { key: "power-planned", label: "計畫停電", bg: "#7c3aed" },
+  { key: "water-outage", label: "停水公告", bg: "#0f766e" },
   { key: "earthquake", label: "地震震央", bg: "#dc2626" },
-  { key: "shelter", label: "全台避難場所", bg: "#15803d" },
-  { key: "cctv", label: "CCTV", bg: "#2563eb" },
-  { key: "city-focus", label: "焦點範圍", bg: "#0891b2" }
+  { key: "shelter", label: "避難場所", bg: "#15803d" },
+  { key: "cctv", label: "路口監控", bg: "#0096c7" },
+  { key: "city-focus", label: "定位範圍", bg: "#00d4ff", color: "#123" }
 ];
 
 function syncMapAlertBadges() {
@@ -9609,8 +9866,8 @@ function focusMapLegendMarkers(legendKey) {
   if (!markers.length) {
     return;
   }
-  if (legendKey === "shelter") {
-    fitMapToTaiwan(true);
+  if (legendKey === "shelter" || legendKey === "city-focus") {
+    fitMapToLocateRange(true);
     return;
   }
   try {
@@ -9684,12 +9941,15 @@ function updateMapForCityChange() {
   updateCameraMapLayer();
   updateEarthquakeMapLayer();
   updateShelterMapLayer();
+  updateWaterOutageMapLayer();
+  updateFloodMapLayer();
   fetchPowerOutageData().catch((error) => {
     appState.powerOutageMetaText = `停電區域資料暫時無法更新：${error.message}`;
     if (powerOutageMeta) {
       powerOutageMeta.textContent = appState.powerOutageMetaText;
     }
   });
+  fitMapToLocateRange(false);
 }
 
 function addDisasterMapBaseTiles(map) {
@@ -9716,8 +9976,29 @@ function addDisasterMapBaseTiles(map) {
   darkTiles.addTo(map);
 }
 
+function scheduleMapLayersByView() {
+  window.clearTimeout(shelterZoomTimer);
+  shelterZoomTimer = window.setTimeout(() => {
+    if (Date.now() < mapPopupHoldUntil) {
+      scheduleMapLayersByView();
+      return;
+    }
+    if (ignoreShelterZoomEvents > 0) {
+      return;
+    }
+    updateFloodMapLayer();
+    updatePowerOutageMapLayer();
+    updateWaterOutageMapLayer();
+    updateEarthquakeMapLayer();
+    updateShelterMapLayer();
+    updateCameraMapLayer();
+    updateMapLegendLocationPins();
+  }, 140);
+}
+
 function initWarningMap() {
   const mapEl = document.querySelector("#warningMap");
+  restoreMapLocateFocus();
   if (!mapEl || typeof L === "undefined") {
     loadFloodStations()
       .then(() => fetchLiveFloodData())
@@ -9735,26 +10016,15 @@ function initWarningMap() {
 
   warningMap.createPane("outagePane");
   warningMap.createPane("floodPane");
+  warningMap.createPane("waterPane");
   warningMap.createPane("earthquakePane");
   warningMap.createPane("shelterPane");
   warningMap.createPane("cameraPane");
   warningMap.createPane("focusPane");
   warningMap.createPane("legendLabelPane");
-  const focusPane = warningMap.getPane("focusPane");
-  if (focusPane) {
-    focusPane.style.zIndex = "680";
-  }
-  const earthquakePane = warningMap.getPane("earthquakePane");
-  if (earthquakePane) {
-    earthquakePane.style.zIndex = "670";
-  }
-  const shelterPane = warningMap.getPane("shelterPane");
-  if (shelterPane) {
-    shelterPane.style.zIndex = "665";
-  }
   const legendLabelPane = warningMap.getPane("legendLabelPane");
   if (legendLabelPane) {
-    legendLabelPane.style.zIndex = "690";
+    legendLabelPane.style.zIndex = "710";
   }
 
   addDisasterMapBaseTiles(warningMap);
@@ -9777,15 +10047,15 @@ function initWarningMap() {
     });
   updateCityFocusLayer();
   updateCameraMapLayer();
+  updateWaterOutageMapLayer();
   loadShelterDataset().catch(() => {
     /* shelter layer is optional if the snapshot is missing */
   });
   warningMap.on("zoomend", () => {
-    updateMapLegendLocationPins();
-    scheduleShelterLayerByZoom();
+    scheduleMapLayersByView();
   });
   warningMap.on("moveend", () => {
-    updateMapLegendLocationPins();
+    scheduleMapLayersByView();
   });
   warningMap.on("resize", () => {
     refreshMapPopupMaxWidths();
@@ -9793,10 +10063,10 @@ function initWarningMap() {
   });
   warningMap.whenReady(() => {
     updateCityFocusLayer();
-    fitMapToTaiwan(false);
+    fitMapToLocateRange(false);
   });
   requestAnimationFrame(() => {
-    fitMapToTaiwan(false);
+    fitMapToLocateRange(false);
   });
   if (typeof IntersectionObserver === "function") {
     const mapVisibility = new IntersectionObserver(
@@ -10121,6 +10391,7 @@ citySelect.addEventListener("change", () => {
   }
   fillTownshipSelect(citySelect.value);
   cctvLocateFocus = null;
+  persistMapLocatePoint(getActiveWeatherLocation());
   saveRegionPreference();
   syncCityCameraScopeToLocator();
   syncFreewayCameraScopeToLocator();
@@ -10137,6 +10408,7 @@ townshipSelect.addEventListener("change", () => {
     return;
   }
   cctvLocateFocus = null;
+  persistMapLocatePoint(getActiveWeatherLocation());
   saveRegionPreference();
   syncCityCameraScopeToLocator();
   syncFreewayCameraScopeToLocator();
