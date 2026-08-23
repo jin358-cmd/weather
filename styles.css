@@ -2955,10 +2955,13 @@ input[type="checkbox"] {
   flex: 0 0 auto;
 }
 
-.weekly-forecast-icon svg {
+.weekly-forecast-icon svg,
+.weekly-forecast-icon-img {
   width: 44px;
   height: 44px;
   display: block;
+  background: transparent;
+  object-fit: contain;
 }
 
 .weekly-forecast-side {
@@ -3395,7 +3398,8 @@ input[type="checkbox"] {
     height: 44px;
   }
 
-  .weekly-forecast-icon svg {
+  .weekly-forecast-icon svg,
+  .weekly-forecast-icon-img {
     width: 40px;
     height: 40px;
   }
@@ -6144,7 +6148,8 @@ body.eq-sheet-open {
     height: 42px;
   }
 
-  .weekly-forecast-icon svg {
+  .weekly-forecast-icon svg,
+  .weekly-forecast-icon-img {
     width: 38px;
     height: 38px;
   }
