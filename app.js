@@ -669,7 +669,16 @@ const SUBSCRIPTION_TOPIC_ORDER = [
   "water-outage",
   "earthquake"
 ];
-const SITE_PUBLIC_URL = "https://amjin358-svg.github.io/jin/";
+const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
+const SUBSCRIPTION_TOPIC_LABELS = {
+  weather: "每日天氣預報（Email，每天一次）",
+  air: "空氣品質異常",
+  closure: "停班停課公告",
+  flood: "積淹水監測（20 公里內）",
+  "power-outage": "停電區域（10 公里內）",
+  "water-outage": "停水公告（定位／所選鄉鎮市區）",
+  earthquake: "地震通報（氣象署／國家級警報同步）"
+};
 const EARTHQUAKE_CWA_PAGE = "https://www.cwa.gov.tw/V8/C/E/index.html";
 const EARTHQUAKE_CWA_LIST_MIRROR =
   "https://r.jina.ai/https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
@@ -683,7 +692,7 @@ const EARTHQUAKE_DETAIL_ENRICH_LIMIT = 12;
 const EARTHQUAKE_PREVIEW_LIMIT = 3;
 const EARTHQUAKE_SCWEB_PAGE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
 const EARTHQUAKE_SCWEB_MAP_BASE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/imgs";
-const SUBSCRIBE_OWNER_INBOX = "amjin358@gmail.com";
+const SUBSCRIBE_OWNER_INBOX = "jin358@gmail.com";
 const VAPID_PUBLIC_KEY =
   "BJXXT1l-q5eu0Obt6DDDndh1NeVqGL9jR3mS8aoH1-cB6W3Cqk_UM9jLLF9PLyc1RguSVPmki1bxbOsNcYeOVbI";
 const RECOVERY_STATE_STORAGE_KEY = "subscriptionRecoveryStateV1";
@@ -7592,7 +7601,7 @@ function buildDailyWeatherEmailBody() {
   ].join("\n");
 }
 
-async function sendEmailToInbox(toEmail, subject, message) {
+async function postFormSubmitMail(toEmail, fields) {
   const email = String(toEmail || "").trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error("Email 格式不正確");
@@ -7604,12 +7613,11 @@ async function sendEmailToInbox(toEmail, subject, message) {
       Accept: "application/json"
     },
     body: JSON.stringify({
-      _subject: subject,
       _template: "box",
       _captcha: "false",
       _honey: "",
-      message: String(message || ""),
-      platform: SITE_PUBLIC_URL
+      platform: SITE_PUBLIC_URL,
+      ...fields
     })
   });
   const raw = await response.text();
@@ -7619,10 +7627,59 @@ async function sendEmailToInbox(toEmail, subject, message) {
   } catch {
     payload = null;
   }
-  if (!response.ok) {
-    throw new Error(payload?.message || `郵件發送失敗（HTTP ${response.status}）`);
+  const payloadMessage = String(payload?.message || "");
+  if (!payload) {
+    throw new Error("郵件服務暫時無法連線，請稍後再試");
   }
-  return payload || { success: true };
+  if (!response.ok || payload.success === false || payload.success === "false") {
+    throw new Error(payloadMessage || `郵件發送失敗（HTTP ${response.status}）`);
+  }
+  return payload;
+}
+
+async function sendEmailToInbox(toEmail, subject, message) {
+  const email = String(toEmail || "").trim().toLowerCase();
+  return postFormSubmitMail(email, {
+    name: "停班停課+即時災害通報平台",
+    email,
+    _replyto: email,
+    _subject: subject,
+    message: String(message || "")
+  });
+}
+
+function formatSubscriptionTopicLines(topics = []) {
+  const values = Array.isArray(topics) ? topics : [];
+  const lines = SUBSCRIPTION_TOPIC_ORDER.filter((topic) => values.includes(topic)).map(
+    (topic) => `・${SUBSCRIPTION_TOPIC_LABELS[topic] || topic}`
+  );
+  return lines.length ? lines : ["・（未勾選主題）"];
+}
+
+function buildSubscriptionSuccessEmailBody(record) {
+  const location = `${record.city || ""}${record.township || ""}`.trim() || "尚未指定地區";
+  const lines = [
+    "【訂閱成功通知】",
+    "",
+    "感謝您訂閱「停班停課＋即時災害通報平台」。",
+    "您的即時訊息訂閱已儲存成功。",
+    "",
+    `訂閱信箱：${record.email}`,
+    `訂閱地區：${location}`,
+    "訂閱主題：",
+    ...formatSubscriptionTopicLines(record.topics),
+    "",
+    "即時災害、停班停課、空氣品質等通知，會在您完成「依設備定位選區」後，於網站與系統通知發送。"
+  ];
+  if ((record.topics || []).includes("weather")) {
+    lines.push("", "已同時啟用每日天氣預報 Email（每天一次）。", "", buildDailyWeatherEmailBody());
+  }
+  lines.push(
+    "",
+    `平台：${SITE_PUBLIC_URL}`,
+    "若要變更或取消訂閱，請回網站調整主題後再次按下「儲存訂閱」。"
+  );
+  return lines.join("\n");
 }
 
 function buildSubscriberRecord(subscription = appState.subscription) {
@@ -7647,7 +7704,7 @@ async function upsertSubscriberOnServer(record) {
   if (!token || !record?.email) {
     return { synced: false, reason: "no-token" };
   }
-  const apiBase = "https://api.github.com/repos/amjin358-svg/jin/contents/data/subscribers.json";
+  const apiBase = "https://api.github.com/repos/jin358-cmd/weather/contents/data/subscribers.json";
   const currentResponse = await fetch(`${apiBase}?ref=main`, {
     headers: {
       Accept: "application/vnd.github+json",
@@ -7700,21 +7757,24 @@ async function upsertSubscriberOnServer(record) {
   return { synced: true };
 }
 
-async function notifyOwnerNewSubscriber(record) {
+async function notifyOwnerNewSubscriber(record, subscriberMessage = "") {
   try {
-    await sendEmailToInbox(
-      SUBSCRIBE_OWNER_INBOX,
-      `【新訂閱】${record.email}`,
-      [
-        "有新的每日天氣預報訂閱：",
+    await postFormSubmitMail(SUBSCRIBE_OWNER_INBOX, {
+      name: record.email,
+      email: record.email,
+      _replyto: record.email,
+      _subject: `【新訂閱】${record.email}`,
+      _autoresponse: subscriberMessage || buildSubscriptionSuccessEmailBody(record),
+      message: [
+        "有新的即時訊息訂閱：",
         `Email：${record.email}`,
-        `地區：${record.city}${record.township || ""}`,
+        `地區：${record.city || ""}${record.township || ""}`,
         `主題：${(record.topics || []).join(", ")}`,
         `座標：${record.lat}, ${record.lon}`,
         "",
-        "請確認 data/subscribers.json 已包含此訂閱者，供 GitHub Actions 每日寄送。"
+        subscriberMessage || "已同步寄出訂閱成功通知給訂閱者。"
       ].join("\n")
-    );
+    });
   } catch {
     // Owner mirror is best-effort only.
   }
@@ -7744,6 +7804,8 @@ async function sendDailyWeatherEmail({ force = false } = {}) {
 
 async function registerSubscriptionEmailDelivery(subscription) {
   const record = buildSubscriberRecord(subscription);
+  const successBody = buildSubscriptionSuccessEmailBody(record);
+  const locationLabel = `${record.city || ""}${record.township || ""}`.trim();
   const results = {
     confirmationSent: false,
     dailySent: false,
@@ -7751,27 +7813,20 @@ async function registerSubscriptionEmailDelivery(subscription) {
     activationHint: false
   };
   try {
-    await sendEmailToInbox(
-      record.email,
-      `【訂閱確認】每日天氣預報｜${record.city}${record.township || ""}`,
-      [
-        "感謝訂閱「停班停課+即時災害通報平台」。",
-        "已為您啟用【每天一次】天氣預報 Email。",
-        "",
-        buildDailyWeatherEmailBody(),
-        "",
-        "若這是第一次收到本平台郵件，請先點選服務商寄出的確認連結，之後即可穩定接收每日預報。"
-      ].join("\n")
-    );
+    await sendEmailToInbox(record.email, `【訂閱成功】即時訊息通知｜${locationLabel || "通報平台"}`, successBody);
     results.confirmationSent = true;
-    results.dailySent = true;
-    localStorage.setItem(DAILY_WEATHER_EMAIL_DATE_KEY, getTaipeiDateKey());
+    if ((record.topics || []).includes("weather")) {
+      results.dailySent = true;
+      localStorage.setItem(DAILY_WEATHER_EMAIL_DATE_KEY, getTaipeiDateKey());
+    }
   } catch (error) {
     const message = String(error?.message || error);
     results.activationHint = /confirm|activation|驗證|確認|Make sure you confirm/i.test(message);
-    throw error;
+    if (!results.activationHint) {
+      throw error;
+    }
   }
-  notifyOwnerNewSubscriber(record);
+  notifyOwnerNewSubscriber(record, successBody);
   try {
     const sync = await upsertSubscriberOnServer(record);
     results.serverSynced = Boolean(sync?.synced);
@@ -9912,15 +9967,19 @@ subscriptionForm.addEventListener("submit", async (event) => {
   localStorage.setItem(SUBSCRIPTION_STORAGE_KEY, JSON.stringify(appState.subscription));
   await initServiceWorker();
   await ensureNotificationPermission();
-  if (topics.includes("weather")) {
-    try {
-      if (!appState.weather?.current) {
-        await fetchWeather();
-      }
-      await registerSubscriptionEmailDelivery(appState.subscription);
-    } catch {
-      /* keep status minimal even if mail activation is pending */
+  let mailStatus = "";
+  try {
+    if (topics.includes("weather") && !appState.weather?.current) {
+      await fetchWeather();
     }
+    const mail = await registerSubscriptionEmailDelivery(appState.subscription);
+    if (mail.confirmationSent) {
+      mailStatus = "已寄出訂閱成功通知信到您的信箱。";
+    } else if (mail.activationHint) {
+      mailStatus = "請至信箱點選確認連結，之後即可收到訂閱成功通知與每日預報。";
+    }
+  } catch {
+    mailStatus = "若未收到通知信，請查看垃圾郵件或再按一次儲存訂閱。";
   }
   try {
     await enableBackgroundNotifications(appState.subscription);
@@ -9928,13 +9987,15 @@ subscriptionForm.addEventListener("submit", async (event) => {
     /* ignore */
   }
   if (!isForecastNotifyArmedByLocate()) {
-    renderSubscriptionStatus(`訂閱已儲存。${getForecastNotifyGateMessage()}`);
+    renderSubscriptionStatus(
+      ["訂閱已儲存。", mailStatus, getForecastNotifyGateMessage()].filter(Boolean).join("")
+    );
     updateNotificationHint(getForecastNotifyGateMessage());
     clearSubscriptionHint();
     return;
   }
   await sendSubscriptionNotification({ force: true });
-  renderSubscriptionStatus("訂閱完成。");
+  renderSubscriptionStatus(mailStatus ? `訂閱完成。${mailStatus}` : "訂閱完成。");
   clearSubscriptionHint();
 });
 

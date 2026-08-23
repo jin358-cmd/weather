@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SUBSCRIBERS_PATH = path.join(ROOT, "data", "subscribers.json");
-const SITE_URL = "https://amjin358-svg.github.io/jin/";
+const SITE_URL = "https://jin358-cmd.github.io/weather/";
 const FROM_EMAIL = process.env.MAIL_FROM || "停班停課通報 <onboarding@resend.dev>";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 

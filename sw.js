@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v140-weekly-png-icons";
+const SW_VERSION = "jin-v141-subscribe-email";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
