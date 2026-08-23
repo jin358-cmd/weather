@@ -7744,11 +7744,6 @@ function renderAiAlerts() {
       alerts.push(`【氣象署警特報】${row.title}`);
     }
   });
-  (appState.ncdrAlerts || []).slice(0, 1).forEach((row) => {
-    if (row?.title) {
-      alerts.push(`【NCDR 示警】${row.title}`);
-    }
-  });
 
   if (!alerts.length) {
     alerts.push("目前未觸發重大災害提醒。");
@@ -8089,15 +8084,19 @@ function initPwaInstallExperience() {
   renderPwaInstallBanner();
 }
 
+function isOfficialWarningCatalogLine(line) {
+  return /資料提供\s*:|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(line);
+}
+
 function parseOfficialWarningMarkdown(markdown, cityName, { sourceLabel, keyword, sourceUrl }) {
   const city = normalizeTaiwanPlaceText(cityName);
   const lines = String(markdown || "")
     .split(/\n+/)
     .map((line) => line.replace(/^#+\s*/, "").trim())
-    .filter((line) => line && !line.startsWith("![") && line.length < 280);
+    .filter((line) => line && !line.startsWith("![") && line.length < 280 && !isOfficialWarningCatalogLine(line));
   const hits = lines.filter((line) => keyword.test(line));
   const cityHits = city
-    ? hits.filter((line) => normalizeTaiwanPlaceText(line).includes(city) || /全臺|全台|各地/.test(line))
+    ? hits.filter((line) => normalizeTaiwanPlaceText(line).includes(city) || /全[臺台]|各地(?!方)/.test(line))
     : hits;
   const picked = cityHits.slice(0, 4).map((line) => ({
     city: cityName,
@@ -11804,8 +11803,7 @@ async function performFullRefresh(triggerSource, options = {}) {
               earthquakeMeta.textContent = appState.earthquakeMetaText;
             }
           }),
-        () => fetchCwaWarnings(),
-        () => fetchNcdrAlerts()
+        () => fetchCwaWarnings()
       ],
       { showProgress }
     );

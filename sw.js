@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v171-locate-dot-red";
+const SW_VERSION = "jin-v172-remove-ncdr-eq-alert";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -369,15 +369,19 @@ function stampSourceLine(source, body) {
   return `${body}（來源：${source}｜${time}）`;
 }
 
+function isOfficialWarningCatalogLine(line) {
+  return /資料提供\s*:|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(line);
+}
+
 function parseOfficialWarningMarkdown(markdown, cityName, { sourceLabel, keyword }) {
   const city = normalizeTaiwanPlaceText(cityName);
   const lines = String(markdown || "")
     .split(/\n+/)
     .map((line) => line.replace(/^#+\s*/, "").trim())
-    .filter((line) => line && !line.startsWith("![") && line.length < 280);
+    .filter((line) => line && !line.startsWith("![") && line.length < 280 && !isOfficialWarningCatalogLine(line));
   const hits = lines.filter((line) => keyword.test(line) && (!city || normalizeTaiwanPlaceText(line).includes(city) || findCitiesInText(line).length > 0));
   const cityHits = city
-    ? hits.filter((line) => normalizeTaiwanPlaceText(line).includes(city) || /全臺|全台|各地/.test(line))
+    ? hits.filter((line) => normalizeTaiwanPlaceText(line).includes(city) || /全[臺台]|各地(?!方)/.test(line))
     : hits;
   const top = (cityHits[0] || hits[0] || "").replace(/\s+/g, " ").slice(0, 140);
   if (!top) {
