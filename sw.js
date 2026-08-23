@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v172-remove-ncdr-eq-alert";
+const SW_VERSION = "jin-v173-legend-focus-red-closure";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

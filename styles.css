@@ -5727,8 +5727,8 @@ body.eq-sheet-open {
 }
 
 .legend-swatch.city-focus-swatch {
-  background: #00d4ff;
-  border-color: #e0f7ff;
+  background: #e11d48;
+  border-color: #fff1f2;
 }
 
 .leaflet-div-icon.map-focus-pulse,
@@ -5804,7 +5804,7 @@ body.eq-sheet-open {
 .map-focus-pulse-dot::after {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -10px;
   border-radius: 50%;
   border: 2px solid rgba(225, 29, 72, 0.55);
   animation: map-focus-ring 1.8s ease-out infinite;
@@ -5820,7 +5820,7 @@ body.eq-sheet-open {
     box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.45);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(225, 29, 72, 0);
+    box-shadow: 0 0 0 14px rgba(225, 29, 72, 0);
   }
 }
 
@@ -5830,7 +5830,7 @@ body.eq-sheet-open {
     opacity: 0.7;
   }
   100% {
-    transform: scale(1.9);
+    transform: scale(2.5);
     opacity: 0;
   }
 }

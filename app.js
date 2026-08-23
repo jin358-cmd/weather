@@ -660,7 +660,7 @@ const mapLayerVisibility = {
   "power-outage": true,
   "flood-warning": true,
   "water-outage": true,
-  "closure-points": true,
+  "closure-points": false,
   "earthquake-points": true,
   "shelter-points": true,
   "cctv-points": true,
@@ -674,7 +674,7 @@ const mapCategoryVisibility = {
   "power-disaster": true,
   "power-planned": true,
   "water-outage": true,
-  closure: true,
+  closure: false,
   earthquake: true,
   shelter: true,
   cctv: true,
@@ -10408,6 +10408,13 @@ function rememberLegendItemHome(item) {
   legendItemHomes[key] = { list: row.parentElement };
 }
 
+function getLegendPromoteList(legend, key) {
+  if (key === "closure") {
+    return legend.querySelector(".legend-list-always");
+  }
+  return legend.querySelector("#legendActiveList");
+}
+
 function syncLegendActivePlacement(legend) {
   const activeList = legend.querySelector("#legendActiveList");
   const activeBlock = legend.querySelector("#legendActiveBlock");
@@ -10425,9 +10432,14 @@ function syncLegendActivePlacement(legend) {
     if (!item || !row) {
       return;
     }
-    if (isDisasterLegendActive(key) && isMapCategoryVisible(key)) {
-      if (row.parentElement !== activeList) {
-        activeList.append(row);
+    const promoteList = getLegendPromoteList(legend, key);
+    if (isDisasterLegendActive(key) && isMapCategoryVisible(key) && promoteList) {
+      if (key === "closure") {
+        if (promoteList.firstElementChild !== row) {
+          promoteList.prepend(row);
+        }
+      } else if (row.parentElement !== promoteList) {
+        promoteList.append(row);
       }
       return;
     }
@@ -10443,9 +10455,8 @@ function syncLegendActivePlacement(legend) {
       activeList.append(row);
     }
   });
-  const activeCount = activeList.children.length;
   if (activeBlock) {
-    activeBlock.hidden = activeCount === 0;
+    activeBlock.hidden = activeList.children.length === 0;
   }
   legend.querySelectorAll("#legendDisasterGroup .legend-group-label").forEach((label) => {
     const list = label.nextElementSibling;
@@ -10455,7 +10466,7 @@ function syncLegendActivePlacement(legend) {
       list.hidden = !hasRows;
     }
   });
-  return activeCount;
+  return DISASTER_LEGEND_KEYS.filter((key) => isDisasterLegendActive(key) && isMapCategoryVisible(key)).length;
 }
 
 function applyAutoDisasterLayerVisibility() {
@@ -10854,8 +10865,8 @@ function updateCityFocusLayer() {
     icon: L.divIcon({
       className: "map-focus-pulse",
       html: '<span class="map-focus-pulse-dot" aria-hidden="true"></span>',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
     })
   });
   center.bindPopup(
@@ -11188,7 +11199,7 @@ function syncMapLegendState() {
           : markers.length
             ? describeLegendMarkerPlaces(markers)
             : "目前無點位";
-    const alwaysShowRow = !isDisaster;
+    const alwaysShowRow = !isDisaster || (key === "closure" && isActive);
     if (countEl) {
       countEl.textContent = String(isActive || key !== "closure" ? markers.length : 0);
       countEl.removeAttribute("aria-hidden");
@@ -11259,7 +11270,7 @@ const ALERT_BADGE_CONFIG = [
   { key: "earthquake", label: "地震震央", bg: "#dc2626" },
   { key: "shelter", label: "避難場所", bg: "#15803d" },
   { key: "cctv", label: "路口監控", bg: "#0096c7" },
-  { key: "city-focus", label: "定位範圍", bg: "#00d4ff", color: "#123" }
+  { key: "city-focus", label: "定位範圍", bg: "#e11d48" }
 ];
 
 function syncMapAlertBadges() {
