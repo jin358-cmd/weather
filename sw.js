@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v143-weekly-title-metrics";
+const SW_VERSION = "jin-v144-metrics-gold";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
