@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v170-notify-permission-explain";
+const SW_VERSION = "jin-v171-locate-dot-red";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

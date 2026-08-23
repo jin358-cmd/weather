@@ -5794,9 +5794,9 @@ body.eq-sheet-open {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #12b76a;
-  border: 2px solid #ecfdf3;
-  box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.5);
+  background: #e11d48;
+  border: 2px solid #fff1f2;
+  box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.5);
   animation: map-focus-pulse 1.6s ease-out infinite;
 }
 
@@ -5806,7 +5806,7 @@ body.eq-sheet-open {
   position: absolute;
   inset: -6px;
   border-radius: 50%;
-  border: 2px solid rgba(18, 183, 106, 0.55);
+  border: 2px solid rgba(225, 29, 72, 0.55);
   animation: map-focus-ring 1.8s ease-out infinite;
 }
 
@@ -5817,10 +5817,10 @@ body.eq-sheet-open {
 @keyframes map-focus-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.45);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.45);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(18, 183, 106, 0);
+    box-shadow: 0 0 0 8px rgba(225, 29, 72, 0);
   }
 }
 
@@ -5838,7 +5838,7 @@ body.eq-sheet-open {
 @media (prefers-reduced-motion: reduce) {
   .map-focus-pulse-dot {
     animation: none;
-    box-shadow: 0 0 0 3px rgba(18, 183, 106, 0.35);
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.35);
   }
 
   .map-focus-pulse-dot::before,

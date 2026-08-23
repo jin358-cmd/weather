@@ -633,7 +633,7 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points", skipCallout: true },
   shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
   cctv: { title: "路口監控", color: "#0096c7", layer: "cctv-points", skipCallout: true, alwaysShow: true },
-  "city-focus": { title: "定位範圍", color: "#12b76a", layer: "city-focus", skipCallout: true, alwaysShow: true, flash: true }
+  "city-focus": { title: "定位範圍", color: "#e11d48", layer: "city-focus", skipCallout: true, alwaysShow: true, flash: true }
 };
 let mapLegendLabelLayer = null;
 const mapLayerOrder = [
