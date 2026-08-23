@@ -519,6 +519,11 @@ body.theme-elegant[data-legacy-theme="dusk"] .locate-btn.locate-btn-pulse::after
   color: var(--muted) !important;
 }
 
+.theme-elegant .weather-metrics dt,
+.theme-elegant .msn-weather-card .weather-metrics dt {
+  color: #f4efe6 !important;
+}
+
 .theme-elegant .metrics dd,
 .theme-elegant .weather-temp-main,
 .theme-elegant .weather-place,
