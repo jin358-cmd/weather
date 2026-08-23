@@ -3139,7 +3139,7 @@ input[type="checkbox"] {
   align-items: flex-end;
   justify-content: center;
   gap: 1px;
-  font-size: clamp(15px, 3.6vw, 18px);
+  font-size: clamp(13px, 3.2vw, 16px);
   color: #5b6b86;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
@@ -3580,7 +3580,7 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-rain {
-    font-size: clamp(13px, 3.4vw, 15px);
+    font-size: clamp(11px, 3vw, 13px);
     line-height: 1;
     white-space: nowrap;
   }
@@ -6584,7 +6584,7 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-rain {
-    font-size: clamp(15px, 3.8vw, 17px);
+    font-size: clamp(13px, 3.4vw, 15px);
     line-height: 1;
     white-space: nowrap;
   }
