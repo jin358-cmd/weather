@@ -515,7 +515,7 @@ body {
 .pwa-history-details > summary .pwa-panel-title {
   display: inline;
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.75rem;
 }
 
 .pwa-history-details > summary::after {

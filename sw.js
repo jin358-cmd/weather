@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v177-alert-fit-noscroll";
+const SW_VERSION = "jin-v178-history-closed-smaller";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
