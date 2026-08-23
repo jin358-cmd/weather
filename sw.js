@@ -661,7 +661,9 @@ function isNationalEarthquakeAlert(quake) {
 async function buildBackgroundAlertMessages(prefs) {
   const messages = [];
   const recoveryMessages = [];
-  const topics = new Set(prefs?.topics || []);
+  const topics = new Set(
+    (prefs?.topics || []).filter((topic) => topic !== "cwa-warning" && topic !== "ncdr-alert")
+  );
   const lat = Number(prefs?.lat);
   const lon = Number(prefs?.lon);
   const label = prefs?.label || `${prefs?.city || ""}${prefs?.township || ""}` || "訂閱地區";
