@@ -1,4 +1,22 @@
-const SW_VERSION = "jin-v161-closure-date";
+const SW_VERSION = "jin-v162-pwa-upgrade";
+const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
+const PWA_PRECACHE_URLS = [
+  "./",
+  "./index.html",
+  "./offline.html",
+  "./styles.css",
+  "./legacy-themes.css",
+  "./app.js",
+  "./legacy-theme.js",
+  "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/apple-touch-icon.png"
+];
+const CWA_WARNING_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
+const NCDR_ALERT_MIRROR = "https://r.jina.ai/https://alerts.ncdr.nat.gov.tw/";
+const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
+const COOLDOWN_KEY = "notifyCooldown";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
@@ -19,11 +37,69 @@ const EARTHQUAKE_NATIONAL_INTENSITY = 4;
 const EARTHQUAKE_RECENT_MS = 168 * 60 * 60 * 1000;
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil(
+    caches.open(PWA_CACHE_NAME).then(async (cache) => {
+      await Promise.all(PWA_PRECACHE_URLS.map((url) => cache.add(url).catch(() => undefined)));
+      await self.skipWaiting();
+    })
+  );
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key.startsWith("jin-pwa-") && key !== PWA_CACHE_NAME).map((key) => caches.delete(key)))
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET") {
+    return;
+  }
+  const url = new URL(request.url);
+  const sameOrigin = url.origin === self.location.origin;
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(PWA_CACHE_NAME).then((cache) => cache.put("./index.html", copy)).catch(() => {});
+          return response;
+        })
+        .catch(async () => {
+          const cache = await caches.open(PWA_CACHE_NAME);
+          return (
+            (await cache.match("./index.html")) ||
+            (await cache.match("./")) ||
+            (await cache.match("./offline.html")) ||
+            new Response("目前離線", { headers: { "Content-Type": "text/plain; charset=utf-8" } })
+          );
+        })
+    );
+    return;
+  }
+  if (!sameOrigin) {
+    return;
+  }
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const networked = fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(PWA_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+          }
+          return response;
+        })
+        .catch(() => cached);
+      return cached || networked;
+    })
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -256,6 +332,89 @@ function formatClosureNotifyMessage(markdown, message) {
   const dates = extractClosureApplyDates(message, noticeDate);
   const dateText = dates.map((date) => formatClosureDateLabel(date)).join("、");
   return dateText ? `${dateText}：${message}` : message;
+}
+
+const TAIWAN_CITY_NAMES = [
+  "臺北市",
+  "新北市",
+  "基隆市",
+  "桃園市",
+  "新竹市",
+  "新竹縣",
+  "苗栗縣",
+  "臺中市",
+  "彰化縣",
+  "南投縣",
+  "雲林縣",
+  "嘉義市",
+  "嘉義縣",
+  "臺南市",
+  "高雄市",
+  "屏東縣",
+  "宜蘭縣",
+  "花蓮縣",
+  "臺東縣",
+  "澎湖縣",
+  "金門縣",
+  "連江縣"
+];
+
+function findCitiesInText(text) {
+  const hay = normalizeTaiwanPlaceText(text);
+  return TAIWAN_CITY_NAMES.filter((city) => hay.includes(normalizeTaiwanPlaceText(city)));
+}
+
+function stampSourceLine(source, body) {
+  const time = new Date().toLocaleString("zh-TW", { hour12: false, timeZone: "Asia/Taipei" });
+  return `${body}（來源：${source}｜${time}）`;
+}
+
+function parseOfficialWarningMarkdown(markdown, cityName, { sourceLabel, keyword }) {
+  const city = normalizeTaiwanPlaceText(cityName);
+  const lines = String(markdown || "")
+    .split(/\n+/)
+    .map((line) => line.replace(/^#+\s*/, "").trim())
+    .filter((line) => line && !line.startsWith("![") && line.length < 280);
+  const hits = lines.filter((line) => keyword.test(line) && (!city || normalizeTaiwanPlaceText(line).includes(city) || findCitiesInText(line).length > 0));
+  const cityHits = city
+    ? hits.filter((line) => normalizeTaiwanPlaceText(line).includes(city) || /全臺|全台|各地/.test(line))
+    : hits;
+  const top = (cityHits[0] || hits[0] || "").replace(/\s+/g, " ").slice(0, 140);
+  if (!top) {
+    return null;
+  }
+  return stampSourceLine(sourceLabel, top);
+}
+
+function eventKeyFromMessage(message, city) {
+  const compact = String(message || "")
+    .replace(/\d{4}\/\d{1,2}\/\d{1,2}[^\s]*/g, "")
+    .replace(/\d{1,2}:\d{2}(?::\d{2})?/g, "")
+    .replace(/來源：[^｜|]+[｜|]\s*/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 96);
+  return `${normalizeTaiwanPlaceText(city)}|${compact}`;
+}
+
+async function filterCooldownMessages(messages, city, { force = false } = {}) {
+  const lines = (messages || []).map((item) => String(item || "").trim()).filter(Boolean);
+  if (force) {
+    return lines;
+  }
+  const now = Date.now();
+  const map = (await idbGet(COOLDOWN_KEY)) || {};
+  const kept = [];
+  lines.forEach((line) => {
+    const key = eventKeyFromMessage(line, city);
+    if (map[key] && now - Number(map[key]) < NOTIFY_COOLDOWN_MS) {
+      return;
+    }
+    map[key] = now;
+    kept.push(line);
+  });
+  await idbSet(COOLDOWN_KEY, map);
+  return kept;
 }
 
 function isRecoveryNotificationLine(text) {
@@ -566,9 +725,12 @@ async function buildBackgroundAlertMessages(prefs) {
         const message = parseClosureCityMessage(markdown, city);
         const datedMessage = formatClosureNotifyMessage(markdown, message);
         messages.push(
-          datedMessage
-            ? `【停班停課】${label}：${datedMessage}`
-            : `【停班停課】${label}：目前無停班停課狀態`
+          stampSourceLine(
+            "行政院人事行政總處",
+            datedMessage
+              ? `【停班停課】${label}：${datedMessage}`
+              : `【停班停課】${label}：目前無停班停課狀態`
+          )
         );
         const active = isClosureStopMessage(message);
         if (city && prev.cityClosures?.[city]?.active && !active) {
@@ -754,6 +916,38 @@ async function buildBackgroundAlertMessages(prefs) {
     next.waterOutages = prev.waterOutages || {};
   }
 
+  if (topics.has("cwa-warning")) {
+    try {
+      const response = await fetch(CWA_WARNING_MIRROR, { cache: "no-store" });
+      if (response.ok) {
+        const text = await response.text();
+        const parsed = parseOfficialWarningMarkdown(text, city, {
+          sourceLabel: "中央氣象署警特報",
+          keyword: /特報|警報|注意/
+        });
+        messages.push(parsed || stampSourceLine("中央氣象署警特報", `【氣象署警特報】${label} 目前無縣市對應警特報`));
+      }
+    } catch {
+      messages.push(stampSourceLine("中央氣象署警特報", `【氣象署警特報】${label} 資料暫時無法讀取`));
+    }
+  }
+
+  if (topics.has("ncdr-alert")) {
+    try {
+      const response = await fetch(NCDR_ALERT_MIRROR, { cache: "no-store" });
+      if (response.ok) {
+        const text = await response.text();
+        const parsed = parseOfficialWarningMarkdown(text, city, {
+          sourceLabel: "NCDR 民生示警",
+          keyword: /示警|警戒|警報|淹水|土石流|停電|道路/
+        });
+        messages.push(parsed || stampSourceLine("NCDR 民生示警", `【NCDR 示警】${label} 目前無縣市對應示警`));
+      }
+    } catch {
+      messages.push(stampSourceLine("NCDR 民生示警", `【NCDR 示警】${label} 資料暫時無法讀取`));
+    }
+  }
+
   if (topics.has("earthquake")) {
     try {
       const response = await fetch(EARTHQUAKE_CWA_LIST_MIRROR, { cache: "no-store" });
@@ -896,7 +1090,8 @@ async function runBackgroundSubscriptionCheck() {
         .map((item) => item.trim())
         .filter(Boolean);
   const previousSet = new Set(previousMessages);
-  const fresh = outgoing.filter((line) => !previousSet.has(line));
+  const changed = outgoing.filter((line) => !previousSet.has(line));
+  const fresh = await filterCooldownMessages(changed, prefs.city || "", { force: false });
   if (!fresh.length) {
     await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
     return { checked: true, notified: false, reason: "unchanged" };

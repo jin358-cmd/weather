@@ -19,9 +19,14 @@
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./legacy-themes.css" />
     <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
     <meta name="theme-color" content="#161d27" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="台灣災防" />
+    <meta name="apple-mobile-web-app-title" content="災防通報" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="application-name" content="災防通報" />
   </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <div class="ambient-bg" aria-hidden="true">
@@ -33,6 +38,16 @@
       <span class="ambient-orb ambient-orb-c"></span>
     </div>
     <main class="app">
+      <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
+        <div class="pwa-install-copy">
+          <strong id="pwaInstallTitle">安裝災防通報</strong>
+          <p id="pwaInstallText">加到主畫面後可全螢幕開啟，並接收災防通知。</p>
+        </div>
+        <div class="pwa-install-actions">
+          <button id="pwaInstallBtn" type="button" class="refresh-btn">安裝到主畫面</button>
+          <button id="pwaInstallDismiss" type="button" class="ghost-btn">稍後</button>
+        </div>
+      </aside>
       <header class="hero">
         <div class="hero-flow" aria-hidden="true">
           <span class="hero-flow-layer hero-flow-ribbon"></span>
@@ -317,14 +332,43 @@
               ><input type="checkbox" name="topic" value="earthquake" checked />
               <span class="topic-option-text">地震通報（氣象署／國家級警報同步）</span></label
             >
+            <label class="topic-option"
+              ><input type="checkbox" name="topic" value="cwa-warning" checked />
+              <span class="topic-option-text">氣象署警特報</span></label
+            >
+            <label class="topic-option"
+              ><input type="checkbox" name="topic" value="ncdr-alert" checked />
+              <span class="topic-option-text">NCDR 民生示警</span></label
+            >
             <div class="subscription-actions">
               <button type="submit" class="refresh-btn">儲存訂閱</button>
+              <button id="enableNotifyBtn" type="button" class="ghost-btn">允許系統通知</button>
               <button id="testNotificationBtn" type="button" class="ghost-btn">測試通知</button>
             </div>
           </form>
           <p id="subscriptionStatus" class="timestamp subscription-status-box">尚未設定訂閱。</p>
-          <p class="timestamp subscription-email-note">儲存訂閱後，請先完成「依設備定位選區」才會開始發送通知。</p>
+          <p id="notifyPermissionStatus" class="timestamp">通知權限：尚未詢問</p>
+          <p class="timestamp subscription-email-note">儲存訂閱後，請先完成「依設備定位選區」才會開始發送警戒通知。測試通知不受此限制。</p>
           <p id="notificationHint" class="timestamp notification-hint" hidden></p>
+          <div class="pwa-history-block">
+            <h3 class="pwa-panel-title">推播歷程</h3>
+            <ol id="notifyHistoryList" class="pwa-history-list">
+              <li>尚無發送紀錄。</li>
+            </ol>
+          </div>
+          <details class="pwa-test-details">
+            <summary>PWA 測試清單</summary>
+            <ul id="pwaTestList" class="pwa-test-list">
+              <li data-pwa-check="secure">HTTPS／安全連線</li>
+              <li data-pwa-check="manifest">manifest 與 192／512 圖示</li>
+              <li data-pwa-check="sw">Service Worker 已註冊並快取首頁</li>
+              <li data-pwa-check="standalone">加到主畫面後以獨立視窗開啟</li>
+              <li data-pwa-check="install">Android 安裝提示／iPhone 加入主畫面說明</li>
+              <li data-pwa-check="permission">通知權限（允許／拒絕皆有對應畫面）</li>
+              <li data-pwa-check="history">測試通知已寫入歷程（含來源與時間）</li>
+              <li data-pwa-check="offline">弱網路／離線時可看到基本畫面</li>
+            </ul>
+          </details>
         </article>
         </div>
       </section>
@@ -598,6 +642,9 @@
             <li>天氣與空氣品質：Open-Meteo（鄉鎮級即時、8 小時降雨、一週預報／AQI）。</li>
             <li>區域記憶：瀏覽器 localStorage 保留上次選取的區域／縣市／鄉鎮。</li>
             <li>停班停課資料：行政院人事行政總處公告頁面（經公開鏡像讀取）。</li>
+            <li>氣象署警特報：中央氣象署天氣特報頁（W29，經公開鏡像讀取）。</li>
+            <li>NCDR 示警：國家災害防救科技中心民生示警公開資料平台（經公開鏡像讀取）。</li>
+            <li>PWA：可安裝到主畫面；離線時顯示快取首頁或基本離線畫面。同一事件同一縣市推播有 30 分鐘冷卻。</li>
             <li>定位點路口 CCTV：交通部運輸資料流通服務（各縣市 CCTV）。</li>
             <li>國道CCTV監控：交通部公路局即時 CCTV（預設依定位點縣市最近國道監控點，北向／南向分畫面，可手動改選國道／縣市／監控點）。</li>
             <li>積淹水警示：經濟部水利署 IoW 即時淹水深度感測（公開 API）。</li>
