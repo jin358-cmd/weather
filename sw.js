@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v146-cctv-labels-metrics";
+const SW_VERSION = "jin-v147-refresh-alert-status";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";

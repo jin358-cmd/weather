@@ -679,6 +679,8 @@ const SUBSCRIPTION_TOPIC_LABELS = {
   "water-outage": "停水公告（定位／所選鄉鎮市區）",
   earthquake: "地震通報（氣象署／國家級警報同步）"
 };
+const DISASTER_STATUS_TOPICS = ["closure", "flood", "earthquake"];
+const UTILITY_STATUS_TOPICS = ["power-outage", "water-outage"];
 const EARTHQUAKE_CWA_PAGE = "https://www.cwa.gov.tw/V8/C/E/index.html";
 const EARTHQUAKE_CWA_LIST_MIRROR =
   "https://r.jina.ai/https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
@@ -7250,7 +7252,12 @@ function getSubscriptionUpdateLines() {
     .map((text) => String(text || "").trim())
     .filter(Boolean);
   if (appState.subscription?.email && getSelectedSubscriptionTopics().length) {
-    const messages = buildSubscriptionNotificationMessages();
+    const messages = (Array.isArray(customMessages) && customMessages.length
+    ? customMessages
+    : buildSubscriptionNotificationMessages()
+  )
+    .map((text) => String(text || "").trim())
+    .filter(Boolean);
     if (recoveryLines.length || messages.length) {
       return [...recoveryLines, ...messages];
     }
@@ -8030,7 +8037,128 @@ function getSubscriptionWaterOutageMessage() {
   return `【停水公告】${locationLabel}：${top.summary || top.area || "有停水案件"}（${top.period || "期間詳見台水"}）。`;
 }
 
-async function sendSubscriptionNotification({ force = false, inPage = true } = {}) {
+function getSubscriptionTyphoonMessage() {
+  const locationLabel = getSubscriptionLocationLabel();
+  const official = appState.typhoonOfficial;
+  const typhoon = appState.typhoon;
+  const name = official?.name ? `（${official.name}）` : "";
+  if (official?.hasLandWarning) {
+    return `【颱風警報】中央氣象署已發布陸上颱風警報${name}，${locationLabel} 請依地方政府指示防災。`;
+  }
+  if (official?.hasWarning) {
+    return `【颱風警報】中央氣象署已發布颱風警報${name}，${locationLabel} 請持續留意路徑與風雨。`;
+  }
+  if (typhoon?.level === "高") {
+    return `【颱風警戒】${locationLabel} 颱風風險指數 ${typhoon.score}（高），請預先備妥防災物資。`;
+  }
+  if (typhoon?.level === "中") {
+    return `【颱風注意】${locationLabel} 颱風風險指數 ${typhoon.score}（中），請關注後續警戒資訊。`;
+  }
+  return `【颱風監測】${locationLabel} 目前無陸上颱風警報。`;
+}
+
+function hasActiveNationalEarthquake() {
+  return (appState.earthquakes || []).some(
+    (quake) =>
+      isNationalEarthquakeAlert(quake) &&
+      Date.now() - quake.timeMs <= EARTHQUAKE_RECENT_HOURS * 60 * 60 * 1000
+  );
+}
+
+function hasActiveFloodWarningStatus() {
+  const location = getSubscriptionWeatherLocation();
+  const nearby = location ? getNearbyFloodPoints(location, FLOOD_SUBSCRIPTION_RADIUS_KM) : [];
+  return nearby.some((point) => isFloodWarningDepth(point.depthCm));
+}
+
+function hasActiveClosureAlert() {
+  const cityName = getSubscriptionCityName();
+  const closure = cityName ? appState.closureRows.find((row) => row.city === cityName) : null;
+  return Boolean(
+    closure && (closure.message.includes("停止上班") || closure.message.includes("停止上課"))
+  );
+}
+
+function hasActiveDisasterAlertStatus() {
+  return (
+    Boolean(appState.typhoonOfficial?.hasLandWarning || appState.typhoonOfficial?.hasWarning) ||
+    appState.typhoon?.level === "高" ||
+    hasActiveNationalEarthquake() ||
+    hasActiveFloodWarningStatus() ||
+    hasActiveClosureAlert()
+  );
+}
+
+function hasActiveUtilityAlertStatus() {
+  return getNearbyPowerOutages().length > 0 || (appState.waterOutageItems || []).length > 0;
+}
+
+function buildAlertStatusDigestMessages() {
+  const topics = new Set(getSelectedSubscriptionTopics());
+  const disasterLines = [getSubscriptionTyphoonMessage()];
+  DISASTER_STATUS_TOPICS.forEach((topic) => {
+    if (!topics.has(topic)) {
+      return;
+    }
+    if (topic === "earthquake") {
+      disasterLines.push(getSubscriptionEarthquakeMessage());
+      return;
+    }
+    if (topic === "flood") {
+      disasterLines.push(getSubscriptionFloodMessage());
+      return;
+    }
+    if (topic === "closure") {
+      disasterLines.push(getSubscriptionClosureMessage());
+    }
+  });
+
+  const utilityLines = [];
+  UTILITY_STATUS_TOPICS.forEach((topic) => {
+    if (!topics.has(topic)) {
+      return;
+    }
+    if (topic === "power-outage") {
+      utilityLines.push(getSubscriptionPowerOutageMessage());
+      return;
+    }
+    if (topic === "water-outage") {
+      utilityLines.push(getSubscriptionWaterOutageMessage());
+    }
+  });
+  if (!utilityLines.length) {
+    utilityLines.push(getSubscriptionPowerOutageMessage(), getSubscriptionWaterOutageMessage());
+  }
+
+  const messages = [];
+  if (!hasActiveDisasterAlertStatus()) {
+    messages.push("【災害警戒】目前無災害警戒。");
+  }
+  messages.push(...disasterLines);
+  if (!hasActiveUtilityAlertStatus()) {
+    messages.push("【公有事業】目前恢復正常。");
+  }
+  messages.push(...utilityLines);
+  return messages.map((text) => String(text || "").trim()).filter(Boolean);
+}
+
+async function notifyManualRefreshAlertStatus() {
+  const digest = buildAlertStatusDigestMessages();
+  const extras = buildSubscriptionNotificationMessages().filter((line) => !digest.includes(line));
+  return sendSubscriptionNotification({
+    force: true,
+    inPage: !document.hidden,
+    messages: [...digest, ...extras],
+    title: "災害警戒通知狀態"
+  });
+}
+
+async function sendSubscriptionNotification({
+  force = false,
+  inPage = true,
+  messages: customMessages,
+  title = "預報訂閱通知"
+} = {}) {
   if (!appState.subscription?.email) {
     renderSubscriptionStatus("請先輸入 Email 並儲存訂閱。");
     return false;
@@ -8059,13 +8187,13 @@ async function sendSubscriptionNotification({ force = false, inPage = true } = {
   const body = messages.join("\n");
 
   if (inPage) {
-    showInPageAlert("預報訂閱通知", body, {
+    showInPageAlert(title, body, {
       timeoutMs: Math.min(20000, 8000 + messages.length * 800),
       fullscreen: true,
       variant: "subscription"
     });
   }
-  const deviceShown = await notifySubscriptionMessagesToDevice(messages, { persist: true });
+  const deviceShown = await notifySubscriptionMessagesToDevice(messages, { title, persist: true });
   persistSubscriptionForBackground(appState.subscription).catch(() => {});
 
   localStorage.setItem(NOTIFICATION_DIGEST_STORAGE_KEY, getNotificationDigest(messages));
@@ -8077,7 +8205,14 @@ async function sendSubscriptionNotification({ force = false, inPage = true } = {
   return true;
 }
 
-async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
+async function maybeNotifySubscribers(triggerSource, recoveryMessages = [], options = {}) {
+  if (triggerSource && typeof triggerSource === "object" && !Array.isArray(triggerSource)) {
+    options = { ...triggerSource, ...options };
+    triggerSource = options.triggerSource || "manual";
+    if (Array.isArray(options.recoveryMessages)) {
+      recoveryMessages = options.recoveryMessages;
+    }
+  }
   if (recoveryMessages.length) {
     await sendRecoveryNotifications(recoveryMessages);
   }
@@ -8093,12 +8228,16 @@ async function maybeNotifySubscribers(triggerSource, recoveryMessages = []) {
   } catch (error) {
     console.warn("每日天氣預報 Email 發送失敗：", error);
   }
-  await sendSubscriptionNotification({
-    inPage: triggerSource !== "auto" && !document.hidden
-  });
+  if (options.force) {
+    await notifyManualRefreshAlertStatus();
+  } else {
+    await sendSubscriptionNotification({
+      inPage: triggerSource !== "auto" && !document.hidden
+    });
+  }
   const digestLines = [
     ...(recoveryMessages || []).map((item) => (typeof item === "string" ? item : item?.text)),
-    ...buildSubscriptionNotificationMessages()
+    ...(options.force ? buildAlertStatusDigestMessages() : buildSubscriptionNotificationMessages())
   ]
     .map((text) => String(text || "").trim())
     .filter(Boolean);
@@ -9763,7 +9902,7 @@ function startAutoRefreshTimers() {
   restartAutoRefreshTimers();
 }
 
-async function performFullRefresh(triggerSource) {
+async function performFullRefresh(triggerSource, options = {}) {
   clearDeviceNotifiedThisRefresh();
   const showProgress = triggerSource === "manual";
   if (showProgress) {
@@ -9814,7 +9953,9 @@ async function performFullRefresh(triggerSource) {
     appState.lastRecoveryMessages = recoveryMessages;
     persistSubscriptionForBackground(appState.subscription).catch(() => {});
     await flushPendingUtilityAlerts();
-    await maybeNotifySubscribers(triggerSource, recoveryMessages);
+    await maybeNotifySubscribers(triggerSource, recoveryMessages, {
+      force: Boolean(options.force)
+    });
     if (showProgress) {
       setRefreshProgress(100);
     }
@@ -9881,7 +10022,7 @@ windyLocateBtn?.addEventListener("click", (event) => {
 });
 
 refreshBtn.addEventListener("click", () => {
-  performFullRefresh("manual").catch(() => {
+  performFullRefresh("manual", { force: true }).catch(() => {
     setRefreshButtonLoading(false);
   });
 });
