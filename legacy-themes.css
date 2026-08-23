@@ -533,6 +533,20 @@ body.theme-elegant[data-legacy-theme="dusk"] .locate-btn.locate-btn-pulse::after
   color: var(--text) !important;
 }
 
+.theme-elegant .air-details,
+.theme-elegant .msn-weather-card .air-details {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid #8ebce6 !important;
+  border-radius: 18px !important;
+  overflow: hidden;
+}
+
+.theme-elegant .air-details > summary,
+.theme-elegant .air-details .air-inline-summary {
+  border-radius: 18px;
+}
+
 /* 1. 雲白公務：明亮、深藍標題、高對比 */
 body.theme-elegant[data-legacy-theme="cloud"] {
   color-scheme: light;
