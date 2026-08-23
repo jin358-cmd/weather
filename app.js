@@ -704,6 +704,7 @@ const LIKE_COUNTER_KEY = "likes";
 const LIKE_COUNTER_STORAGE_KEY = "siteLikeCountV1";
 const LIKE_VOTED_STORAGE_KEY = "siteLikedV1";
 const CITY_CCTV_RADIUS_KM = 1;
+const CITY_CCTV_NEARBY_KM = 8;
 const CITY_CCTV_PREVIEW_LIMIT = 6;
 const CITY_CCTV_MORE_LIMIT = 40;
 const CITY_CCTV_VERIFY_EXPAND_SIZE = 80;
@@ -819,6 +820,12 @@ function getCctvLocationFocus() {
 
 function normalizeTaiwanPlaceText(text) {
   return String(text ?? "").replace(/臺/g, "台").trim();
+}
+
+function sameTaiwanCityName(a, b) {
+  const left = normalizeTaiwanPlaceText(a);
+  const right = normalizeTaiwanPlaceText(b);
+  return Boolean(left) && left === right;
 }
 
 function getTaiwanDateSlash() {
@@ -1670,8 +1677,8 @@ function getSelectedCameraDistrict() {
     return {
       id: CAMERA_DISTRICT_ALL_CITY,
       label: cityName ? `${cityName}全部` : "全國",
-      lat: city?.lat ?? location?.lat,
-      lon: city?.lon ?? location?.lon,
+      lat: location?.lat ?? city?.lat,
+      lon: location?.lon ?? city?.lon,
       radiusKm: 9999,
       town: ""
     };
@@ -1693,8 +1700,8 @@ function getSelectedCameraDistrict() {
   return {
     id: CAMERA_DISTRICT_ALL_CITY,
     label: cityName ? `${cityName}全部` : "全國",
-    lat: city?.lat ?? location?.lat,
-    lon: city?.lon ?? location?.lon,
+    lat: location?.lat ?? city?.lat,
+    lon: location?.lon ?? city?.lon,
     radiusKm: 9999,
     town: ""
   };
@@ -1836,11 +1843,17 @@ function getCameraFocusPoint(region, selectedCityName) {
 }
 
 function getCityCameraFocusPoint() {
-  if (isNationwideCameraCity(cameraCitySelect) || (isLocatorFollowCameraCity(cameraCitySelect) && cctvLocateFocus)) {
-    const locate = getCctvLocationFocus();
+  const locate = getCctvLocationFocus();
+  const selectedCity = getSelectedCameraCityName() || citySelect?.value || "";
+  const locatorCity = citySelect?.value || "";
+  if (
+    isNationwideCameraCity(cameraCitySelect) ||
+    isLocatorFollowCameraCity(cameraCitySelect) ||
+    sameTaiwanCityName(selectedCity, locatorCity)
+  ) {
     return { lat: locate.lat, lon: locate.lon };
   }
-  return getCameraFocusPoint(getSelectedCameraDistrict(), getSelectedCameraCityName() || citySelect.value);
+  return getCameraFocusPoint(getSelectedCameraDistrict(), selectedCity);
 }
 
 function getFreewayCameraFocusPoint() {
@@ -2214,7 +2227,7 @@ function resolveCameraLandDistrict(camera = {}) {
   if (!city || !Number.isFinite(lat) || !Number.isFinite(lon)) {
     return "";
   }
-  const towns = TOWNSHIP_LOCATIONS.filter((item) => item.city === city);
+  const towns = TOWNSHIP_LOCATIONS.filter((item) => sameTaiwanCityName(item.city, city));
   if (!towns.length) {
     return "";
   }
@@ -2250,13 +2263,14 @@ function scoreCityCameras({ cityName = "", keyword = "", radiusOnly = false, tow
   const focus = getCctvLocationFocus();
   const keywordNorm = normalize(keyword);
   const radiusKm = CITY_CCTV_RADIUS_KM;
+  const nearbyKm = CITY_CCTV_NEARBY_KM;
 
   return dedupeCamerasByIdentity(
     cityCameraDataset.cameras
       .filter((camera) => isCameraUrlUsable(camera.html))
       .filter((camera) => !isCameraMarkedBlackScreen(camera))
       .filter((camera) => !isCameraMaintenanceText(camera))
-      .filter((camera) => !cityName || camera.city === cityName)
+      .filter((camera) => !cityName || sameTaiwanCityName(camera.city, cityName))
       .filter((camera) => {
         if (!keywordNorm) {
           return true;
@@ -2279,6 +2293,7 @@ function scoreCityCameras({ cityName = "", keyword = "", radiusOnly = false, tow
           focusLabel: focus.label,
           areaLabel: landTown ? `${camera.city || ""}${landTown}` : camera.city || focus.label,
           withinLocateRadius: Number.isFinite(distanceKm) && distanceKm <= radiusKm,
+          withinNearby: Number.isFinite(distanceKm) && distanceKm <= nearbyKm,
           locateFallback: false
         };
       })
@@ -2287,10 +2302,10 @@ function scoreCityCameras({ cityName = "", keyword = "", radiusOnly = false, tow
           return true;
         }
         if (radiusOnly) {
-          return camera.withinLocateRadius;
+          return camera.withinNearby;
         }
         if (townName && !cctvLocateFocus && !isNationwideCameraCity(cameraCitySelect)) {
-          return camera.landTown === townName;
+          return camera.landTown === townName || camera.withinNearby;
         }
         return true;
       })
@@ -2362,7 +2377,8 @@ function enrichCityCameraForMap(camera, focusPoint, focus) {
     landTown,
     focusLabel: focus?.label || camera.city || "",
     areaLabel: landTown ? `${camera.city || ""}${landTown}` : camera.city || focus?.label || "",
-    withinLocateRadius: Number.isFinite(distanceKm) && distanceKm <= radiusKm
+    withinLocateRadius: Number.isFinite(distanceKm) && distanceKm <= radiusKm,
+    withinNearby: Number.isFinite(distanceKm) && distanceKm <= CITY_CCTV_NEARBY_KM
   };
 }
 
@@ -3160,7 +3176,7 @@ function getCityCamerasForPrefetch(cityName) {
     return [];
   }
   return cityCameraDataset.cameras
-    .filter((camera) => camera.city === cityName)
+    .filter((camera) => sameTaiwanCityName(camera.city, cityName))
     .filter((camera) => isCameraUrlUsable(camera.html))
     .filter((camera) => !isCameraMarkedBlackScreen(camera))
     .filter((camera) => !isCameraMaintenanceText(camera));
@@ -3548,7 +3564,7 @@ function updateCameraMetaText() {
   const cityFetchedAt = cityCameraDataset.fetchedAt ? formatDateTime(cityCameraDataset.fetchedAt) : "未提供";
   const focus = getCctvLocationFocus();
   const focusLabel = focus.label || "所選位置";
-  cameraMeta.textContent = `定位點：${focusLabel}｜快照：${cityFetchedAt}`;
+  cameraMeta.textContent = `定位點：${focusLabel}｜週圍 ${CITY_CCTV_NEARBY_KM} 公里優先｜快照：${cityFetchedAt}`;
 }
 
 function placeCityCameraMoreAfterLastScreen() {
@@ -8765,9 +8781,9 @@ function updateCameraMapLayer() {
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}&z=18`;
     const areaText = camera.city || camera.areaLabel || "";
     const scopeNote = camera.locateFallback
-      ? `範圍外最近鏡頭（定位中心 ${CITY_CCTV_RADIUS_KM} 公里內無點）`
-      : camera.withinLocateRadius
-        ? `最近可檢視路口監控（${CITY_CCTV_RADIUS_KM} 公里內）`
+      ? `範圍外最近鏡頭（定位點 ${CITY_CCTV_NEARBY_KM} 公里內無點）`
+      : camera.withinNearby
+        ? `定位點週圍路口監控（約 ${Number(camera.distanceKm).toFixed(1)} km）`
         : "最近可檢視路口監控（點選檢視）";
     const useImage = isLikelyDirectImageStream(camera.html);
     const previewHtml = useImage

@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v133-motion-weather-icons";
+const SW_VERSION = "jin-v134-cctv-locate-nearby";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
