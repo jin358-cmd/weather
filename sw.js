@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v184-hero-title-center";
+const SW_VERSION = "jin-v185-sync-maps-locate";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

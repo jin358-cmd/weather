@@ -437,6 +437,8 @@ const regionMemoryMeta = document.querySelector("#regionMemoryMeta");
 let suppressRegionSelectEvents = false;
 let windyLocateFocus = null;
 let cctvLocateFocus = null;
+let pendingMapLocateSync = false;
+let fitLocateRangeTimer = 0;
 const cameraProbeCache = new Map();
 let cameraPrefetchToken = 0;
 const CAMERA_PREFETCH_CONCURRENCY = 3;
@@ -896,6 +898,7 @@ function persistMapLocatePoint(point) {
         lat: Number(point.lat),
         lon: Number(point.lon),
         label: String(point.label || "").trim(),
+        fromDevice: Boolean(point.fromDevice),
         savedAt: new Date().toISOString()
       })
     );
@@ -915,7 +918,8 @@ function readPersistedMapLocatePoint() {
     return {
       lat,
       lon,
-      label: String(parsed.label || "").trim() || "上次定位點"
+      label: String(parsed.label || "").trim() || "上次定位點",
+      fromDevice: Boolean(parsed.fromDevice)
     };
   } catch {
     return null;
@@ -1413,18 +1417,58 @@ function fillTownshipSelect(cityName, preferredTown) {
   }
 }
 
+function setWindyLocateFocus(lat, lon, accuracy) {
+  if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) {
+    return;
+  }
+  windyLocateFocus = {
+    lat: Number(lat),
+    lon: Number(lon),
+    zoom: Math.max(8, resolveWindyLocateZoom(accuracy)),
+    precision: 6
+  };
+}
+
+function restoreWindyLocateFocus() {
+  if (
+    windyLocateFocus &&
+    Number.isFinite(windyLocateFocus.lat) &&
+    Number.isFinite(windyLocateFocus.lon)
+  ) {
+    return;
+  }
+  const last = readPersistedMapLocatePoint();
+  if (!last?.fromDevice || !Number.isFinite(last.lat) || !Number.isFinite(last.lon)) {
+    return;
+  }
+  setWindyLocateFocus(last.lat, last.lon);
+}
+
+function applyDeviceCoordinatesToMaps(latitude, longitude, accuracy, nearest = null) {
+  cctvLocateFocus = {
+    lat: latitude,
+    lon: longitude,
+    label: nearest ? `${nearest.city}${nearest.town}｜裝置定位` : "裝置定位點",
+    accuracy,
+    fromDevice: true
+  };
+  persistMapLocatePoint(cctvLocateFocus);
+  setWindyLocateFocus(latitude, longitude, accuracy);
+  lockWindyWrapSize();
+  updateWindyTrackEmbed({ force: true });
+  pendingMapLocateSync = true;
+  if (warningMap) {
+    updateCityFocusLayer();
+    scheduleFitMapToLocateRange({ animate: true });
+  }
+}
+
 function applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy) {
   applyRegionSelection(getRegionForCity(nearest.city), nearest.city, nearest.town, {
     persist: true,
     updateMeta: false
   });
-  cctvLocateFocus = {
-    lat: latitude,
-    lon: longitude,
-    label: `${nearest.city}${nearest.town}｜裝置定位`,
-    accuracy
-  };
-  persistMapLocatePoint(cctvLocateFocus);
+  applyDeviceCoordinatesToMaps(latitude, longitude, accuracy, nearest);
   syncCityCameraScopeToLocator();
   syncFreewayCameraScopeToLocator();
   setLocateCompleteMeta(nearest.city, nearest.town);
@@ -2192,13 +2236,6 @@ async function locateByDevice() {
     }
 
     applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy);
-    windyLocateFocus = {
-      lat: latitude,
-      lon: longitude,
-      zoom: 5,
-      precision: 6
-    };
-    updateWindyTrackEmbed({ force: true });
 
     armForecastNotifyByDeviceLocate();
     if (appState.subscription?.email) {
@@ -2210,6 +2247,9 @@ async function locateByDevice() {
     performFullRefresh("manual")
       .then(async () => {
         updateMapForCityChange();
+        pendingMapLocateSync = true;
+        scheduleFitMapToLocateRange({ animate: false });
+        updateWindyTrackEmbed({ force: true });
         if (appState.subscription?.email) {
           await sendSubscriptionNotification({ force: true });
         }
@@ -6200,6 +6240,7 @@ function updateWindyTrackEmbed({ force = false } = {}) {
     if (force) {
       nextUrl.searchParams.set("_locate", String(Date.now()));
     }
+    windyEmbed.loading = "eager";
     windyEmbed.src = nextUrl.toString();
   }
   windyEmbed.style.width = "100%";
@@ -6258,18 +6299,11 @@ function locateWindyEmbed() {
 
   const applySuccess = (position) => {
     const { latitude, longitude, accuracy } = position.coords;
-    windyLocateFocus = {
-      lat: latitude,
-      lon: longitude,
-      zoom: 5,
-      precision: 6
-    };
-    lockWindyWrapSize();
-    updateWindyTrackEmbed({ force: true });
-
     const nearest = findNearestTownship(latitude, longitude);
     if (nearest) {
       applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy);
+    } else {
+      applyDeviceCoordinatesToMaps(latitude, longitude, accuracy);
     }
     finish();
   };
@@ -10456,6 +10490,30 @@ function fitMapToLocateRange(animate = false) {
   }, 450);
 }
 
+function scheduleFitMapToLocateRange({ animate = false, attempts = 3 } = {}) {
+  if (!warningMap) {
+    return;
+  }
+  window.clearTimeout(fitLocateRangeTimer);
+  let left = Math.max(1, Number(attempts) || 1);
+  const run = () => {
+    if (!warningMap || left <= 0) {
+      return;
+    }
+    warningMap.invalidateSize();
+    fitMapToLocateRange(animate && left === Math.max(1, Number(attempts) || 1));
+    left -= 1;
+    const size = warningMap.getSize?.();
+    if (size && size.x > 40 && size.y > 40 && left <= 0) {
+      pendingMapLocateSync = false;
+    }
+    if (left > 0) {
+      fitLocateRangeTimer = window.setTimeout(run, 280);
+    }
+  };
+  run();
+}
+
 function isMapCategoryVisible(key) {
   return mapCategoryVisibility[key] !== false;
 }
@@ -11629,6 +11687,10 @@ function initWarningMap() {
           return;
         }
         warningMap.invalidateSize();
+        if (pendingMapLocateSync) {
+          scheduleFitMapToLocateRange({ animate: false });
+          pendingMapLocateSync = false;
+        }
       },
       { threshold: 0.15 }
     );
@@ -12568,6 +12630,7 @@ initFreewayCitySelect();
 loadSubscription();
 renderSubscriptionStatus();
 updateNotificationHint();
+restoreWindyLocateFocus();
 updateWindyTrackEmbed();
 syncNoticeDetailsOpen();
 fitHeroTexts();
