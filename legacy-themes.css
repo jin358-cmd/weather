@@ -307,6 +307,21 @@ body.theme-elegant[data-legacy-theme="dusk"] .camera-load-progress .refresh-prog
   color: #1d4ed8 !important;
 }
 
+.theme-elegant .in-page-alert-subscription .in-page-alert-line-status,
+.theme-elegant .in-page-alert-refresh-done .in-page-alert-line-status {
+  color: #111 !important;
+}
+
+.theme-elegant .in-page-alert-subscription .in-page-alert-line-closure,
+.theme-elegant .in-page-alert-refresh-done .in-page-alert-line-closure {
+  color: #b71c1c !important;
+}
+
+.theme-elegant .in-page-alert-subscription .in-page-alert-line-change,
+.theme-elegant .in-page-alert-refresh-done .in-page-alert-line-change {
+  color: #1d4ed8 !important;
+}
+
 .theme-elegant .topic-option input {
   width: 1.2em;
   height: 1.2em;

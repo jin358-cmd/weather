@@ -7472,6 +7472,24 @@ body.eq-sheet-open {
   overflow-wrap: anywhere;
 }
 
+.in-page-alert-subscription .in-page-alert-line,
+.in-page-alert-refresh-done .in-page-alert-line,
+.in-page-alert-subscription .in-page-alert-line-status,
+.in-page-alert-refresh-done .in-page-alert-line-status {
+  color: #111;
+}
+
+.in-page-alert-subscription .in-page-alert-line-closure,
+.in-page-alert-refresh-done .in-page-alert-line-closure {
+  color: #b71c1c;
+  font-weight: 800;
+}
+
+.in-page-alert-subscription .in-page-alert-line-change,
+.in-page-alert-refresh-done .in-page-alert-line-change {
+  color: #1d4ed8;
+}
+
 .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-close {
   flex: 0 0 auto;
 }

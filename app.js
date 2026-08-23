@@ -8241,6 +8241,27 @@ function unlockPageScrollForOverlay() {
   window.scrollTo(0, overlayLockedScrollY);
 }
 
+function getSubscriptionNotifyLineTone(line) {
+  const text = String(line || "");
+  const isClosureLift = /停班停課解除|已解除停班停課/.test(text);
+  const isActiveClosure =
+    /【停班停課】/.test(text) &&
+    /停止上班|停止上課/.test(text) &&
+    !/目前無停班停課|恢復正常上班/.test(text) &&
+    !isClosureLift;
+  if (isActiveClosure) {
+    return "closure";
+  }
+  if (
+    isClosureLift ||
+    /解除|消退|已恢復|已解除/.test(text) ||
+    /【(?:積淹水警戒|停電警戒|停水警戒|地震通報|颱風警報|國家緊急訊息)】/.test(text)
+  ) {
+    return "change";
+  }
+  return "status";
+}
+
 function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, variant = "" } = {}) {
   if (!inPageAlertHost) {
     return false;
@@ -8281,6 +8302,9 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
   (lines.length ? lines : [""]).forEach((line) => {
     const row = document.createElement("p");
     row.className = "in-page-alert-line";
+    if (variant === "subscription" || variant === "refresh-done") {
+      row.classList.add(`in-page-alert-line-${getSubscriptionNotifyLineTone(line)}`);
+    }
     row.textContent = line;
     bodyHost?.append(row);
   });
