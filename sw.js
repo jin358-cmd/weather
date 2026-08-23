@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v164-locate-circle-1km";
+const SW_VERSION = "jin-v165-windy-rain-thunder";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

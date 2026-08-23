@@ -6133,7 +6133,7 @@ function buildWindyEmbedUrl(lat, lon, zoom = 5, { precision = 3 } = {}) {
     height: String(box.height),
     zoom: String(zoom),
     level: "surface",
-    overlay: "wind",
+    overlay: "rain",
     product: "ecmwf",
     menu: "",
     message: "true",
