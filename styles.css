@@ -3171,6 +3171,18 @@ input[type="checkbox"] {
   object-fit: contain;
 }
 
+.weekly-forecast-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 0 1 auto;
+  min-width: 48px;
+  max-width: 6.4em;
+  text-align: center;
+}
+
 .weekly-forecast-side {
   display: flex;
   flex-wrap: nowrap;
@@ -3178,20 +3190,24 @@ input[type="checkbox"] {
   gap: 8px;
   min-width: 0;
   flex: 1 1 auto;
-  justify-content: flex-start;
-  text-align: left;
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .weekly-forecast-label {
-  font-size: clamp(18px, 4.5vw, 22px);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  width: 100%;
+  font-size: clamp(12px, 3.2vw, 15px);
   font-weight: 700;
   color: #1f2a44;
   line-height: 1.2;
   min-width: 0;
-  flex: 1 1 auto;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .weekly-forecast-temps {
@@ -3655,10 +3671,14 @@ input[type="checkbox"] {
     height: 40px;
   }
 
+  .weekly-forecast-status {
+    min-width: 44px;
+  }
+
   .weekly-forecast-side {
     gap: 6px;
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: flex-end;
+    text-align: right;
   }
 
   .weekly-forecast-rain {
@@ -6893,6 +6913,10 @@ body.eq-sheet-open {
     height: 38px;
   }
 
+  .weekly-forecast-status {
+    min-width: 42px;
+  }
+
   .weekly-forecast-day strong {
     font-size: clamp(19px, 5vw, 23px);
     font-weight: 900;
@@ -6905,7 +6929,7 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-label {
-    font-size: clamp(17px, 4.5vw, 20px);
+    font-size: clamp(11px, 3.1vw, 14px);
   }
 
   .weekly-forecast-temps {
@@ -6914,6 +6938,7 @@ body.eq-sheet-open {
 
   .weekly-forecast-side {
     gap: 6px;
+    justify-content: flex-end;
   }
 
   .weekly-forecast-rain {
