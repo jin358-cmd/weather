@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v207-merge-category-notices";
+const SW_VERSION = "jin-v208-pwa-top-install";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

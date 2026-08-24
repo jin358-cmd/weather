@@ -6,7 +6,15 @@
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://jin358-cmd.github.io/weather/manifest.json"
+    }
+  ],
   "background_color": "#161d27",
   "theme_color": "#161d27",
   "lang": "zh-Hant-TW",
