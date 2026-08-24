@@ -2050,9 +2050,11 @@ html.has-channel-talk .site-footer {
 }
 
 .camera-list-wrap {
+  position: relative;
   display: grid;
   gap: 10px;
   min-width: 0;
+  min-height: 220px;
 }
 
 .freeway-load-progress-host {
@@ -2071,13 +2073,18 @@ html.has-channel-talk .site-footer {
 }
 
 .camera-load-progress-host {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 4px;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 16px;
   border-radius: 12px;
-  background: transparent;
+  background: rgba(16, 22, 30, 0.72);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 
 .freeway-load-progress-host[hidden],
@@ -2091,8 +2098,8 @@ html.has-channel-talk .site-footer {
 }
 
 .camera-load-progress {
-  width: 72px;
-  height: 72px;
+  width: 96px;
+  height: 96px;
   flex-shrink: 0;
 }
 
