@@ -4896,8 +4896,22 @@ body.eq-sheet-open {
   overflow-wrap: anywhere;
 }
 
+.warning-map.leaflet-container .eq-popup-wrap.leaflet-popup,
+.leaflet-container .eq-popup-wrap.disaster-map-popup {
+  max-width: min(46%, 260px) !important;
+  min-width: min(156px, 52vw);
+}
+
+.leaflet-container .eq-popup-wrap .leaflet-popup-content {
+  margin: 8px 10px;
+  max-height: min(48vh, 260px);
+}
+
 .leaflet-container .eq-popup-wrap .eq-popup {
   max-width: 100%;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.35;
   word-break: break-word;
 }
 
@@ -5557,10 +5571,18 @@ body.eq-sheet-open {
 
 .eq-popup-report {
   margin-top: 4px;
-  padding: 8px;
-  border-radius: 8px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: #d4d4d4;
+  color: #1a1a1a;
+  border: 1px solid #8d8d8d;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.eq-popup-report,
+.eq-popup-report * {
+  color: #1a1a1a;
 }
 
 .eq-popup-areas {

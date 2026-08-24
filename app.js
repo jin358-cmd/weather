@@ -11182,7 +11182,7 @@ function ensureLegendLayerSwitch(item) {
   return input;
 }
 
-function getMapMessageMaxWidth() {
+function getMapMessageMaxWidth(kind = "") {
   let mapWidth = 0;
   try {
     mapWidth = Number(warningMap?.getSize?.()?.x) || 0;
@@ -11195,17 +11195,26 @@ function getMapMessageMaxWidth() {
       Number(window.innerWidth) ||
       360;
   }
+  if (kind === "earthquake") {
+    const width = Math.floor(mapWidth * 0.46);
+    return Math.max(156, Math.min(260, Number.isFinite(width) ? width : 260));
+  }
   const width = Math.floor(mapWidth * 0.8);
   return Math.max(140, Number.isFinite(width) ? width : 140);
 }
 
+function getMapPopupKind(className = "") {
+  return /\beq-popup-wrap\b/.test(String(className)) ? "earthquake" : "";
+}
+
 function getMapPopupOptions(extra = {}) {
+  const kind = getMapPopupKind(extra.className || "");
   return {
-    autoPanPadding: [16, 16],
+    autoPanPadding: kind === "earthquake" ? [12, 12] : [16, 16],
     className: "disaster-map-popup",
     autoPan: true,
     ...extra,
-    maxWidth: getMapMessageMaxWidth()
+    maxWidth: extra.maxWidth ?? getMapMessageMaxWidth(kind)
   };
 }
 
@@ -11410,7 +11419,7 @@ function openMarkerPopupSafely(marker) {
     try {
       ensureMarkerOnMap(marker);
       if (popup) {
-        popup.options.maxWidth = getMapMessageMaxWidth();
+        popup.options.maxWidth = getMapMessageMaxWidth(getMapPopupKind(popup.options?.className));
         if (latlng) {
           popup.setLatLng(latlng);
         }
@@ -11440,14 +11449,13 @@ function openMarkerPopupSafely(marker) {
 }
 
 function refreshMapPopupMaxWidths() {
-  const maxWidth = getMapMessageMaxWidth();
   Object.values(mapLegendMarkers).forEach((markers) => {
     (markers || []).forEach((marker) => {
       const popup = marker.getPopup?.();
       if (!popup) {
         return;
       }
-      popup.options.maxWidth = maxWidth;
+      popup.options.maxWidth = getMapMessageMaxWidth(getMapPopupKind(popup.options?.className));
       if (popup.isOpen()) {
         popup.update();
       }
