@@ -1346,10 +1346,13 @@ function updatePowerOutageMapLayer() {
   grouped.forEach((items, key) => {
     const [type] = key.split("|");
     const sample = items[0];
-    const marker = L.circleMarker([sample.lat, sample.lon], {
-      pane: "outagePane",
-      ...buildPowerOutageMarkerStyle(type)
-    });
+    const marker = L.circleMarker(
+      [sample.lat, sample.lon],
+      getMapCircleMarkerOptions({
+        pane: "outagePane",
+        ...buildPowerOutageMarkerStyle(type)
+      })
+    );
     const popupLines = items
       .slice(0, 4)
       .map((item) => {
@@ -7598,14 +7601,17 @@ function updateEarthquakeMapLayer() {
       return;
     }
     const style = getEarthquakeMarkerStyle(quake);
-    const marker = L.circleMarker([quake.lat, quake.lon], {
-      pane: "earthquakePane",
-      radius: style.radius,
-      color: style.color,
-      fillColor: style.fillColor,
-      fillOpacity: 0.9,
-      weight: 2
-    });
+    const marker = L.circleMarker(
+      [quake.lat, quake.lon],
+      getMapCircleMarkerOptions({
+        pane: "earthquakePane",
+        radius: style.radius,
+        color: style.color,
+        fillColor: style.fillColor,
+        fillOpacity: 0.9,
+        weight: 2
+      })
+    );
     const popupHtml = buildEarthquakePopupHtml(quake);
     marker.bindPopup(popupHtml, getMapPopupOptions({ className: "eq-popup-wrap disaster-map-popup" }));
     marker.on("click", () => {
@@ -7846,7 +7852,7 @@ function renderAiAlerts() {
 }
 
 function syncAlertDataToDisasterMapLayers() {
-  if (!warningMap) {
+  if (!warningMap || isMapPopupHoldActive()) {
     return;
   }
   updateFloodMapLayer();
@@ -9760,14 +9766,17 @@ function updateWaterOutageMapLayer() {
   const items = appState.waterOutageItems || [];
   const point = items.length ? getWaterOutageMapPoint() : null;
   if (point) {
-    const marker = L.circleMarker([point.lat, point.lon], {
-      pane: "waterPane",
-      radius: 8,
-      color: "#115e59",
-      fillColor: "#0f766e",
-      fillOpacity: 0.88,
-      weight: 2
-    });
+    const marker = L.circleMarker(
+      [point.lat, point.lon],
+      getMapCircleMarkerOptions({
+        pane: "waterPane",
+        radius: 8,
+        color: "#115e59",
+        fillColor: "#0f766e",
+        fillOpacity: 0.88,
+        weight: 2
+      })
+    );
     const lines = items
       .slice(0, 4)
       .map((item) => `<strong>${escapeMapLegendHtml(item.area || "停水公告")}</strong><br/>${escapeMapLegendHtml(item.period || "")}<br/>${escapeMapLegendHtml(item.reason || "")}`)
@@ -10136,6 +10145,8 @@ function getSheltersForMap() {
 
 let shelterZoomTimer = 0;
 let mapPopupHoldUntil = 0;
+let mapPopupIsOpen = false;
+let pendingAlertLayerRefresh = false;
 function resizeShelterMarkers() {
   const icon = getShelterMarkerIcon();
   (mapLegendMarkers.shelter || []).forEach((marker) => {
@@ -10148,8 +10159,7 @@ function resizeShelterMarkers() {
 function scheduleShelterLayerByZoom() {
   window.clearTimeout(shelterZoomTimer);
   shelterZoomTimer = window.setTimeout(() => {
-    if (Date.now() < mapPopupHoldUntil) {
-      scheduleShelterLayerByZoom();
+    if (isMapPopupHoldActive()) {
       return;
     }
     if (mapLegendMarkers.shelter?.length) {
@@ -10344,10 +10354,13 @@ function updateFloodMapLayer() {
     }),
     MAP_ALERT_LAYER_DECLUTTER
   ).forEach((point) => {
-    const marker = L.circleMarker([point.lat, point.lon], {
-      pane: "floodPane",
-      ...buildFloodPointStyle(point.depthCm)
-    });
+    const marker = L.circleMarker(
+      [point.lat, point.lon],
+      getMapCircleMarkerOptions({
+        pane: "floodPane",
+        ...buildFloodPointStyle(point.depthCm)
+      })
+    );
     marker.bindPopup(
       `
         <strong>${formatFloodStationLabel(point)}</strong><br/>
@@ -10400,6 +10413,7 @@ function focusAllFloodMarkers() {
   if (!warningMap) {
     return;
   }
+  beginMapPopupHold(4000);
   const markers = getFloodMarkersOnMap();
   if (!markers.length) {
     return;
@@ -10741,6 +10755,36 @@ function getMapPopupOptions(extra = {}) {
   };
 }
 
+function getMapCircleMarkerOptions(style = {}) {
+  return {
+    bubblingMouseEvents: false,
+    ...style
+  };
+}
+
+function isMapPopupHoldActive() {
+  return mapPopupIsOpen || Date.now() < mapPopupHoldUntil;
+}
+
+function beginMapPopupHold(ms = 2500) {
+  holdMapPopupRefresh(ms);
+}
+
+function bindDisasterMapPopupHold() {
+  if (!warningMap || warningMap._popupHoldBound) {
+    return;
+  }
+  warningMap._popupHoldBound = true;
+  warningMap.on("popupopen", () => {
+    mapPopupIsOpen = true;
+    holdMapPopupRefresh(60 * 1000);
+  });
+  warningMap.on("popupclose", () => {
+    mapPopupIsOpen = false;
+    mapPopupHoldUntil = Date.now() + 200;
+  });
+}
+
 function getMarkersLatLngs(markers = []) {
   return markers.map((marker) => getLeafletLatLng(marker)).filter(Boolean);
 }
@@ -10830,7 +10874,7 @@ function openMarkerPopupSafely(marker) {
   if (!warningMap || !marker) {
     return;
   }
-  holdMapPopupRefresh(1000);
+  beginMapPopupHold(4000);
   const latlng = getLeafletLatLng(marker);
   const popup = typeof marker.getPopup === "function" ? marker.getPopup() : null;
   const quake = marker._earthquake;
@@ -11261,6 +11305,7 @@ function openLegendSourceMarker(sourceMarker) {
   if (!warningMap || !sourceMarker) {
     return;
   }
+  beginMapPopupHold(4000);
   const latlng = getLeafletLatLng(sourceMarker);
   if (latlng) {
     warningMap.setView(latlng, Math.max(warningMap.getZoom(), 13), { animate: true });
@@ -11499,6 +11544,7 @@ function focusMapLegendMarkers(legendKey) {
   if (!warningMap || !legendKey) {
     return;
   }
+  beginMapPopupHold(4000);
   if (!isMapCategoryVisible(legendKey) && Object.prototype.hasOwnProperty.call(mapCategoryVisibility, legendKey)) {
     mapCategoryVisibility[legendKey] = true;
     mapCategoryUserOff.delete(legendKey);
@@ -11611,25 +11657,32 @@ function addDisasterMapBaseTiles(map) {
   darkTiles.addTo(map);
 }
 
-function scheduleMapLayersByView() {
+function scheduleMapLayersByView({ includeAlertLayers = false } = {}) {
+  if (includeAlertLayers) {
+    pendingAlertLayerRefresh = true;
+  }
   window.clearTimeout(shelterZoomTimer);
   shelterZoomTimer = window.setTimeout(() => {
-    if (Date.now() < mapPopupHoldUntil) {
-      scheduleMapLayersByView();
+    if (isMapPopupHoldActive()) {
       return;
     }
     if (ignoreShelterZoomEvents > 0) {
+      pendingAlertLayerRefresh = false;
       return;
     }
-    updateFloodMapLayer();
-    updatePowerOutageMapLayer();
-    updateWaterOutageMapLayer();
-    updateClosureMapLayer();
-    updateEarthquakeMapLayer();
+    const refreshAlerts = pendingAlertLayerRefresh;
+    pendingAlertLayerRefresh = false;
     updateShelterMapLayer();
     updateCameraMapLayer();
     updateMapLegendLocationPins();
-  }, 140);
+    if (refreshAlerts) {
+      updateFloodMapLayer();
+      updatePowerOutageMapLayer();
+      updateWaterOutageMapLayer();
+      updateClosureMapLayer();
+      updateEarthquakeMapLayer();
+    }
+  }, 160);
 }
 
 function initWarningMap() {
@@ -11649,6 +11702,7 @@ function initWarningMap() {
     attributionControl: true
   }).setView(TAIWAN_MAP_CENTER, TAIWAN_MAP_ZOOM);
   L.control.zoom({ position: "bottomleft" }).addTo(warningMap);
+  bindDisasterMapPopupHold();
 
   warningMap.createPane("outagePane");
   warningMap.createPane("floodPane");
@@ -11698,7 +11752,7 @@ function initWarningMap() {
     console.warn("避難場所圖層載入失敗：", error);
   });
   warningMap.on("zoomend", () => {
-    scheduleMapLayersByView();
+    scheduleMapLayersByView({ includeAlertLayers: true });
   });
   warningMap.on("moveend", () => {
     scheduleMapLayersByView();
