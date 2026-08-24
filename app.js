@@ -630,7 +630,7 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage", skipCallout: true },
   "water-outage": { title: "停水公告", color: "#0f766e", layer: "water-outage", skipCallout: true },
   closure: { title: "停班停課", color: "#b71c1c", layer: "closure-points", skipCallout: true },
-  earthquake: { title: "地震震央", color: "#f97316", layer: "earthquake-points", skipCallout: true },
+  earthquake: { title: "地震震央", color: "#f5c400", layer: "earthquake-points", skipCallout: true },
   shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
   cctv: { title: "路口監控", color: "#0096c7", layer: "cctv-points", skipCallout: true, alwaysShow: true },
   "city-focus": { title: "定位範圍", color: "#e11d48", layer: "city-focus", skipCallout: true, alwaysShow: true, flash: true }
@@ -783,6 +783,7 @@ const CLOSURE_REGION_LABELS = ["北部地區", "中部地區", "南部地區", "
 const MAP_LOCATE_DIAMETER_KM = 5;
 const MAP_LOCATE_RADIUS_KM = MAP_LOCATE_DIAMETER_KM / 2;
 const MAP_FOCUS_CIRCLE_RADIUS_M = MAP_LOCATE_RADIUS_KM * 1000;
+const MAP_LOCATE_VIEW_DIAMETER_M = 1000;
 const LAST_MAP_LOCATE_STORAGE_KEY = "lastMapLocateV1";
 const WINDY_EMBED_HEIGHT = 560;
 const WINDY_EMBED_WIDTH = 560;
@@ -7266,6 +7267,18 @@ function parseAiAlertPresentation(text) {
   };
 }
 
+function getEarthquakeMapPinStyle() {
+  return {
+    color: "#3f3200",
+    fillColor: "#f5c400",
+    radius: 7,
+    weight: 2,
+    fillOpacity: 0.95,
+    className: "eq-epicenter-blink",
+    label: "地震震央"
+  };
+}
+
 function getEarthquakeMarkerStyle(quake) {
   const colorKey = quake.alertColor || getCwaEarthquakeAlertColor(quake.magnitude, quake.intensityValue);
   if (colorKey === "red") {
@@ -7804,7 +7817,7 @@ function updateEarthquakeMapLayer() {
     if (!Number.isFinite(quake.lat) || !Number.isFinite(quake.lon)) {
       return;
     }
-    const style = getEarthquakeMarkerStyle(quake);
+    const style = getEarthquakeMapPinStyle();
     const marker = L.circleMarker(
       [quake.lat, quake.lon],
       getMapCircleMarkerOptions({
@@ -7812,8 +7825,9 @@ function updateEarthquakeMapLayer() {
         radius: style.radius,
         color: style.color,
         fillColor: style.fillColor,
-        fillOpacity: 0.9,
-        weight: 2
+        fillOpacity: style.fillOpacity,
+        weight: style.weight,
+        className: style.className
       })
     );
     const popupHtml = buildEarthquakePopupHtml(quake);
@@ -10977,10 +10991,10 @@ function fitMapToLocateRange(animate = false) {
   }
   ignoreShelterZoomEvents += 1;
   warningMap.invalidateSize();
-  const bounds = L.latLng(focus.lat, focus.lon).toBounds(MAP_FOCUS_CIRCLE_RADIUS_M * 2);
+  const bounds = L.latLng(focus.lat, focus.lon).toBounds(MAP_LOCATE_VIEW_DIAMETER_M);
   warningMap.fitBounds(bounds, {
-    padding: [28, 28],
-    maxZoom: 15,
+    padding: [20, 20],
+    maxZoom: 16,
     animate
   });
   window.setTimeout(() => {
@@ -11202,8 +11216,8 @@ function getMapMessageMaxWidth(kind = "") {
       360;
   }
   if (kind === "earthquake") {
-    const width = Math.floor(mapWidth * 0.46);
-    return Math.max(156, Math.min(260, Number.isFinite(width) ? width : 260));
+    const width = Math.floor(mapWidth * 0.3);
+    return Math.max(96, Number.isFinite(width) ? width : 120);
   }
   const width = Math.floor(mapWidth * 0.8);
   return Math.max(140, Number.isFinite(width) ? width : 140);
@@ -12064,39 +12078,78 @@ const ALERT_BADGE_CONFIG = [
   { key: "cctv", label: "路口監控", bg: "#0096c7" },
   { key: "city-focus", label: "定位範圍", bg: "#e11d48" }
 ];
+const MAP_ALERT_BADGE_LEFT_KEYS = ["shelter", "cctv", "city-focus"];
+const MAP_ALERT_BADGE_RIGHT_KEYS = [
+  "earthquake",
+  "flood-4",
+  "flood-3",
+  "flood-2",
+  "flood-1",
+  "closure",
+  "power-disaster",
+  "power-planned",
+  "water-outage"
+];
+
+function createMapAlertBadge({ key, label, bg, color }) {
+  const count = (mapLegendMarkers[key] || []).length;
+  if (!count || !isMapCategoryVisible(key)) {
+    return null;
+  }
+  if (key === "closure" && !hasSelectedCityClosureAnnouncement()) {
+    return null;
+  }
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "map-alert-badge";
+  btn.style.background = bg;
+  if (color) btn.style.color = color;
+  btn.dataset.empty = "false";
+  const dateSummary =
+    key === "closure"
+      ? Array.from(
+          new Set(
+            (mapLegendMarkers.closure || []).flatMap((marker) =>
+              (marker._closureDates || []).map((iso) => formatClosureDateShort(iso))
+            )
+          )
+        ).join("、")
+      : "";
+  btn.textContent = key === "closure" && dateSummary ? `${label} ${dateSummary}` : `${label} ${count}`;
+  btn.title = dateSummary ? `定位${label}點位｜適用 ${dateSummary}` : `定位${label}點位`;
+  btn.addEventListener("click", () => focusMapLegendMarkers(key));
+  return btn;
+}
 
 function syncMapAlertBadges() {
   const container = document.querySelector("#mapAlertBadges");
   if (!container) return;
-  container.innerHTML = "";
-  ALERT_BADGE_CONFIG.forEach(({ key, label, bg, color }) => {
-    const count = (mapLegendMarkers[key] || []).length;
-    if (!count || !isMapCategoryVisible(key)) {
-      return;
+  let leftCol = container.querySelector("#mapAlertBadgesLeft");
+  let rightCol = container.querySelector("#mapAlertBadgesRight");
+  if (!leftCol || !rightCol) {
+    container.innerHTML = "";
+    leftCol = document.createElement("div");
+    leftCol.id = "mapAlertBadgesLeft";
+    leftCol.className = "map-alert-badges-col map-alert-badges-left";
+    rightCol = document.createElement("div");
+    rightCol.id = "mapAlertBadgesRight";
+    rightCol.className = "map-alert-badges-col map-alert-badges-right";
+    container.append(leftCol, rightCol);
+  }
+  leftCol.innerHTML = "";
+  rightCol.innerHTML = "";
+  const byKey = new Map(ALERT_BADGE_CONFIG.map((item) => [item.key, item]));
+  MAP_ALERT_BADGE_LEFT_KEYS.forEach((key) => {
+    const badge = byKey.get(key) ? createMapAlertBadge(byKey.get(key)) : null;
+    if (badge) {
+      leftCol.append(badge);
     }
-    if (key === "closure" && !hasSelectedCityClosureAnnouncement()) {
-      return;
+  });
+  MAP_ALERT_BADGE_RIGHT_KEYS.forEach((key) => {
+    const badge = byKey.get(key) ? createMapAlertBadge(byKey.get(key)) : null;
+    if (badge) {
+      rightCol.append(badge);
     }
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "map-alert-badge";
-    btn.style.background = bg;
-    if (color) btn.style.color = color;
-    btn.dataset.empty = "false";
-    const dateSummary =
-      key === "closure"
-        ? Array.from(
-            new Set(
-              (mapLegendMarkers.closure || []).flatMap((marker) =>
-                (marker._closureDates || []).map((iso) => formatClosureDateShort(iso))
-              )
-            )
-          ).join("、")
-        : "";
-    btn.textContent = key === "closure" && dateSummary ? `${label} ${dateSummary}` : `${label} ${count}`;
-    btn.title = dateSummary ? `定位${label}點位｜適用 ${dateSummary}` : `定位${label}點位`;
-    btn.addEventListener("click", () => focusMapLegendMarkers(key));
-    container.append(btn);
   });
 }
 

@@ -4024,12 +4024,19 @@ input[type="checkbox"] {
 
 .map-pane-wrap .map-alert-badges {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 10px;
+  left: 10px;
+  right: 10px;
   z-index: 500;
-  max-width: min(72%, 420px);
+  max-width: none;
   padding: 0;
   pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  background: none;
+  border: none;
 }
 
 .map-pane-wrap .map-alert-badges .map-alert-badge {
@@ -4333,6 +4340,37 @@ input[type="checkbox"] {
   }
 }
 
+.leaflet-pane path.eq-epicenter-blink,
+.eq-epicenter-blink {
+  animation: eq-epicenter-blink 1.05s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes eq-epicenter-blink {
+  0%,
+  100% {
+    fill-opacity: 1;
+    stroke-opacity: 1;
+    filter: brightness(1.2);
+  }
+  50% {
+    fill-opacity: 0.16;
+    stroke-opacity: 0.4;
+    filter: brightness(0.38);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-pane path.eq-epicenter-blink,
+  .eq-epicenter-blink {
+    animation: none;
+    fill-opacity: 1;
+    stroke-opacity: 1;
+    filter: none;
+  }
+}
+
 .map-legend-callout-card {
   position: absolute;
   left: 12px;
@@ -4397,9 +4435,31 @@ input[type="checkbox"] {
 
 .map-alert-badges {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0;
+}
+
+.map-alert-badges-col {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  padding: 6px 8px;
+  max-width: min(48%, 220px);
+  pointer-events: none;
+}
+
+.map-alert-badges-left {
+  align-items: flex-start;
+}
+
+.map-alert-badges-right {
+  align-items: flex-end;
+}
+
+.map-alert-badges-right .map-alert-badge {
+  margin-left: auto;
 }
 
 .map-alert-badge {
@@ -4634,8 +4694,8 @@ input[type="checkbox"] {
 }
 
 .legend-swatch.earthquake-point {
-  background: #f97316;
-  border-color: #9a3412;
+  background: #f5c400;
+  border-color: #3f3200;
   border-radius: 50%;
 }
 
@@ -4922,8 +4982,9 @@ body.eq-sheet-open {
 
 .warning-map.leaflet-container .eq-popup-wrap.leaflet-popup,
 .leaflet-container .eq-popup-wrap.disaster-map-popup {
-  max-width: min(46%, 260px) !important;
-  min-width: min(156px, 52vw);
+  max-width: 30% !important;
+  min-width: 0;
+  width: 30%;
 }
 
 .leaflet-container .eq-popup-wrap .leaflet-popup-content {
@@ -7422,9 +7483,8 @@ body.eq-sheet-open {
 }
 
 .theme-cyberpunk-2700 .map-alert-badges {
-  background: rgba(4, 10, 22, 0.65);
-  border: 1px solid rgba(0, 245, 255, 0.18);
-  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
 }
 
 .theme-cyberpunk-2700 .map-alert-badge {
