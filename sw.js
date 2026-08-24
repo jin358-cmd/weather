@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v216-cctv-google-labels";
+const SW_VERSION = "jin-v217-channel-talk-plugin";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
