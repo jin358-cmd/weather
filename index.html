@@ -16,7 +16,7 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=214" />
+    <link rel="stylesheet" href="./styles.css?v=215" />
     <link rel="stylesheet" href="./legacy-themes.css?v=203" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -379,7 +379,10 @@
         <div class="map-layout">
           <div class="map-pane-wrap">
             <div id="warningMap" class="warning-map map-pane" aria-label="即時災害警示地圖"></div>
-            <div id="mapAlertBadges" class="map-alert-badges" aria-label="災害類別數量"></div>
+            <div id="mapAlertBadges" class="map-alert-badges" aria-label="災害類別數量">
+              <div id="mapAlertBadgesLeft" class="map-alert-badges-col map-alert-badges-left"></div>
+              <div id="mapAlertBadgesRight" class="map-alert-badges-col map-alert-badges-right"></div>
+            </div>
           </div>
           <div class="map-legend map-legend-below" aria-label="地圖圖例對照">
             <h4>圖例對照</h4>
@@ -706,7 +709,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=210" defer></script>
+    <script src="./app.js?v=211" defer></script>
     <script src="./legacy-theme.js" defer></script>
   </body>
 </html>
