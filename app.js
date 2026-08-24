@@ -5265,7 +5265,7 @@ const MOTION_WEATHER_ICON_PNG = {
   wind: "./icons/weather/motion-wind.png",
   typhoon: "./icons/weather/motion-typhoon.png"
 };
-const WEATHER_ICON_ASSET_VERSION = "v199";
+const WEATHER_ICON_ASSET_VERSION = "v203";
 
 function weatherIconSrc(path) {
   return `${path}?v=${WEATHER_ICON_ASSET_VERSION}`;
