@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v214-channel-talk-footer";
+const SW_VERSION = "jin-v215-footer-credit-rename";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
