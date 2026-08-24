@@ -559,6 +559,10 @@ body {
   cursor: not-allowed;
 }
 
+.pwa-torch-btn[hidden] {
+  display: none !important;
+}
+
 .pwa-install-copy {
   flex: 1 1 220px;
 }
