@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v213-map-badges-eq-zoom";
+const SW_VERSION = "jin-v214-channel-talk-footer";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -8,6 +8,7 @@ const PWA_PRECACHE_URLS = [
   "./legacy-themes.css",
   "./app.js",
   "./legacy-theme.js",
+  "./channel-talk.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
