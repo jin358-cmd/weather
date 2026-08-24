@@ -454,8 +454,7 @@ body {
 }
 
 .pwa-install-banner {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 50;
   display: block;
   width: 100%;
@@ -467,7 +466,6 @@ body {
   background: rgba(12, 22, 36, 0.96);
   color: #f4efe6;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(10px);
 }
 
 .pwa-install-inner {
