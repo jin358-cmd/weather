@@ -4965,7 +4965,10 @@ body.eq-sheet-open {
   margin-top: 8px;
 }
 
-.leaflet-pane.leaflet-cameraPane-pane {
+.leaflet-overlay-pane,
+.leaflet-overlay-pane svg,
+.leaflet-pane.leaflet-focusPane-pane,
+.leaflet-pane.leaflet-focusPane-pane svg {
   overflow: visible !important;
 }
 

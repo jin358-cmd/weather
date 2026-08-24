@@ -11419,8 +11419,12 @@ function updateCityFocusLayer() {
   const boxBounds = L.latLng(location.lat, location.lon).toBounds(MAP_LOCATE_DIAMETER_KM * 1000);
   mapCityFocusLayer = L.featureGroup();
   mapLegendMarkers["city-focus"] = [];
+  const overlayPane = warningMap.getPane("overlayPane");
+  if (overlayPane) {
+    overlayPane.style.overflow = "visible";
+  }
   const frame = L.rectangle(boxBounds, {
-    pane: "focusPane",
+    pane: "overlayPane",
     className: "leaflet-focus-frame",
     color: "#7af6ff",
     weight: 2,
@@ -11430,24 +11434,24 @@ function updateCityFocusLayer() {
     interactive: false
   });
   const ringHalo = L.circle([location.lat, location.lon], {
-    pane: "focusPane",
+    pane: "overlayPane",
     className: "leaflet-focus-circle-halo",
     radius: radiusM,
     color: "#ffffff",
     weight: 12,
-    opacity: 0.4,
+    opacity: 0.45,
     fill: false,
     interactive: false
   });
   const ring = L.circle([location.lat, location.lon], {
-    pane: "focusPane",
+    pane: "overlayPane",
     className: "leaflet-focus-circle",
     radius: radiusM,
     color: "#7af6ff",
     weight: 6,
     opacity: 1,
     fillColor: "#00d4ff",
-    fillOpacity: 0.2,
+    fillOpacity: 0.18,
     interactive: false
   });
   const north = boxBounds.getNorth();
