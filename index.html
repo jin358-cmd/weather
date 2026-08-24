@@ -16,7 +16,7 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=209" />
+    <link rel="stylesheet" href="./styles.css?v=210" />
     <link rel="stylesheet" href="./legacy-themes.css?v=203" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -27,8 +27,28 @@
     <meta name="apple-mobile-web-app-title" content="災防通報" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="application-name" content="災防通報" />
+    <script>
+      window.__jinPwaPrompt = null;
+      window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        window.__jinPwaPrompt = event;
+        window.dispatchEvent(new Event("jin-pwa-prompt-ready"));
+      });
+    </script>
   </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
+    <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
+      <div class="pwa-install-inner">
+        <div class="pwa-install-copy">
+          <strong id="pwaInstallTitle">尚未安裝桌面版</strong>
+          <p id="pwaInstallText">點安裝後可獨立視窗開啟，並接收災防通知。</p>
+        </div>
+        <div class="pwa-install-actions">
+          <button id="pwaInstallBtn" type="button" class="refresh-btn">安裝桌面版</button>
+          <button id="pwaInstallDismiss" type="button" class="ghost-btn">稍後</button>
+        </div>
+      </div>
+    </aside>
     <div class="ambient-bg" aria-hidden="true">
       <span class="cyber-grid"></span>
       <span class="cyber-scanlines"></span>
@@ -38,16 +58,6 @@
       <span class="ambient-orb ambient-orb-c"></span>
     </div>
     <main class="app">
-      <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
-        <div class="pwa-install-copy">
-          <strong id="pwaInstallTitle">安裝災防通報</strong>
-          <p id="pwaInstallText">加到主畫面後可全螢幕開啟，並接收災防通知。</p>
-        </div>
-        <div class="pwa-install-actions">
-          <button id="pwaInstallBtn" type="button" class="refresh-btn">安裝到主畫面</button>
-          <button id="pwaInstallDismiss" type="button" class="ghost-btn">稍後</button>
-        </div>
-      </aside>
       <header class="hero">
         <div class="hero-flow" aria-hidden="true">
           <span class="hero-flow-layer hero-flow-ribbon"></span>
@@ -696,7 +706,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=205" defer></script>
+    <script src="./app.js?v=206" defer></script>
     <script src="./legacy-theme.js" defer></script>
   </body>
 </html>

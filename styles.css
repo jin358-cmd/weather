@@ -454,17 +454,30 @@ body {
 }
 
 .pwa-install-banner {
+  position: relative;
+  z-index: 50;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 227, 138, 0.4);
+  border-radius: 0;
+  background: rgba(12, 22, 36, 0.96);
+  color: #f4efe6;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.pwa-install-inner {
+  width: 100%;
+  max-width: min(1240px, 100%);
+  margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px 14px;
-  margin: 10px 0 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 227, 138, 0.35);
-  border-radius: 12px;
-  background: rgba(22, 29, 39, 0.88);
-  color: #f4efe6;
+  padding: 10px max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
 }
 
 .pwa-install-banner[hidden] {
@@ -564,6 +577,7 @@ body {
 }
 
 @media (max-width: 860px) {
+  .pwa-install-inner,
   .pwa-install-banner,
   .subscription-actions {
     width: 100%;
