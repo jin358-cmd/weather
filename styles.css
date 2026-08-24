@@ -4427,13 +4427,6 @@ input[type="checkbox"] {
   cursor: default;
 }
 
-.leaflet-focus-frame {
-  stroke: #00d4ff !important;
-  stroke-width: 3px !important;
-  stroke-dasharray: 10 6;
-  fill: rgba(0, 212, 255, 0.05) !important;
-}
-
 .leaflet-focus-circle {
   stroke: #7af6ff !important;
   stroke-width: 6px !important;
@@ -6132,12 +6125,6 @@ body.eq-sheet-open {
     opacity: 0.32;
     transform: scale(1.08);
   }
-}
-
-.leaflet-focus-frame {
-  stroke: #00d4ff;
-  stroke-width: 3;
-  fill: rgba(0, 212, 255, 0.05);
 }
 
 .leaflet-focus-circle {
