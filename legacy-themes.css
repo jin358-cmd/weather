@@ -192,6 +192,18 @@ body.theme-elegant[data-legacy-theme="dusk"] .hero-flow-c {
   text-align: center;
 }
 
+.theme-elegant .ai-alert-item.ai-alert-typhoon-high,
+.theme-elegant .alert-block .ai-alert-item.ai-alert-typhoon-high {
+  border-color: #4a148c;
+  background: #6a1b9a;
+  color: #fff;
+}
+
+.theme-elegant .ai-alert-item.ai-alert-typhoon-high .ai-alert-tag,
+.theme-elegant .ai-alert-item.ai-alert-typhoon-high .ai-alert-body {
+  color: #fff;
+}
+
 .theme-elegant .ai-alert-item.ai-alert-closure-stop,
 .theme-elegant .alert-block .ai-alert-item.ai-alert-closure-stop {
   border-color: #7f1d1d;

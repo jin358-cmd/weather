@@ -7006,8 +7006,9 @@ function parseAiAlertPresentation(text) {
   const floodLevel = levelMatch ? Number(levelMatch[1]) : 0;
 
   let tone = "neutral";
-  if (
-    tag.includes("高風險") ||
+  if (tag.includes("高風險")) {
+    tone = "typhoon-high";
+  } else if (
     tag.includes("積淹水警戒") ||
     tag.includes("國家緊急訊息") ||
     tag === "地震通報"
