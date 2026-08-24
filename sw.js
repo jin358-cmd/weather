@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v195-map-popup-hold";
+const SW_VERSION = "jin-v196-eq-below-weather";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

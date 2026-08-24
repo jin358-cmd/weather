@@ -163,40 +163,6 @@
       </section>
 
       <div
-        class="visual-break section-title-bar visual-break-earthquake"
-        style="--visual-image: url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80')"
-      >
-        <div class="visual-break-overlay"></div>
-        <h2 class="visual-break-caption">地震即時通報</h2>
-      </div>
-
-      <section class="card earthquake-card" aria-label="地震即時通報">
-        <div class="section-head earthquake-head">
-          <p id="earthquakeMeta" class="timestamp earthquake-meta">讀取中...</p>
-        </div>
-        <p id="earthquakeSummary" class="earthquake-summary">資料讀取中...</p>
-        <ul id="earthquakeList" class="analysis-list earthquake-list" aria-live="polite"></ul>
-      </section>
-
-      <div
-        id="earthquakeDetailSheet"
-        class="eq-detail-sheet"
-        hidden
-        role="dialog"
-        aria-modal="true"
-        aria-label="地震震央通報詳情"
-      >
-        <button type="button" class="eq-detail-sheet-backdrop" aria-label="關閉地震詳情"></button>
-        <div class="eq-detail-sheet-panel">
-          <div class="eq-detail-sheet-toolbar">
-            <strong>地震震央通報</strong>
-            <button id="earthquakeDetailSheetClose" type="button" class="ghost-btn">關閉</button>
-          </div>
-          <div id="earthquakeDetailSheetBody" class="eq-detail-sheet-body"></div>
-        </div>
-      </div>
-
-      <div
         id="townshipWeatherTitle"
         class="visual-break section-title-bar visual-break-weather"
         style="--visual-image: url('https://images.unsplash.com/photo-1428908728789-d2de25dbd4e2?auto=format&fit=crop&w=1400&q=80')"
@@ -288,6 +254,40 @@
         </article>
         </div>
       </section>
+
+      <div
+        class="visual-break section-title-bar visual-break-earthquake"
+        style="--visual-image: url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80')"
+      >
+        <div class="visual-break-overlay"></div>
+        <h2 class="visual-break-caption">地震即時通報</h2>
+      </div>
+
+      <section class="card earthquake-card" aria-label="地震即時通報">
+        <div class="section-head earthquake-head">
+          <p id="earthquakeMeta" class="timestamp earthquake-meta">讀取中...</p>
+        </div>
+        <p id="earthquakeSummary" class="earthquake-summary">資料讀取中...</p>
+        <ul id="earthquakeList" class="analysis-list earthquake-list" aria-live="polite"></ul>
+      </section>
+
+      <div
+        id="earthquakeDetailSheet"
+        class="eq-detail-sheet"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-label="地震震央通報詳情"
+      >
+        <button type="button" class="eq-detail-sheet-backdrop" aria-label="關閉地震詳情"></button>
+        <div class="eq-detail-sheet-panel">
+          <div class="eq-detail-sheet-toolbar">
+            <strong>地震震央通報</strong>
+            <button id="earthquakeDetailSheetClose" type="button" class="ghost-btn">關閉</button>
+          </div>
+          <div id="earthquakeDetailSheetBody" class="eq-detail-sheet-body"></div>
+        </div>
+      </div>
 
       <div
         class="visual-break section-title-bar visual-break-alert"

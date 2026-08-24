@@ -7485,11 +7485,9 @@ function renderEarthquakePanel() {
     footer.addEventListener("click", (event) => {
       event.preventDefault();
       details.open = false;
-      const weatherTitle =
-        document.querySelector("#townshipWeatherTitle") ||
-        document.querySelector(".visual-break-weather");
       window.requestAnimationFrame(() => {
-        weatherTitle?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const earthquakeTitle = document.querySelector(".visual-break-earthquake");
+        earthquakeTitle?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     });
     const syncCollapseLabels = () => {
