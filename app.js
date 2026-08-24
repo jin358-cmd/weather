@@ -7028,6 +7028,10 @@ function parseAiAlertPresentation(text) {
     tone = "high";
   } else if (tag.includes("積淹水警示") || tag.includes("積淹水監測")) {
     tone = floodLevel >= 1 ? `flood-${floodLevel}` : "flood-1";
+  } else if (tag.includes("公有事業警戒")) {
+    tone = "watch";
+  } else if (tag.includes("公有事業")) {
+    tone = "general";
   } else if (tag.includes("注意") || tag.includes("地震")) {
     tone = "watch";
   } else if (tag.includes("空品")) {
@@ -7760,12 +7764,191 @@ function getSubscriptionEarthquakeMessage() {
   );
 }
 
+function getLocatedCityName() {
+  return citySelect?.value || getActiveWeatherLocation()?.cityName || "";
+}
+
+function getLocatedCityFloodPoints() {
+  const cityName = getLocatedCityName();
+  const location = getActiveWeatherLocation();
+  if (!cityName) {
+    return [];
+  }
+  return (appState.floodLivePoints || [])
+    .filter((point) => sameTaiwanCityName(point.county, cityName))
+    .map((point) => ({
+      ...point,
+      areaName: formatFloodStationLabel(point),
+      distanceKm:
+        location && Number.isFinite(location.lat) && Number.isFinite(location.lon)
+          ? getDistanceKm(location.lat, location.lon, point.lat, point.lon)
+          : null
+    }))
+    .sort(
+      (a, b) =>
+        (Number(b.level) || 0) - (Number(a.level) || 0) ||
+        (Number(b.depthCm) || 0) - (Number(a.depthCm) || 0) ||
+        (Number(a.distanceKm) || 0) - (Number(b.distanceKm) || 0)
+    );
+}
+
+function formatFloodAlertLocationLine(point) {
+  const dist = Number.isFinite(point.distanceKm) ? `，約 ${point.distanceKm.toFixed(1)} km` : "";
+  return `${point.areaName || "積水點"} 水深 ${point.depthCm} cm（等級 ${point.level}）${dist}`;
+}
+
+function getUtilityAlertLocationLines() {
+  const lines = [];
+  getNearbyPowerOutages().forEach((point) => {
+    const typeLabel = point.type === "disaster" ? "災害性停電" : "計畫性停電";
+    const place = point.label || point.area || "未提供區域";
+    const dist = Number.isFinite(point.distanceKm) ? `，約 ${point.distanceKm.toFixed(1)} km` : "";
+    lines.push(`停電｜${place}（${typeLabel}${dist}）`);
+  });
+  (appState.waterOutageItems || []).forEach((item) => {
+    const place = item.area || item.summary || "停水公告";
+    const period = item.period ? `（${item.period}）` : "";
+    lines.push(`停水｜${place}${period}`);
+  });
+  return lines;
+}
+
+function getUtilityRecoveryLocationLines() {
+  return (appState.lastRecoveryMessages || [])
+    .filter((item) => {
+      const kind = typeof item === "object" ? String(item.kind || "") : "";
+      const text = String(typeof item === "string" ? item : item?.text || "");
+      return (
+        kind === "power-recovery" ||
+        kind === "water-recovery" ||
+        /【停電解除】|【停水解除】/.test(text)
+      );
+    })
+    .map((item) => String(typeof item === "string" ? item : item?.text || "").trim())
+    .filter(Boolean);
+}
+
+function appendAiAlertItem({ tag, tone, summary, locations = [], recovered = false, top = false }) {
+  if (!aiAlertList) {
+    return;
+  }
+  const item = document.createElement("li");
+  item.className = `ai-alert-item ai-alert-${tone || "neutral"}`;
+  if (top) {
+    item.classList.add("ai-alert-top");
+  }
+  if (tag) {
+    const tagEl = document.createElement("span");
+    tagEl.className = "ai-alert-tag";
+    tagEl.textContent = tag;
+    item.append(tagEl);
+  }
+  const bodyEl = document.createElement("span");
+  bodyEl.className = "ai-alert-body";
+  bodyEl.textContent = summary;
+  item.append(bodyEl);
+  if (locations.length) {
+    const details = document.createElement("details");
+    details.className = "ai-alert-more-details";
+    const summaryEl = document.createElement("summary");
+    summaryEl.className = "ai-alert-more-summary";
+    const closedLabel = recovered
+      ? `▸ 展開查看 ${locations.length} 處解除位置`
+      : `▸ 展開全部 ${locations.length} 處位置`;
+    const openedLabel = recovered
+      ? `▾ 收合 ${locations.length} 處解除位置`
+      : `▾ 收合全部 ${locations.length} 處位置`;
+    summaryEl.textContent = closedLabel;
+    const list = document.createElement("ul");
+    list.className = "ai-alert-location-list";
+    locations.forEach((line) => {
+      const row = document.createElement("li");
+      row.textContent = line;
+      list.append(row);
+    });
+    details.addEventListener("toggle", () => {
+      summaryEl.textContent = details.open ? openedLabel : closedLabel;
+    });
+    details.append(summaryEl, list);
+    item.append(details);
+  }
+  aiAlertList.append(item);
+}
+
+function appendAiAlertText(text, { top = false } = {}) {
+  const presentation = parseAiAlertPresentation(text);
+  appendAiAlertItem({
+    tag: presentation.tag,
+    tone: presentation.tone,
+    summary: presentation.body || presentation.text,
+    top
+  });
+}
+
+function renderFloodStatusAlert() {
+  const cityName = getLocatedCityName() || "所選縣市";
+  const cityFloods = getLocatedCityFloodPoints();
+  if (cityFloods.length) {
+    const top = cityFloods[0];
+    const maxLevel = Math.max(...cityFloods.map((point) => Number(point.level) || 1), 1);
+    const summary = `${cityName}目前 ${cityFloods.length} 處積水，最高等級 ${maxLevel}（${formatFloodAlertLocationLine(top)}）。`;
+    appendAiAlertItem({
+      tag: "【積淹水警示】",
+      tone: `flood-${Math.min(4, maxLevel)}`,
+      summary,
+      locations: cityFloods.map(formatFloodAlertLocationLine)
+    });
+    return `【積淹水警示】${summary}`;
+  }
+  if (/暫時無法更新/.test(appState.floodMetaText || "")) {
+    const text = `【積淹水監測】${appState.floodMetaText}`;
+    appendAiAlertText(text);
+    return text;
+  }
+  const text = `【積淹水監測】${cityName}目前無積淹水通報。`;
+  appendAiAlertText(text);
+  return text;
+}
+
+function renderUtilityStatusAlert() {
+  const cityName = getLocatedCityName() || "所選縣市";
+  const activeLines = getUtilityAlertLocationLines();
+  if (activeLines.length) {
+    const powerCount = getNearbyPowerOutages().length;
+    const waterCount = (appState.waterOutageItems || []).length;
+    const parts = [];
+    if (powerCount) {
+      parts.push(`${powerCount} 處停電`);
+    }
+    if (waterCount) {
+      parts.push(`${waterCount} 筆停水`);
+    }
+    const summary = `${cityName}目前${parts.join("、")}，可展開查看全部位置。`;
+    appendAiAlertItem({
+      tag: "【公有事業警戒】",
+      tone: "watch",
+      summary,
+      locations: activeLines
+    });
+    return `【公有事業警戒】${summary}`;
+  }
+  const recoveryLines = getUtilityRecoveryLocationLines();
+  const summary = `${cityName}目前恢復正常。`;
+  appendAiAlertItem({
+    tag: "【公有事業】",
+    tone: "general",
+    summary,
+    locations: recoveryLines,
+    recovered: true
+  });
+  return `【公有事業】${summary}`;
+}
+
 function renderAiAlerts() {
   const alerts = [];
   const typhoon = appState.typhoon;
   const air = appState.airQuality;
   const cityClosure = appState.closureRows.find((row) => row.city === citySelect.value);
-  const nearbyFlood = getNearbyFloodWarnings();
   const recentQuakes = (appState.earthquakes || []).filter(
     (quake) => Date.now() - quake.timeMs <= EARTHQUAKE_RECENT_HOURS * 60 * 60 * 1000
   );
@@ -7779,15 +7962,6 @@ function renderAiAlerts() {
     );
   } else {
     alerts.push(`【停班停課】${cityName}：目前無停班停課狀態`);
-  }
-
-  if (nearbyFlood.length > 0) {
-    const top = nearbyFlood[0];
-    alerts.push(
-      `【積淹水警示】${top.areaName} 距離約 ${top.distanceKm.toFixed(1)} km，水深 ${top.waterDepthCm} cm（等級 ${top.level}）。`
-    );
-  } else if (appState.floodMetaText) {
-    alerts.push(`【積淹水監測】${appState.floodMetaText}`);
   }
 
   if (nationalQuake) {
@@ -7822,30 +7996,23 @@ function renderAiAlerts() {
   });
 
   const visibleAlerts = alerts.filter((text) => !isDroppedNcdrAlertText(text));
-  if (!visibleAlerts.length) {
-    visibleAlerts.push("目前未觸發重大災害提醒。");
+  if (!aiAlertList) {
+    appState.aiAlerts = visibleAlerts;
+    return;
   }
-  appState.aiAlerts = visibleAlerts;
   aiAlertList.innerHTML = "";
+  const digest = [];
   visibleAlerts.forEach((text, index) => {
-    const presentation = parseAiAlertPresentation(text);
-    const item = document.createElement("li");
-    item.className = `ai-alert-item ai-alert-${presentation.tone}`;
+    appendAiAlertText(text, { top: index === 0 });
+    digest.push(text);
     if (index === 0) {
-      item.classList.add("ai-alert-top");
+      digest.push(renderFloodStatusAlert(), renderUtilityStatusAlert());
     }
-    if (presentation.tag) {
-      const tagEl = document.createElement("span");
-      tagEl.className = "ai-alert-tag";
-      tagEl.textContent = presentation.tag;
-      item.append(tagEl);
-    }
-    const bodyEl = document.createElement("span");
-    bodyEl.className = "ai-alert-body";
-    bodyEl.textContent = presentation.body || presentation.text;
-    item.append(bodyEl);
-    aiAlertList.append(item);
   });
+  if (!visibleAlerts.length) {
+    digest.push(renderFloodStatusAlert(), renderUtilityStatusAlert());
+  }
+  appState.aiAlerts = digest.map((text) => String(text || "").trim()).filter(Boolean);
   syncAlertDataToDisasterMapLayers();
 }
 
@@ -12060,10 +12227,10 @@ async function performFullRefresh(triggerSource, options = {}) {
       setRefreshProgress(92);
     }
     renderTyphoonAnalysis();
-    renderAiAlerts();
     updateMapForCityChange();
     const recoveryMessages = updateRecoveryTrackingState();
     appState.lastRecoveryMessages = recoveryMessages;
+    renderAiAlerts();
     persistSubscriptionForBackground(appState.subscription).catch(() => {});
     await flushPendingUtilityAlerts();
     await maybeNotifySubscribers(triggerSource, recoveryMessages, {

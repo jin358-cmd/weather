@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v196-eq-below-weather";
+const SW_VERSION = "jin-v197-flood-utility-lists";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
