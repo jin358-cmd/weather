@@ -586,6 +586,13 @@ const pwaInstallBtn = document.querySelector("#pwaInstallBtn");
 const pwaInstallDismiss = document.querySelector("#pwaInstallDismiss");
 const pwaInstallTitle = document.querySelector("#pwaInstallTitle");
 const pwaInstallText = document.querySelector("#pwaInstallText");
+const pwaUtilityBar = document.querySelector("#pwaUtilityBar");
+const pwaWeatherChip = document.querySelector("#pwaWeatherChip");
+const pwaWeatherChipText = document.querySelector("#pwaWeatherChipText");
+const torchToggleBtn = document.querySelector("#torchToggleBtn");
+const torchToggleLabel = document.querySelector("#torchToggleLabel");
+const torchToggleIcon = document.querySelector("#torchToggleIcon");
+const torchVideo = document.querySelector("#torchVideo");
 const notificationHint = document.querySelector("#notificationHint");
 const inPageAlertHost = document.querySelector("#inPageAlertHost");
 const autoRefreshMeta = document.querySelector("#autoRefreshMeta");
@@ -733,6 +740,7 @@ const PWA_NOTIFY_HISTORY_KEY = "pwaNotificationHistoryV1";
 const PWA_NOTIFY_COOLDOWN_KEY = "pwaNotificationCooldownV1";
 const PWA_SUBSCRIBER_RECORDS_KEY = "pwaSubscriberRecordsV1";
 const PWA_INSTALL_DISMISS_KEY = "pwaInstallDismissedV1";
+const WEATHER_STATUS_NOTIFY_TAG = "jin-weather-status";
 const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
 const CWA_WARNING_PAGE = "https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
 const CWA_WARNING_MIRROR = `https://r.jina.ai/${CWA_WARNING_PAGE}`;
@@ -6062,6 +6070,7 @@ async function fetchWeather() {
     rain24,
     rainProb
   };
+  refreshPwaWeatherStatus();
 }
 
 function getClosureCityNamesDescending() {
@@ -9035,6 +9044,7 @@ async function refreshPwaInstallBanner() {
     pwaInstallBanner.dataset.installed = "1";
     pwaInstallBanner.hidden = true;
     updatePwaTestChecklist();
+    syncPwaUtilityBar().catch(() => {});
     return;
   }
   delete pwaInstallBanner.dataset.installed;
@@ -9060,6 +9070,7 @@ function initPwaInstallExperience() {
       pwaInstallBanner.dataset.installed = "1";
     }
     renderPwaInstallBanner();
+    syncPwaUtilityBar().catch(() => {});
   });
   window.matchMedia("(display-mode: standalone)").addEventListener("change", () => {
     refreshPwaInstallBanner().catch(() => renderPwaInstallBanner());
@@ -9097,6 +9108,320 @@ function initPwaInstallExperience() {
     renderPwaInstallBanner();
   });
   refreshPwaInstallBanner().catch(() => renderPwaInstallBanner());
+  syncPwaUtilityBar().catch(() => {});
+}
+
+const WEATHER_STATUS_PERIODIC_TAG = "jin-weather-status";
+let torchOn = false;
+let torchCapability = "unknown";
+let torchStream = null;
+let torchTrack = null;
+
+function isWebTorchLikely() {
+  if (!isLikelyAndroidDevice()) {
+    return false;
+  }
+  return Boolean(navigator.mediaDevices?.getUserMedia);
+}
+
+async function isPwaInstalledForTray() {
+  if (isStandaloneDisplay() || pwaInstallBanner?.dataset.installed === "1") {
+    return true;
+  }
+  return hasInstalledDesktopPwa();
+}
+
+function getWeatherStatusPayload() {
+  const current = appState.weather?.current;
+  const location = getActiveWeatherLocation();
+  const place = appState.weather?.label || location?.label || "所選位置";
+  const status = current
+    ? WEATHER_CODE_LABEL[current.weather_code] ?? "天氣狀態更新中"
+    : "天氣讀取中";
+  const tempRaw = Number(current?.temperature_2m);
+  const temperature = Number.isFinite(tempRaw) ? Math.round(tempRaw) : null;
+  const title = temperature !== null ? `${temperature}° ${status}` : status;
+  const torchAvailable = torchCapability !== "no" && isWebTorchLikely();
+  const torchText = torchAvailable ? `｜手電筒 ${torchOn ? "開" : "關"}` : "";
+  return {
+    title,
+    body: `${place}${torchText}`,
+    temperature,
+    status,
+    place,
+    lat: Number(appState.weather?.lat ?? location?.lat),
+    lon: Number(appState.weather?.lon ?? location?.lon),
+    torchOn,
+    torchAvailable
+  };
+}
+
+function updatePwaWeatherChip() {
+  if (!pwaWeatherChipText) {
+    return;
+  }
+  const payload = getWeatherStatusPayload();
+  pwaWeatherChipText.textContent = payload.title;
+  if (pwaWeatherChip) {
+    pwaWeatherChip.title = payload.body;
+    pwaWeatherChip.setAttribute("aria-label", `目前天氣 ${payload.title}`);
+  }
+}
+
+function updateTorchButtonUi() {
+  if (!torchToggleBtn) {
+    return;
+  }
+  if (!isWebTorchLikely() || torchCapability === "no") {
+    torchToggleBtn.hidden = true;
+    torchToggleBtn.disabled = true;
+    torchToggleBtn.setAttribute("aria-pressed", "false");
+    if (torchToggleLabel) {
+      torchToggleLabel.textContent = "無手電筒";
+    }
+    return;
+  }
+  torchToggleBtn.hidden = false;
+  torchToggleBtn.disabled = false;
+  torchToggleBtn.setAttribute("aria-pressed", torchOn ? "true" : "false");
+  torchToggleBtn.title = torchOn ? "關閉手電筒" : "開啟手電筒";
+  if (torchToggleLabel) {
+    torchToggleLabel.textContent = torchOn ? "手電筒 開" : "手電筒 關";
+  }
+  if (torchToggleIcon) {
+    torchToggleIcon.src = torchOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png";
+  }
+}
+
+function stopTorchStream() {
+  try {
+    torchTrack?.stop();
+  } catch {
+    /* ignore */
+  }
+  try {
+    torchStream?.getTracks?.().forEach((track) => track.stop());
+  } catch {
+    /* ignore */
+  }
+  torchTrack = null;
+  torchStream = null;
+  if (torchVideo) {
+    torchVideo.srcObject = null;
+  }
+}
+
+async function applyTorchConstraint(track, on) {
+  const attempts = [{ advanced: [{ torch: on }] }, { torch: on }];
+  let lastError = null;
+  for (const constraint of attempts) {
+    try {
+      await track.applyConstraints(constraint);
+      return true;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("torch unsupported");
+}
+
+async function getTorchTrack() {
+  if (torchTrack && torchTrack.readyState === "live") {
+    return torchTrack;
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: { facingMode: { ideal: "environment" } }
+  });
+  torchStream = stream;
+  torchTrack = stream.getVideoTracks()[0] || null;
+  if (torchVideo && torchTrack) {
+    torchVideo.srcObject = stream;
+    try {
+      await torchVideo.play();
+    } catch {
+      /* autoplay can fail; constraints may still work */
+    }
+  }
+  return torchTrack;
+}
+
+async function setTorchEnabled(nextOn) {
+  if (!isWebTorchLikely()) {
+    torchCapability = "no";
+    torchOn = false;
+    updateTorchButtonUi();
+    return false;
+  }
+  if (!nextOn) {
+    if (torchTrack) {
+      try {
+        await applyTorchConstraint(torchTrack, false);
+      } catch {
+        /* stop the stream anyway */
+      }
+    }
+    stopTorchStream();
+    torchOn = false;
+    torchCapability = "yes";
+    updateTorchButtonUi();
+    publishWeatherStatusNotification().catch(() => {});
+    return true;
+  }
+  try {
+    const track = await getTorchTrack();
+    if (!track) {
+      throw new Error("no camera track");
+    }
+    await applyTorchConstraint(track, true);
+    torchCapability = "yes";
+    torchOn = true;
+    updateTorchButtonUi();
+    publishWeatherStatusNotification().catch(() => {});
+    return true;
+  } catch {
+    stopTorchStream();
+    torchOn = false;
+    torchCapability = "no";
+    updateTorchButtonUi();
+    showInPageAlert("手電筒無法開啟", "請允許相機權限，或此裝置沒有補光燈。", {
+      timeoutMs: 6000,
+      variant: "not-open"
+    });
+    publishWeatherStatusNotification().catch(() => {});
+    return false;
+  }
+}
+
+async function toggleTorchFromExternal() {
+  await setTorchEnabled(!torchOn);
+}
+
+async function publishWeatherStatusNotification() {
+  updatePwaWeatherChip();
+  updateTorchButtonUi();
+  const installed = await isPwaInstalledForTray();
+  if (!installed) {
+    return false;
+  }
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+    return false;
+  }
+  const payload = getWeatherStatusPayload();
+  await initServiceWorker();
+  return postToServiceWorker({ type: "SHOW_WEATHER_STATUS", payload });
+}
+
+function refreshPwaWeatherStatus() {
+  updatePwaWeatherChip();
+  publishWeatherStatusNotification().catch(() => {});
+}
+
+async function registerWeatherStatusPeriodicSync() {
+  const registration = await initServiceWorker();
+  if (!registration || !("periodicSync" in registration)) {
+    return false;
+  }
+  try {
+    const status = await navigator.permissions?.query?.({ name: "periodic-background-sync" });
+    if (status && status.state !== "granted") {
+      return false;
+    }
+    await registration.periodicSync.register(WEATHER_STATUS_PERIODIC_TAG, {
+      minInterval: 15 * 60 * 1000
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function syncPwaUtilityBar() {
+  if (!pwaUtilityBar) {
+    return;
+  }
+  const installed = await isPwaInstalledForTray();
+  pwaUtilityBar.hidden = !installed;
+  if (!installed) {
+    return;
+  }
+  if (!isWebTorchLikely()) {
+    torchCapability = "no";
+  }
+  updatePwaWeatherChip();
+  updateTorchButtonUi();
+  registerWeatherStatusPeriodicSync().catch(() => {});
+  if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+    publishWeatherStatusNotification().catch(() => {});
+  }
+}
+
+function consumeTorchQuery() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("torch") !== "toggle") {
+      return;
+    }
+    params.delete("torch");
+    const query = params.toString();
+    const next = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", next);
+    toggleTorchFromExternal().catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
+function initPwaWeatherTorchExperience() {
+  updateTorchButtonUi();
+  pwaWeatherChip?.addEventListener("click", async () => {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      await ensureNotificationPermission();
+    }
+    const shown = await publishWeatherStatusNotification();
+    if (shown) {
+      showInPageAlert("通知列天氣", "已將目前天氣與溫度固定在通知列。", {
+        timeoutMs: 4500,
+        variant: "subscription"
+      });
+      return;
+    }
+    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+      showInPageAlert("無法顯示通知列天氣", getNotifyPermissionExplain().detail || "請允許系統通知。", {
+        timeoutMs: 7000,
+        variant: "not-open"
+      });
+    }
+  });
+  torchToggleBtn?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    await setTorchEnabled(!torchOn);
+  });
+  navigator.serviceWorker?.addEventListener("message", (event) => {
+    const data = event.data || {};
+    if (data.type === "TORCH_TOGGLE") {
+      toggleTorchFromExternal().catch(() => {});
+    }
+  });
+  window.addEventListener("appinstalled", () => {
+    syncPwaUtilityBar().catch(() => {});
+  });
+  window.matchMedia("(display-mode: standalone)").addEventListener("change", () => {
+    syncPwaUtilityBar().catch(() => {});
+  });
+  window.addEventListener("pagehide", () => {
+    if (!torchOn) {
+      return;
+    }
+    torchOn = false;
+    stopTorchStream();
+    navigator.serviceWorker?.controller?.postMessage({
+      type: "SET_TORCH_STATE",
+      payload: { on: false }
+    });
+  });
+  consumeTorchQuery();
+  syncPwaUtilityBar().catch(() => {});
 }
 
 function isOfficialWarningCatalogLine(line) {
@@ -13331,6 +13656,7 @@ enableNotifyBtn?.addEventListener("click", async () => {
       variant: "subscription"
     });
     renderSubscriptionStatus("已允許系統通知。");
+    publishWeatherStatusNotification().catch(() => {});
     return;
   }
   renderSubscriptionStatus("此環境改用頁面內提醒。");
@@ -13817,6 +14143,7 @@ if (document.fonts?.ready) {
 }
 window.matchMedia("(min-width: 861px)").addEventListener("change", syncNoticeDetailsOpen);
 initPwaInstallExperience();
+initPwaWeatherTorchExperience();
 loadNotifyHistory();
 renderNotifyHistory();
 renderNotifyPermissionStatus();
@@ -13826,6 +14153,7 @@ initServiceWorker()
     renderNotifyPermissionStatus();
     updatePwaTestChecklist();
     updateNotificationHint();
+    await syncPwaUtilityBar();
     if (appState.subscription?.email) {
       await enableBackgroundNotifications(appState.subscription).catch(() => {});
     }

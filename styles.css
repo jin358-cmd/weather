@@ -484,6 +484,85 @@ body {
   display: none;
 }
 
+.torch-video {
+  position: fixed;
+  left: -9999px;
+  width: 2px;
+  height: 2px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pwa-utility-bar {
+  position: relative;
+  z-index: 48;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+  border-bottom: 1px solid rgba(255, 227, 138, 0.28);
+  background: rgba(12, 22, 36, 0.94);
+  color: #f4efe6;
+}
+
+.pwa-utility-bar[hidden] {
+  display: none !important;
+}
+
+.pwa-weather-chip,
+.pwa-torch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 227, 138, 0.35);
+  border-radius: 999px;
+  background: rgba(22, 32, 46, 0.92);
+  color: #f8f4ea;
+  cursor: pointer;
+}
+
+.pwa-weather-chip {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.pwa-torch-btn {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pwa-torch-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.pwa-torch-btn[aria-pressed="true"] {
+  border-color: #ffe27a;
+  background: #f5c542;
+  color: #1a1408;
+}
+
+.pwa-torch-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pwa-torch-btn[hidden] {
+  display: none !important;
+}
+
 .pwa-install-copy {
   flex: 1 1 220px;
 }
