@@ -4215,6 +4215,11 @@ input[type="checkbox"] {
   align-items: center;
 }
 
+.map-legend-below .legend-list-always > li > .legend-item-btn.legend-item-locked {
+  width: calc(100% - 44px);
+  margin-left: 44px;
+}
+
 .map-legend-below .legend-item-btn:hover,
 .map-legend-below .legend-item-btn:focus-visible {
   background: color-mix(in srgb, var(--primary) 18%, var(--card-solid, var(--card)));
