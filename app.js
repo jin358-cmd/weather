@@ -11418,8 +11418,8 @@ function updateCityFocusLayer() {
     className: "leaflet-focus-circle-halo",
     radius: radiusM,
     color: "#ffffff",
-    weight: 12,
-    opacity: 0.45,
+    weight: 8,
+    opacity: 0.7,
     fill: false,
     interactive: false
   });

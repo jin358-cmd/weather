@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v205-cctv-pin-no-road";
+const SW_VERSION = "jin-v206-locate-halo-05mm";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
