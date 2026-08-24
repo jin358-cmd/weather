@@ -5670,20 +5670,20 @@ body.eq-sheet-open {
 .ai-alert-typhoon-high,
 .ai-alert-item.ai-alert-typhoon-high,
 .alert-block .ai-alert-item.ai-alert-typhoon-high {
-  border-color: #4a148c;
-  background: #6a1b9a;
-  color: #fff;
+  border-color: #d4c2e8;
+  background: #f7f3fb;
+  color: #4a148c;
 }
 
 .ai-alert-typhoon-high .ai-alert-tag,
 .ai-alert-item.ai-alert-typhoon-high .ai-alert-tag {
-  background: #4a148c;
+  background: #7b1fa2;
   color: #fff;
 }
 
 .ai-alert-typhoon-high .ai-alert-body,
 .ai-alert-item.ai-alert-typhoon-high .ai-alert-body {
-  color: #fff;
+  color: #4a148c;
 }
 
 .ai-alert-air {
@@ -7172,9 +7172,9 @@ body.eq-sheet-open {
 }
 
 .theme-cyberpunk-2700 .ai-alert-item.ai-alert-typhoon-high {
-  background: #6a1b9a !important;
-  border-color: #4a148c !important;
-  color: #fff !important;
+  background: #f7f3fb !important;
+  border-color: #d4c2e8 !important;
+  color: #4a148c !important;
 }
 
 .theme-cyberpunk-2700 .ai-alert-item.ai-alert-closure-stop {

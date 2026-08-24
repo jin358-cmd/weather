@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v200-locate-range-always";
+const SW_VERSION = "jin-v201-typhoon-pale-purple";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
