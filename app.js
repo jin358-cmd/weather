@@ -602,6 +602,7 @@ let warningMap = null;
 let mapFloodLayer = null;
 let mapCameraLayer = null;
 let mapCityFocusLayer = null;
+let mapFocusRenderer = null;
 let mapPowerOutageLayer = null;
 let mapWaterOutageLayer = null;
 let mapClosureLayer = null;
@@ -3172,8 +3173,12 @@ function formatCameraIntersectionShort(camera) {
 
 function formatCctvMapPinLabel(camera) {
   const [cleanA, cleanB] = getCameraDisplayRoads(camera);
+  if (cleanA && cleanB) {
+    const label = `${cleanA}×${cleanB}`;
+    return label.length > 16 ? `${label.slice(0, 16)}…` : label;
+  }
   const label = cleanA || cleanB || formatCameraIntersectionShort(camera);
-  return label.length > 10 ? `${label.slice(0, 10)}…` : label;
+  return label.length > 12 ? `${label.slice(0, 12)}…` : label;
 }
 
 function getCityCamerasForDisasterMap() {
@@ -3402,6 +3407,27 @@ function normalizeRoadToken(text = "") {
     .trim();
 }
 
+const TAINAN_YANSHUI_BRIDGE_LAT = 23.016;
+
+function aliasProvincialRoadName(camera, token = "") {
+  const name = normalizeRoadToken(token);
+  if (!name) {
+    return "";
+  }
+  const city = String(camera?.city || "").replaceAll("台", "臺");
+  const lat = Number(camera?.gisy);
+  const highway = name.replaceAll("臺", "台");
+  if (
+    city === "臺南市" &&
+    Number.isFinite(lat) &&
+    lat < TAINAN_YANSHUI_BRIDGE_LAT &&
+    highway === "台17線"
+  ) {
+    return "中華西路";
+  }
+  return name;
+}
+
 function areRelatedRoadNames(a = "", b = "") {
   const left = normalizeRoadToken(a);
   const right = normalizeRoadToken(b);
@@ -3547,7 +3573,7 @@ function enrichCityCameraCrossRoadsFromNeighbors() {
 function getCameraIntersectionRoads(camera, { allowLookup = true } = {}) {
   const parts = [];
   const pushUnique = (value) => {
-    const token = normalizeRoadToken(value);
+    const token = aliasProvincialRoadName(camera, value);
     if (!token) {
       return;
     }
@@ -8525,7 +8551,7 @@ function isOverlayScrollExempt(event) {
   const path = typeof event?.composedPath === "function" ? event.composedPath() : [event?.target];
   return path.some((node) =>
     node?.closest?.(
-      ".in-page-alert, .in-page-alert-close, .eq-detail-sheet-panel, .eq-detail-sheet-body"
+      ".in-page-alert, .in-page-alert-close, .eq-detail-sheet-panel, .eq-detail-sheet-body, .cctv-monitor-lightbox, .cctv-monitor-lightbox-panel"
     )
   );
 }
@@ -11043,13 +11069,83 @@ function bindDisasterMapPopupHold() {
     return;
   }
   warningMap._popupHoldBound = true;
-  warningMap.on("popupopen", () => {
+  warningMap.on("popupopen", (event) => {
     mapPopupIsOpen = true;
     holdMapPopupRefresh(60 * 1000);
+    bindCctvPopupZoom(event?.popup);
   });
   warningMap.on("popupclose", () => {
     mapPopupIsOpen = false;
     mapPopupHoldUntil = Date.now() + 200;
+  });
+}
+
+function bindCctvPopupZoom(popup) {
+  const root = popup?.getElement?.();
+  const camera = popup?._source?._cctvCamera;
+  const button = root?.querySelector("[data-cctv-zoom]");
+  if (!root || !camera || !button || button.dataset.bound === "1") {
+    return;
+  }
+  button.dataset.bound = "1";
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openCctvMonitorLightbox(camera);
+  });
+}
+
+function openCctvMonitorLightbox(camera) {
+  const box = document.querySelector("#cctvMonitorLightbox");
+  const title = document.querySelector("#cctvMonitorLightboxTitle");
+  const media = document.querySelector("#cctvMonitorLightboxMedia");
+  if (!box || !media) {
+    return;
+  }
+  if (title) {
+    title.textContent = formatCameraIntersectionShort(camera);
+  }
+  media.innerHTML = getCameraPreviewHtml(camera, "cctv-monitor-lightbox-frame");
+  const frame = media.querySelector(".cctv-map-popup-frame");
+  if (frame) {
+    frame.classList.remove("cctv-map-popup-frame");
+  }
+  box.hidden = false;
+  lockPageScrollForOverlay();
+  document.querySelector("#cctvMonitorLightboxClose")?.focus();
+}
+
+function closeCctvMonitorLightbox() {
+  const box = document.querySelector("#cctvMonitorLightbox");
+  const media = document.querySelector("#cctvMonitorLightboxMedia");
+  if (!box || box.hidden) {
+    return;
+  }
+  box.hidden = true;
+  if (media) {
+    media.innerHTML = "";
+  }
+  unlockPageScrollForOverlay();
+}
+
+function initCctvMonitorLightbox() {
+  const box = document.querySelector("#cctvMonitorLightbox");
+  if (!box || box.dataset.bound === "1") {
+    return;
+  }
+  box.dataset.bound = "1";
+  box.addEventListener("click", (event) => {
+    if (event.target === box) {
+      closeCctvMonitorLightbox();
+    }
+  });
+  document.querySelector("#cctvMonitorLightboxClose")?.addEventListener("click", () => {
+    closeCctvMonitorLightbox();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeCctvMonitorLightbox();
+    }
   });
 }
 
@@ -11324,25 +11420,32 @@ function updateCityFocusLayer() {
   const boxBounds = L.latLng(location.lat, location.lon).toBounds(MAP_LOCATE_DIAMETER_KM * 1000);
   mapCityFocusLayer = L.featureGroup();
   mapLegendMarkers["city-focus"] = [];
+  if (!mapFocusRenderer && warningMap) {
+    mapFocusRenderer = L.svg({ pane: "focusPane", padding: 0.6 });
+    mapFocusRenderer.addTo(warningMap);
+  }
   const frame = L.rectangle(boxBounds, {
     pane: "focusPane",
+    renderer: mapFocusRenderer,
     className: "leaflet-focus-frame",
     color: "#00d4ff",
-    weight: 4,
-    opacity: 1,
+    weight: 3,
+    opacity: 0.7,
     dashArray: "10 6",
     fillColor: "#00d4ff",
-    fillOpacity: 0.08,
+    fillOpacity: 0.04,
     interactive: false
   });
   const ring = L.circle([location.lat, location.lon], {
     pane: "focusPane",
+    renderer: mapFocusRenderer,
+    className: "leaflet-focus-circle",
     radius: radiusM,
     color: "#00d4ff",
-    weight: 4,
+    weight: 5,
     opacity: 1,
     fillColor: "#00d4ff",
-    fillOpacity: 0.1,
+    fillOpacity: 0.14,
     interactive: false
   });
   const north = boxBounds.getNorth();
@@ -11413,6 +11516,21 @@ function getCameraPreviewHtml(camera, className = "cctv-map-popup-media") {
     : `<iframe class="${className} cctv-map-popup-frame" src="${safeUrl}" title="${alt}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
 }
 
+function getCctvThumbIcon(camera) {
+  const label = escapeMapLegendHtml(formatCctvMapPinLabel(camera));
+  const streamUrl = String(camera?.html || "").trim();
+  const thumbInner = isLikelyDirectImageStream(streamUrl)
+    ? getCameraPreviewHtml(camera, "cctv-map-thumb-media")
+    : '<span class="cctv-map-ring" aria-hidden="true"></span>';
+  const thumbClass = isLikelyDirectImageStream(streamUrl) ? "cctv-map-thumb" : "cctv-map-ring-wrap";
+  return L.divIcon({
+    className: "cctv-map-thumb-marker",
+    html: `<span class="cctv-map-pin"><span class="${thumbClass}">${thumbInner}</span><span class="cctv-map-label"><span class="cctv-map-label-bar" aria-hidden="true"></span><span class="cctv-map-label-text">${label}</span></span></span>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0]
+  });
+}
+
 function buildCctvMapPopupHtml(camera) {
   const [cleanA, cleanB] = getCameraDisplayRoads(camera);
   const nameHtml =
@@ -11422,22 +11540,16 @@ function buildCctvMapPopupHtml(camera) {
       : `<p class="cctv-map-popup-road">${escapeMapLegendHtml(
           cleanA || cleanB || formatCameraIntersectionShort(camera)
         )}</p>`;
+  const cameraId = escapeMapLegendHtml(camera?.id || "");
   return `
     <div class="cctv-map-popup">
       ${nameHtml}
-      <div class="cctv-map-popup-preview">${getCameraPreviewHtml(camera)}</div>
+      <button type="button" class="cctv-map-popup-zoom" data-cctv-zoom="${cameraId}" aria-label="放大監控畫面">
+        <div class="cctv-map-popup-preview">${getCameraPreviewHtml(camera)}</div>
+        <span class="cctv-map-popup-zoom-hint">點擊放大監控</span>
+      </button>
     </div>
   `;
-}
-
-function getCctvThumbIcon(camera) {
-  const label = escapeMapLegendHtml(formatCctvMapPinLabel(camera));
-  return L.divIcon({
-    className: "cctv-map-thumb-marker",
-    html: `<span class="cctv-map-pin"><span class="cctv-map-ring" aria-hidden="true"></span><span class="cctv-map-label"><span class="cctv-map-label-bar" aria-hidden="true"></span><span class="cctv-map-label-text">${label}</span></span></span>`,
-    iconSize: [0, 0],
-    iconAnchor: [0, 0]
-  });
 }
 
 function updateCameraMapLayer() {
@@ -11467,6 +11579,7 @@ function updateCameraMapLayer() {
     marker.bindPopup(buildCctvMapPopupHtml(camera), getMapPopupOptions({ className: "cctv-popup-wrap disaster-map-popup" }));
     marker._legendPlace = intersectionName;
     marker._cctvNameOnly = true;
+    marker._cctvCamera = camera;
     mapLegendMarkers.cctv.push(marker);
   });
   addVisibleLegendMarkers(mapCameraLayer, ["cctv"]);
@@ -11992,8 +12105,9 @@ function initWarningMap() {
   warningMap.createPane("focusPane");
   warningMap.createPane("legendLabelPane");
   const focusPane = warningMap.getPane("focusPane");
-  if (focusPane) {
+    if (focusPane) {
     focusPane.style.zIndex = String(MAP_PANE_ZINDEX["city-focus"]);
+    focusPane.style.overflow = "visible";
   }
   const legendLabelPane = warningMap.getPane("legendLabelPane");
   if (legendLabelPane) {
@@ -12006,6 +12120,7 @@ function initWarningMap() {
   renderLayerControl();
   applyMapLayerOrder();
   initMapLegendInteractions();
+  initCctvMonitorLightbox();
   syncMapLegendState();
   loadFloodStations()
     .then(() => fetchLiveFloodData())

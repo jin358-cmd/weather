@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v201-typhoon-pale-purple";
+const SW_VERSION = "jin-v202-map-circle-cctv";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
