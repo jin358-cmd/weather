@@ -3170,16 +3170,6 @@ function formatCameraIntersectionShort(camera) {
   return fallback || "路口";
 }
 
-function formatCctvMapPinLabel(camera) {
-  const [cleanA, cleanB] = getCameraDisplayRoads(camera);
-  if (cleanA && cleanB) {
-    const label = `${cleanA}×${cleanB}`;
-    return label.length > 16 ? `${label.slice(0, 16)}…` : label;
-  }
-  const label = cleanA || cleanB || formatCameraIntersectionShort(camera);
-  return label.length > 12 ? `${label.slice(0, 12)}…` : label;
-}
-
 function getCityCamerasForDisasterMap() {
   if (!cityCameraDataset || !Array.isArray(cityCameraDataset.cameras)) {
     return [];
@@ -11513,17 +11503,20 @@ function getCameraPreviewHtml(camera, className = "cctv-map-popup-media") {
 }
 
 function getCctvThumbIcon(camera) {
-  const label = escapeMapLegendHtml(formatCctvMapPinLabel(camera));
   const streamUrl = String(camera?.html || "").trim();
-  const thumbInner = isLikelyDirectImageStream(streamUrl)
-    ? getCameraPreviewHtml(camera, "cctv-map-thumb-media")
-    : '<span class="cctv-map-ring" aria-hidden="true"></span>';
-  const thumbClass = isLikelyDirectImageStream(streamUrl) ? "cctv-map-thumb" : "cctv-map-ring-wrap";
+  if (isLikelyDirectImageStream(streamUrl)) {
+    return L.divIcon({
+      className: "cctv-map-thumb-marker",
+      html: `<span class="cctv-map-thumb">${getCameraPreviewHtml(camera, "cctv-map-thumb-media")}</span>`,
+      iconSize: [44, 34],
+      iconAnchor: [22, 17]
+    });
+  }
   return L.divIcon({
     className: "cctv-map-thumb-marker",
-    html: `<span class="cctv-map-pin"><span class="${thumbClass}">${thumbInner}</span><span class="cctv-map-label"><span class="cctv-map-label-bar" aria-hidden="true"></span><span class="cctv-map-label-text">${label}</span></span></span>`,
-    iconSize: [0, 0],
-    iconAnchor: [0, 0]
+    html: `<span class="cctv-map-ring" aria-hidden="true"></span>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
   });
 }
 
