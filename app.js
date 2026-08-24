@@ -6823,6 +6823,114 @@ function isRecoveryNotificationKind(kind) {
   return String(kind || "").includes("recovery");
 }
 
+function isRecoveryNotificationLine(text) {
+  return /消退|解除|已恢復|已解除/.test(String(text || ""));
+}
+
+const NOTIFY_CATEGORY_ORDER = [
+  "closure",
+  "flood",
+  "typhoon",
+  "earthquake",
+  "power",
+  "water",
+  "cwa-warning",
+  "weather",
+  "air",
+  "other"
+];
+
+function getNotifyCategoryKey(text = "", kind = "") {
+  const raw = `${kind}\n${text}`;
+  if (/停班停課/.test(raw)) {
+    return "closure";
+  }
+  if (/積淹水/.test(raw)) {
+    return "flood";
+  }
+  if (/停電/.test(raw)) {
+    return "power";
+  }
+  if (/停水/.test(raw)) {
+    return "water";
+  }
+  if (/地震/.test(raw)) {
+    return "earthquake";
+  }
+  if (/颱風/.test(raw)) {
+    return "typhoon";
+  }
+  if (/空氣/.test(raw)) {
+    return "air";
+  }
+  if (/氣象署警特報|【氣象署/.test(raw)) {
+    return "cwa-warning";
+  }
+  if (/【天氣】|【降雨】/.test(raw)) {
+    return "weather";
+  }
+  return "other";
+}
+
+function mergeNotifyLinesByCategory(lines = []) {
+  const groups = new Map();
+  (lines || []).forEach((line) => {
+    const text = String(line || "").trim();
+    if (!text) {
+      return;
+    }
+    const key = getNotifyCategoryKey(text);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    const list = groups.get(key);
+    if (!list.includes(text)) {
+      list.push(text);
+    }
+  });
+  return NOTIFY_CATEGORY_ORDER.filter((key) => groups.has(key)).flatMap((key) => groups.get(key));
+}
+
+function mergeNotifyItemsByCategory(items = []) {
+  const groups = new Map();
+  (items || []).forEach((item) => {
+    const text = String(typeof item === "string" ? item : item?.text || "").trim();
+    if (!text) {
+      return;
+    }
+    const kind = typeof item === "object" ? String(item.kind || "") : "";
+    const key = getNotifyCategoryKey(text, kind);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    const list = groups.get(key);
+    if (!list.some((row) => row.text === text)) {
+      list.push({ kind, text });
+    }
+  });
+  return NOTIFY_CATEGORY_ORDER.filter((key) => groups.has(key)).map((key) => ({
+    category: key,
+    items: groups.get(key),
+    lines: groups.get(key).map((row) => row.text)
+  }));
+}
+
+function getMergedNotifyBatchTitle(lines = []) {
+  const rows = (lines || []).map((line) => String(line || "").trim()).filter(Boolean);
+  if (!rows.length) {
+    return "災害狀態更新";
+  }
+  const allRecovery = rows.every(isRecoveryNotificationLine);
+  const anyRecovery = rows.some(isRecoveryNotificationLine);
+  if (allRecovery) {
+    return "災害警戒解除";
+  }
+  if (anyRecovery) {
+    return "災害狀態更新";
+  }
+  return "災害警戒通知";
+}
+
 function getRecoverySentKey(item) {
   return `${item?.kind || "recovery"}::${String(item?.text || "").trim()}`;
 }
@@ -8637,7 +8745,10 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean);
-    if (variant === "subscription" || variant === "refresh-done") {
+    if (variant === "subscription") {
+      return sortSubscriptionNoticeLines(mergeNotifyLinesByCategory(rows));
+    }
+    if (variant === "refresh-done") {
       return sortSubscriptionNoticeLines(rows);
     }
     return rows;
@@ -8665,6 +8776,16 @@ function showInPageAlert(title, body, { timeoutMs = 8000, fullscreen = false, va
     }
     unlockPageScrollForOverlay();
   };
+  alert._closeInPageAlert = close;
+  if (variant === "subscription" || variant === "refresh-done") {
+    [...(inPageAlertHost.querySelectorAll(`.in-page-alert-${variant}`) || [])].forEach((el) => {
+      if (typeof el._closeInPageAlert === "function") {
+        el._closeInPageAlert();
+      } else {
+        el.remove();
+      }
+    });
+  }
   const closeBtn = alert.querySelector(".in-page-alert-close");
   closeBtn?.addEventListener("click", (event) => {
     event.preventDefault();
@@ -8889,38 +9010,15 @@ async function getNotificationRegistration() {
 }
 
 async function notifySubscriptionMessagesToDevice(messages, { title = "預報訂閱通知", persist = false } = {}) {
-  const lines = (messages || []).map((item) => String(item || "").trim()).filter(Boolean);
+  const lines = mergeNotifyLinesByCategory(
+    (messages || []).map((item) => String(item || "").trim()).filter(Boolean)
+  );
   if (!lines.length) {
     return false;
   }
   const stamp = Date.now();
-  const items = isDesktopNotifyLayout()
-    ? [
-        {
-          title,
-          body: lines.join("\n"),
-          tag: `subscription-bg-${stamp}`
-        }
-      ]
-    : lines.map((line, index) => ({
-        title,
-        body: line,
-        tag: `subscription-bg-${stamp}-${index}`
-      }));
-  if (isDesktopNotifyLayout()) {
-    await showWindowsSystemNotification(items[0].title, items[0].body, { tag: items[0].tag });
-  } else {
-    await postToServiceWorker({
-      type: "SHOW_NOTIFICATION_BATCH",
-      payload: { items }
-    });
-    for (const [index, item] of items.entries()) {
-      await showWindowsSystemNotification(item.title, item.body, { tag: item.tag });
-      if (index < items.length - 1) {
-        await sleep(220);
-      }
-    }
-  }
+  const body = lines.join("\n");
+  await showWindowsSystemNotification(title, body, { tag: `subscription-bg-${stamp}` });
   if (persist) {
     await persistSubscriptionDigestForBackground(lines);
   }
@@ -8994,15 +9092,7 @@ async function notifyAutoRefreshComplete() {
     fullscreen: true,
     variant: "refresh-done"
   });
-  if (isDesktopNotifyLayout()) {
-    await showWindowsSystemNotification(title, body, { tag: "jin-auto-refresh-digest" });
-  } else {
-    await showWindowsSystemNotification(title, intro, { tag: "jin-auto-refresh-intro" });
-    const unseen = updates.filter((line) => !wasDeviceNotifiedThisRefresh(line));
-    if (unseen.length) {
-      await notifySubscriptionMessagesToDevice(unseen, { title: "預報訂閱通知" });
-    }
-  }
+  await showWindowsSystemNotification(title, body, { tag: "jin-auto-refresh-digest" });
   await persistSubscriptionDigestForBackground(updates);
   clearDeviceNotifiedThisRefresh();
 }
@@ -9797,50 +9887,25 @@ async function sendRecoveryNotifications(messages) {
     return false;
   }
 
-  const utilityKinds = new Set([
-    "power-alert",
-    "power-recovery",
-    "water-alert",
-    "water-recovery",
-    "flood-alert",
-    "flood-recovery",
-    "earthquake-alert"
-  ]);
-  const utilityMessages = unseen.filter((item) => utilityKinds.has(item.kind));
-  const otherMessages = unseen.filter((item) => !utilityKinds.has(item.kind));
+  const grouped = mergeNotifyItemsByCategory(unseen);
+  const mergedLines = sortSubscriptionNoticeLines(grouped.flatMap((group) => group.lines));
+  await showAppNotification(getMergedNotifyBatchTitle(mergedLines), mergedLines.join("\n"), {
+    tag: `recovery-digest-${Date.now()}`,
+    variant: "subscription"
+  });
 
-  if (isDesktopNotifyLayout() && otherMessages.length) {
-    const hasRecovery = otherMessages.some((item) => isRecoveryNotificationKind(item.kind));
-    await showAppNotification(
-      hasRecovery ? "災害警戒解除" : "災害狀態更新",
-      otherMessages.map((item) => item.text).join("\n"),
-      {
-        tag: `recovery-digest-${Date.now()}`,
-        variant: "subscription"
-      }
-    );
-  } else {
-    for (const message of otherMessages) {
-      await showAppNotification(
-        isRecoveryNotificationKind(message.kind) ? "災害警戒解除" : "災害狀態更新",
-        message.text,
-        {
-          tag: `recovery-${message.kind || "status"}-${Date.now()}`,
-          variant: "subscription"
-        }
-      );
-      await sleep(700);
-    }
-  }
-
-  for (const message of utilityMessages) {
-    await queueUtilityAlertBurst(message.text, message.kind);
+  const utilityCategories = new Set(["flood", "power", "water", "earthquake"]);
+  const utilityLines = grouped
+    .filter((group) => utilityCategories.has(group.category))
+    .flatMap((group) => group.lines);
+  if (utilityLines.length) {
+    await queueUtilityAlertBurst(utilityLines.join("\n"), "utility-digest", { skipImmediate: true });
   }
   markRecoveryMessagesSent(unseen);
-  recordNotifyHistoryForMessages(
-    unseen.map((item) => item.text),
-    { title: "災害狀態更新", channel: permissionMode === "granted" ? "system" : "in-page" }
-  );
+  recordNotifyHistoryForMessages(grouped.map((group) => group.lines.join("\n")), {
+    title: "災害狀態更新",
+    channel: permissionMode === "granted" ? "system" : "in-page"
+  });
   return true;
 }
 
@@ -9865,14 +9930,15 @@ function canDeliverSubscriptionAlerts() {
   return Boolean(appState.subscription?.email) || isForecastNotifyArmedByLocate();
 }
 
-async function queueUtilityAlertBurst(text, kind = "utility") {
+async function queueUtilityAlertBurst(text, kind = "utility", { skipImmediate = false } = {}) {
   if (!canDeliverSubscriptionAlerts()) {
     return;
   }
   const now = Date.now();
   const burstId = `${kind}-${now}-${Math.random().toString(36).slice(2, 7)}`;
   const pending = loadPendingUtilityAlerts().filter((item) => item.dueAt > now - UTILITY_ALERT_REPEAT_MS);
-  for (let i = 0; i < UTILITY_ALERT_REPEAT_COUNT; i += 1) {
+  const start = skipImmediate ? 1 : 0;
+  for (let i = start; i < UTILITY_ALERT_REPEAT_COUNT; i += 1) {
     pending.push({
       id: `${burstId}-${i + 1}`,
       kind,
@@ -9891,28 +9957,28 @@ async function flushPendingUtilityAlerts() {
   }
   const now = Date.now();
   const pending = loadPendingUtilityAlerts();
-  let changed = false;
-  for (const item of pending) {
-    if (item.sent || item.dueAt > now) {
-      continue;
-    }
-    const isRecovery = isRecoveryNotificationKind(item.kind);
-    await showAppNotification(
-      isRecovery ? "災害警戒解除" : "公用事業警戒通報",
-      `${item.text}\n（自動通報）`,
-      {
-        tag: item.id,
-        variant: "subscription"
-      }
+  const due = pending.filter((item) => !item.sent && item.dueAt <= now);
+  if (due.length) {
+    const mergedLines = sortSubscriptionNoticeLines(
+      mergeNotifyLinesByCategory(due.map((item) => String(item.text || "").trim()).filter(Boolean))
     );
-    item.sent = true;
-    changed = true;
-    await sleep(500);
+    if (mergedLines.length) {
+      const isRecovery = due.every((item) => isRecoveryNotificationKind(item.kind) || isRecoveryNotificationLine(item.text));
+      await showAppNotification(
+        isRecovery ? "災害警戒解除" : "公用事業警戒通報",
+        `${mergedLines.join("\n")}\n（自動通報）`,
+        {
+          tag: `utility-digest-${now}`,
+          variant: "subscription"
+        }
+      );
+    }
+    due.forEach((item) => {
+      item.sent = true;
+    });
   }
   const remaining = pending.filter((item) => !item.sent);
-  if (changed || remaining.length !== pending.length) {
-    savePendingUtilityAlerts(remaining);
-  }
+  savePendingUtilityAlerts(remaining);
   utilityAlertTimers.forEach((timer) => window.clearTimeout(timer));
   utilityAlertTimers = [];
   remaining.forEach((item) => {
@@ -10250,7 +10316,7 @@ async function sendSubscriptionNotification({
   )
     .map((text) => stripDroppedNcdrAlertText(text))
     .filter(Boolean);
-  const orderedMessages = sortSubscriptionNoticeLines(rawMessages);
+  const orderedMessages = sortSubscriptionNoticeLines(mergeNotifyLinesByCategory(rawMessages));
   if (!orderedMessages.length) {
     renderSubscriptionStatus("請先勾選至少一項訂閱主題。");
     return false;
@@ -10319,7 +10385,7 @@ async function maybeNotifySubscribers(triggerSource, recoveryMessages = [], opti
     await notifyManualRefreshAlertStatus();
   } else {
     await sendSubscriptionNotification({
-      inPage: triggerSource !== "auto" && !document.hidden
+      inPage: triggerSource !== "auto" && !document.hidden && !recoveryMessages.length
     });
   }
   const digestLines = [
