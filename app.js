@@ -7992,6 +7992,10 @@ function getLocatedCityFloodPoints() {
     );
 }
 
+function getLocatedCityFloodWarningPoints() {
+  return getLocatedCityFloodPoints().filter((point) => isFloodWarningDepth(point.depthCm));
+}
+
 function formatFloodAlertLocationLine(point) {
   const dist = Number.isFinite(point.distanceKm) ? `，約 ${point.distanceKm.toFixed(1)} km` : "";
   return `${point.areaName || "積水點"} 水深 ${point.depthCm} cm（等級 ${point.level}）${dist}`;
@@ -8087,16 +8091,16 @@ function appendAiAlertText(text, { top = false } = {}) {
 
 function renderFloodStatusAlert() {
   const cityName = getLocatedCityName() || "所選縣市";
-  const cityFloods = getLocatedCityFloodPoints();
-  if (cityFloods.length) {
-    const top = cityFloods[0];
-    const maxLevel = Math.max(...cityFloods.map((point) => Number(point.level) || 1), 1);
-    const summary = `${cityName}目前 ${cityFloods.length} 處積水，最高等級 ${maxLevel}（${formatFloodAlertLocationLine(top)}）。`;
+  const warningFloods = getLocatedCityFloodWarningPoints();
+  if (warningFloods.length) {
+    const top = warningFloods[0];
+    const maxLevel = Math.max(...warningFloods.map((point) => Number(point.level) || 1), 1);
+    const summary = `${cityName}目前 ${warningFloods.length} 處積水，最高等級 ${maxLevel}（${formatFloodAlertLocationLine(top)}）。`;
     appendAiAlertItem({
       tag: "【積淹水警示】",
       tone: `flood-${Math.min(4, maxLevel)}`,
       summary,
-      locations: cityFloods.map(formatFloodAlertLocationLine)
+      locations: warningFloods.map(formatFloodAlertLocationLine)
     });
     return `【積淹水警示】${summary}`;
   }
