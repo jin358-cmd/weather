@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v193-typhoon-high-purple";
+const SW_VERSION = "jin-v194-alert-layers-points";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

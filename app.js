@@ -565,8 +565,6 @@ const likeBtn = document.querySelector("#likeBtn");
 const likeBtnLabel = likeBtn?.querySelector(".like-btn-label");
 const likeCountValue = document.querySelector("#likeCountValue");
 const powerOutageMeta = document.querySelector("#powerOutageMeta");
-const mapFloodCountBtn = document.querySelector("#mapFloodCountBtn");
-const mapFloodCountValue = document.querySelector("#mapFloodCountValue");
 const mapCategoryFilters = document.querySelector("#mapCategoryFilters");
 const aiAlertList = document.querySelector("#aiAlertList");
 const earthquakeMeta = document.querySelector("#earthquakeMeta");
@@ -1025,7 +1023,14 @@ function getMapDeclutterSeparationKm(zoom) {
   return 0.85;
 }
 
-function declutterMapItems(items, getLatLng) {
+const MAP_ALERT_LAYER_DECLUTTER = {
+  ignoreLocateRange: true,
+  ignoreViewBounds: true
+};
+
+function declutterMapItems(items, getLatLng, options = {}) {
+  const ignoreLocateRange = Boolean(options.ignoreLocateRange);
+  const ignoreViewBounds = Boolean(options.ignoreViewBounds);
   const focus = getMapLocatePoint();
   const zoom = warningMap?.getZoom?.();
   const bounds = warningMap?.getBounds?.();
@@ -1035,10 +1040,13 @@ function declutterMapItems(items, getLatLng) {
       const point = getLatLng(item) || {};
       const lat = Number(point.lat);
       const lon = Number(point.lon ?? point.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lon) || !isWithinMapLocateRange(lat, lon)) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
         return null;
       }
-      if (bounds?.isValid?.() && !bounds.contains([lat, lon])) {
+      if (!ignoreLocateRange && !isWithinMapLocateRange(lat, lon)) {
+        return null;
+      }
+      if (!ignoreViewBounds && bounds?.isValid?.() && !bounds.contains([lat, lon])) {
         return null;
       }
       return {
@@ -1325,7 +1333,8 @@ function updatePowerOutageMapLayer() {
     appState.powerOutagePoints.filter(
       (point) => Number.isFinite(point.lat) && Number.isFinite(point.lon)
     ),
-    (point) => ({ lat: point.lat, lon: point.lon })
+    (point) => ({ lat: point.lat, lon: point.lon }),
+    MAP_ALERT_LAYER_DECLUTTER
   ).forEach((point) => {
     const key = `${point.type}|${point.lat.toFixed(4)}|${point.lon.toFixed(4)}`;
     if (!grouped.has(key)) {
@@ -7577,10 +7586,14 @@ function updateEarthquakeMapLayer() {
   mapEarthquakeLayer.clearLayers();
   mapLegendMarkers.earthquake = [];
 
-  declutterMapItems(appState.earthquakes || [], (quake) => ({
-    lat: quake.lat,
-    lon: quake.lon
-  })).forEach((quake) => {
+  declutterMapItems(
+    appState.earthquakes || [],
+    (quake) => ({
+      lat: quake.lat,
+      lon: quake.lon
+    }),
+    MAP_ALERT_LAYER_DECLUTTER
+  ).forEach((quake) => {
     if (!Number.isFinite(quake.lat) || !Number.isFinite(quake.lon)) {
       return;
     }
@@ -7829,6 +7842,17 @@ function renderAiAlerts() {
     item.append(bodyEl);
     aiAlertList.append(item);
   });
+  syncAlertDataToDisasterMapLayers();
+}
+
+function syncAlertDataToDisasterMapLayers() {
+  if (!warningMap) {
+    return;
+  }
+  updateFloodMapLayer();
+  updateWaterOutageMapLayer();
+  updatePowerOutageMapLayer();
+  updateEarthquakeMapLayer();
 }
 
 function loadSubscription() {
@@ -9698,6 +9722,32 @@ async function fetchWaterOutageData() {
   }
 }
 
+function getWaterOutageMapPoint() {
+  const township = getSelectedTownship();
+  if (township && Number.isFinite(Number(township.lat)) && Number.isFinite(Number(township.lon))) {
+    return township;
+  }
+  const locate = getMapLocatePoint();
+  if (locate && Number.isFinite(locate.lat) && Number.isFinite(locate.lon)) {
+    return {
+      lat: locate.lat,
+      lon: locate.lon,
+      city: citySelect?.value || "",
+      town: townshipSelect?.value || ""
+    };
+  }
+  const city = CITY_LOCATIONS.find((item) => item.name === citySelect?.value);
+  if (city && Number.isFinite(city.lat) && Number.isFinite(city.lon)) {
+    return {
+      lat: city.lat,
+      lon: city.lon,
+      city: city.name,
+      town: townshipSelect?.value || ""
+    };
+  }
+  return null;
+}
+
 function updateWaterOutageMapLayer() {
   if (!warningMap) {
     return;
@@ -9707,30 +9757,27 @@ function updateWaterOutageMapLayer() {
   }
   mapWaterOutageLayer.clearLayers();
   mapLegendMarkers["water-outage"] = [];
-  const township = getSelectedTownship();
   const items = appState.waterOutageItems || [];
-  if (township && items.length && isWithinMapLocateRange(township.lat, township.lon)) {
-    const visible = declutterMapItems([township], (point) => ({ lat: point.lat, lon: point.lon }));
-    visible.forEach((point) => {
-      const marker = L.circleMarker([point.lat, point.lon], {
-        pane: "waterPane",
-        radius: 8,
-        color: "#115e59",
-        fillColor: "#0f766e",
-        fillOpacity: 0.88,
-        weight: 2
-      });
-      const lines = items
-        .slice(0, 4)
-        .map((item) => `<strong>${escapeMapLegendHtml(item.area || "停水公告")}</strong><br/>${escapeMapLegendHtml(item.period || "")}<br/>${escapeMapLegendHtml(item.reason || "")}`)
-        .join("<hr/>");
-      marker.bindPopup(
-        `${lines}<br/>來源：台灣自來水公司停水公告`,
-        getMapPopupOptions({ className: "disaster-map-popup" })
-      );
-      marker._legendPlace = `${point.city || ""}${point.town || ""}`.trim() || "停水公告";
-      mapLegendMarkers["water-outage"].push(marker);
+  const point = items.length ? getWaterOutageMapPoint() : null;
+  if (point) {
+    const marker = L.circleMarker([point.lat, point.lon], {
+      pane: "waterPane",
+      radius: 8,
+      color: "#115e59",
+      fillColor: "#0f766e",
+      fillOpacity: 0.88,
+      weight: 2
     });
+    const lines = items
+      .slice(0, 4)
+      .map((item) => `<strong>${escapeMapLegendHtml(item.area || "停水公告")}</strong><br/>${escapeMapLegendHtml(item.period || "")}<br/>${escapeMapLegendHtml(item.reason || "")}`)
+      .join("<hr/>");
+    marker.bindPopup(
+      `${lines}<br/>來源：台灣自來水公司停水公告`,
+      getMapPopupOptions({ className: "disaster-map-popup" })
+    );
+    marker._legendPlace = `${point.city || ""}${point.town || ""}`.trim() || "停水公告";
+    mapLegendMarkers["water-outage"].push(marker);
   }
   addVisibleLegendMarkers(mapWaterOutageLayer, ["water-outage"]);
   syncMapLayerVisibility("water-outage");
@@ -10289,11 +10336,14 @@ function updateFloodMapLayer() {
   mapLegendMarkers["flood-2"] = [];
   mapLegendMarkers["flood-1"] = [];
 
-  // Only plot live flooded sensors inside the locate range so legend/badge counts match on-map points.
-  declutterMapItems(appState.floodLivePoints, (point) => ({
-    lat: point.lat,
-    lon: point.lon
-  })).forEach((point) => {
+  declutterMapItems(
+    appState.floodLivePoints,
+    (point) => ({
+      lat: point.lat,
+      lon: point.lon
+    }),
+    MAP_ALERT_LAYER_DECLUTTER
+  ).forEach((point) => {
     const marker = L.circleMarker([point.lat, point.lon], {
       pane: "floodPane",
       ...buildFloodPointStyle(point.depthCm)
@@ -10330,33 +10380,20 @@ function getFloodMarkersOnMap() {
 function updateFloodLayerMetaText() {
   const floodedCount = appState.floodLivePoints.length;
   const stationCount = appState.floodStations.length;
-  const mappedCount = getFloodMarkersOnMap().length;
   appState.floodMetaText =
     floodedCount > 0
-      ? `即時積水感測點 ${mappedCount} 處（測站總數 ${stationCount}）。`
+      ? `即時積水感測點 ${floodedCount} 處（測站總數 ${stationCount}）。`
       : `目前全台 IoW 測站未回報積水（測站總數 ${stationCount}）。`;
 
   const note = document.querySelector("#floodLayerMeta");
   if (note) {
     note.textContent = `${appState.floodMetaText} 顏色越深代表水深越高。`;
   }
-  syncMapFloodCountBadge(mappedCount);
+  syncMapFloodCountBadge();
 }
 
-function syncMapFloodCountBadge(count) {
-  const value = Math.max(0, Number(count) || 0);
-  if (mapFloodCountValue) {
-    mapFloodCountValue.textContent = String(value);
-  }
-  if (!mapFloodCountBtn) {
-    return;
-  }
-  mapFloodCountBtn.classList.toggle("is-empty", value <= 0);
-  mapFloodCountBtn.disabled = value <= 0;
-  mapFloodCountBtn.setAttribute(
-    "aria-label",
-    value > 0 ? `即時感測點 ${value} 處，點選檢視細節` : "目前無即時感測點"
-  );
+function syncMapFloodCountBadge() {
+  /* 右下角即時感測點已改由圖層與圖例顯示 */
 }
 
 function focusAllFloodMarkers() {
@@ -11533,13 +11570,6 @@ function initMapLegendInteractions() {
     event.preventDefault();
     focusMapLegendMarkers(item.dataset.legendKey);
   });
-  mapFloodCountBtn?.addEventListener("click", (event) => {
-    event.preventDefault();
-    if (mapFloodCountBtn.disabled) {
-      return;
-    }
-    focusAllFloodMarkers();
-  });
 }
 
 function updateMapForCityChange() {
@@ -11553,12 +11583,7 @@ function updateMapForCityChange() {
   updateWaterOutageMapLayer();
   updateClosureMapLayer();
   updateFloodMapLayer();
-  fetchPowerOutageData().catch((error) => {
-    appState.powerOutageMetaText = `停電區域資料暫時無法更新：${error.message}`;
-    if (powerOutageMeta) {
-      powerOutageMeta.textContent = appState.powerOutageMetaText;
-    }
-  });
+  updatePowerOutageMapLayer();
   fitMapToLocateRange(false);
 }
 
