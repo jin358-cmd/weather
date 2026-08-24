@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v198-disaster-pwa-icon";
+const SW_VERSION = "jin-v199-weather-status-icons";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

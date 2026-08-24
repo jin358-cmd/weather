@@ -5072,8 +5072,38 @@ const WEATHER_ICON_THEMES = {
   motion: { label: "暮光動態", className: "weather-icon-theme-motion" }
 };
 
-function getWeatherCategory(code) {
+const WEATHER_WIND_ICON_SPEED_KMH = 40;
+const WEATHER_WIND_ICON_GUST_KMH = 55;
+const WEATHER_CATEGORY_LABEL = {
+  clear: "晴朗",
+  partly: "多雲",
+  overcast: "陰天",
+  rain: "雨天",
+  snow: "下雪",
+  thunder: "雷雨",
+  fog: "有霧",
+  wind: "強風",
+  typhoon: "颱風"
+};
+
+function hasActiveTyphoonWarning(official = appState.typhoonOfficial) {
+  return Boolean(official?.hasLandWarning || official?.hasWarning);
+}
+
+function getLiveWeatherIconExtras() {
+  const current = appState.weather?.current;
+  return {
+    typhoon: hasActiveTyphoonWarning(),
+    windSpeed: Number(current?.wind_speed_10m),
+    windGusts: Number(current?.wind_gusts_10m)
+  };
+}
+
+function getWeatherCategory(code, extras = {}) {
   const weatherCode = Number(code);
+  if (extras.typhoon) {
+    return "typhoon";
+  }
   if ([95, 96, 99].includes(weatherCode)) {
     return "thunder";
   }
@@ -5083,14 +5113,22 @@ function getWeatherCategory(code) {
   if ([61, 63, 65, 80, 81, 82, 51, 53, 55, 56, 57, 66, 67].includes(weatherCode)) {
     return "rain";
   }
-  if ([45, 48, 3].includes(weatherCode)) {
+  if ([45, 48].includes(weatherCode)) {
+    return "fog";
+  }
+  const windSpeed = Number(extras.windSpeed);
+  const windGusts = Number(extras.windGusts);
+  if (
+    (Number.isFinite(windSpeed) && windSpeed >= WEATHER_WIND_ICON_SPEED_KMH) ||
+    (Number.isFinite(windGusts) && windGusts >= WEATHER_WIND_ICON_GUST_KMH)
+  ) {
+    return "wind";
+  }
+  if (weatherCode === 3) {
     return "overcast";
   }
   if (weatherCode === 2) {
     return "partly";
-  }
-  if (weatherCode === 1) {
-    return "clear";
   }
   return "clear";
 }
@@ -5196,13 +5234,34 @@ const MOTION_WEATHER_ICON_PNG = {
   overcast: "./icons/weather/motion-overcast.png",
   rain: "./icons/weather/motion-rain.png",
   snow: "./icons/weather/motion-snow.png",
-  thunder: "./icons/weather/motion-thunder.png"
+  thunder: "./icons/weather/motion-thunder.png",
+  fog: "./icons/weather/motion-fog.png",
+  wind: "./icons/weather/motion-wind.png",
+  typhoon: "./icons/weather/motion-typhoon.png"
 };
+const WEATHER_ICON_ASSET_VERSION = "v199";
 
-function getWeeklyForecastIconHtml(weatherCode) {
-  const category = getWeatherCategory(weatherCode);
-  const src = MOTION_WEATHER_ICON_PNG[category] || MOTION_WEATHER_ICON_PNG.clear;
-  const label = WEATHER_CODE_LABEL[Number(weatherCode)] || "天氣";
+function weatherIconSrc(path) {
+  return `${path}?v=${WEATHER_ICON_ASSET_VERSION}`;
+}
+
+function getWeatherStatusIconHtml(weatherCode, extras = {}, size = 120) {
+  const category = getWeatherCategory(weatherCode, extras);
+  const src = weatherIconSrc(MOTION_WEATHER_ICON_PNG[category] || MOTION_WEATHER_ICON_PNG.clear);
+  const label =
+    category === "typhoon"
+      ? WEATHER_CATEGORY_LABEL.typhoon
+      : category === "wind"
+        ? WEATHER_CATEGORY_LABEL.wind
+        : WEATHER_CODE_LABEL[Number(weatherCode)] || WEATHER_CATEGORY_LABEL[category] || "天氣";
+  return `<img class="weather-status-icon-img" src="${src}" alt="${label}" width="${size}" height="${size}" decoding="async" />`;
+}
+
+function getWeeklyForecastIconHtml(weatherCode, extras = {}) {
+  const category = getWeatherCategory(weatherCode, extras);
+  const src = weatherIconSrc(MOTION_WEATHER_ICON_PNG[category] || MOTION_WEATHER_ICON_PNG.clear);
+  const label =
+    WEATHER_CODE_LABEL[Number(weatherCode)] || WEATHER_CATEGORY_LABEL[category] || "天氣";
   return `<img class="weekly-forecast-icon-img" src="${src}" alt="${label}" width="48" height="48" decoding="async" />`;
 }
 
@@ -5223,10 +5282,7 @@ function setWeatherIconTheme(themeKey) {
   weatherIconThemeOptions?.querySelectorAll(".weather-icon-theme-btn").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.theme === nextTheme);
   });
-  const currentCode = appState.lastWeatherCode;
-  if (Number.isFinite(currentCode)) {
-    renderWeatherIcon(currentCode, appState.lastCloudCover);
-  }
+  refreshWeatherStatusIcon();
 }
 
 function getWeatherIconSvg(code, theme = getWeatherIconTheme(), cloudCover) {
@@ -5253,7 +5309,7 @@ function initWeatherIconThemePicker() {
   setWeatherIconTheme("motion");
 }
 
-function renderWeatherIcon(weatherCode, cloudCover) {
+function renderWeatherIcon(weatherCode, cloudCover, extras = {}) {
   if (!weatherIcon) {
     return;
   }
@@ -5261,11 +5317,23 @@ function renderWeatherIcon(weatherCode, cloudCover) {
   if (cloudCover !== undefined) {
     appState.lastCloudCover = cloudCover;
   }
-  weatherIcon.innerHTML = getWeatherIconSvg(
+  weatherIcon.innerHTML = getWeatherStatusIconHtml(
     weatherCode,
-    getWeatherIconTheme(),
-    cloudCover ?? appState.lastCloudCover
+    extras,
+    120
   );
+}
+
+function refreshWeatherStatusIcon() {
+  const current = appState.weather?.current;
+  if (current) {
+    renderWeatherIcon(current.weather_code, current.cloud_cover, getLiveWeatherIconExtras());
+    return;
+  }
+  const currentCode = appState.lastWeatherCode;
+  if (Number.isFinite(currentCode)) {
+    renderWeatherIcon(currentCode, appState.lastCloudCover, getLiveWeatherIconExtras());
+  }
 }
 
 function findNearestTimeIndex(times, nowIso) {
@@ -5393,7 +5461,8 @@ function buildWeeklyForecastDays(daily = {}) {
       tempMin: Number(daily.temperature_2m_min?.[index]),
       rainSum: Number(daily.precipitation_sum?.[index] ?? 0),
       rainProb: Number(daily.precipitation_probability_max?.[index] ?? 0),
-      cloudCover: Number(daily.cloud_cover_mean?.[index])
+      cloudCover: Number(daily.cloud_cover_mean?.[index]),
+      windSpeedMax: Number(daily.wind_speed_10m_max?.[index])
     };
   });
 }
@@ -5444,12 +5513,15 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
     const minText = Number.isFinite(day.tempMin) ? `${Math.round(day.tempMin)}°` : "--";
     const rainProbText = Number.isFinite(day.rainProb) ? `${Math.round(day.rainProb)}%` : "--";
     const rainSumText = Number.isFinite(day.rainSum) ? `${day.rainSum.toFixed(1)} mm` : "--";
+    const iconHtml = getWeeklyForecastIconHtml(day.weatherCode, {
+      windSpeed: day.windSpeedMax
+    });
     row.innerHTML = `
       <div class="weekly-forecast-day">
         <strong>${index === 0 ? "今天" : day.weekday}</strong>
         <span>${day.monthDay}</span>
       </div>
-      <div class="weekly-forecast-icon weekly-forecast-icon-png">${getWeeklyForecastIconHtml(day.weatherCode)}</div>
+      <div class="weekly-forecast-icon weekly-forecast-icon-png">${iconHtml}</div>
       <div class="weekly-forecast-side">
         <span class="weekly-forecast-label">${day.label}</span>
         <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
@@ -5479,7 +5551,7 @@ async function fetchWeather() {
   endpoint.searchParams.set("hourly", "precipitation_probability,precipitation");
   endpoint.searchParams.set(
     "daily",
-    "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,cloud_cover_mean"
+    "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,cloud_cover_mean,wind_speed_10m_max"
   );
   endpoint.searchParams.set("timezone", "Asia/Taipei");
   endpoint.searchParams.set("forecast_days", "7");
@@ -5516,7 +5588,11 @@ async function fetchWeather() {
   weatherSummary.textContent = WEATHER_CODE_LABEL[current.weather_code] ?? "天氣狀態更新中";
   tempValue.textContent = `${Math.round(current.temperature_2m)}°`;
   feelValue.textContent = `${Math.round(current.apparent_temperature)}°`;
-  renderWeatherIcon(current.weather_code, current.cloud_cover);
+  renderWeatherIcon(current.weather_code, current.cloud_cover, {
+    typhoon: hasActiveTyphoonWarning(),
+    windSpeed: current.wind_speed_10m,
+    windGusts: current.wind_gusts_10m
+  });
   humidityValue.textContent = `${Math.round(current.relative_humidity_2m)}%`;
   windValue.textContent = `${Math.round(current.wind_speed_10m)} km/h`;
   rainValue.textContent = `${current.precipitation.toFixed(1)} mm`;
@@ -12227,6 +12303,7 @@ async function performFullRefresh(triggerSource, options = {}) {
       setRefreshProgress(92);
     }
     renderTyphoonAnalysis();
+    refreshWeatherStatusIcon();
     updateMapForCityChange();
     const recoveryMessages = updateRecoveryTrackingState();
     appState.lastRecoveryMessages = recoveryMessages;

@@ -2535,19 +2535,21 @@ input[type="checkbox"] {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  padding: 8px;
+  padding: 4px;
   border-radius: 24px;
-  background:
-    linear-gradient(160deg, rgba(255, 252, 245, 0.98), rgba(232, 242, 255, 0.94));
+  background: #fff;
   border: 1px solid #c5d8ef;
   box-shadow: 0 8px 18px rgba(120, 160, 210, 0.16);
 }
 
-.weather-icon svg {
+.weather-icon svg,
+.weather-icon img,
+.weather-status-icon-img {
   width: clamp(76px, 19vw, 104px);
   height: clamp(76px, 19vw, 104px);
   display: block;
   overflow: visible;
+  object-fit: contain;
 }
 
 .weather-icon-picker {
