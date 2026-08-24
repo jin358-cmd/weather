@@ -602,7 +602,6 @@ let warningMap = null;
 let mapFloodLayer = null;
 let mapCameraLayer = null;
 let mapCityFocusLayer = null;
-let mapFocusRenderer = null;
 let mapPowerOutageLayer = null;
 let mapWaterOutageLayer = null;
 let mapClosureLayer = null;
@@ -11420,32 +11419,35 @@ function updateCityFocusLayer() {
   const boxBounds = L.latLng(location.lat, location.lon).toBounds(MAP_LOCATE_DIAMETER_KM * 1000);
   mapCityFocusLayer = L.featureGroup();
   mapLegendMarkers["city-focus"] = [];
-  if (!mapFocusRenderer && warningMap) {
-    mapFocusRenderer = L.svg({ pane: "focusPane", padding: 0.6 });
-    mapFocusRenderer.addTo(warningMap);
-  }
   const frame = L.rectangle(boxBounds, {
     pane: "focusPane",
-    renderer: mapFocusRenderer,
     className: "leaflet-focus-frame",
-    color: "#00d4ff",
-    weight: 3,
-    opacity: 0.7,
+    color: "#7af6ff",
+    weight: 2,
+    opacity: 0.45,
     dashArray: "10 6",
-    fillColor: "#00d4ff",
-    fillOpacity: 0.04,
+    fill: false,
+    interactive: false
+  });
+  const ringHalo = L.circle([location.lat, location.lon], {
+    pane: "focusPane",
+    className: "leaflet-focus-circle-halo",
+    radius: radiusM,
+    color: "#ffffff",
+    weight: 12,
+    opacity: 0.4,
+    fill: false,
     interactive: false
   });
   const ring = L.circle([location.lat, location.lon], {
     pane: "focusPane",
-    renderer: mapFocusRenderer,
     className: "leaflet-focus-circle",
     radius: radiusM,
-    color: "#00d4ff",
-    weight: 5,
+    color: "#7af6ff",
+    weight: 6,
     opacity: 1,
     fillColor: "#00d4ff",
-    fillOpacity: 0.14,
+    fillOpacity: 0.2,
     interactive: false
   });
   const north = boxBounds.getNorth();
@@ -11480,6 +11482,7 @@ function updateCityFocusLayer() {
   center._legendPlace = String(location.label || "").trim();
   center._legendKey = "city-focus";
   mapCityFocusLayer.addLayer(frame);
+  mapCityFocusLayer.addLayer(ringHalo);
   mapCityFocusLayer.addLayer(ring);
   mapCityFocusLayer.addLayer(label);
   mapCityFocusLayer.addLayer(center);

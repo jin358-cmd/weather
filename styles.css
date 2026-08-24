@@ -4431,10 +4431,17 @@ input[type="checkbox"] {
 }
 
 .leaflet-focus-circle {
-  stroke: #00d4ff !important;
-  stroke-width: 5px !important;
+  stroke: #7af6ff !important;
+  stroke-width: 6px !important;
   stroke-dasharray: none !important;
-  fill: rgba(0, 212, 255, 0.16) !important;
+  fill: rgba(0, 212, 255, 0.22) !important;
+}
+
+.leaflet-focus-circle-halo {
+  stroke: #ffffff !important;
+  stroke-width: 12px !important;
+  stroke-dasharray: none !important;
+  fill: none !important;
 }
 
 .layer-panel {
@@ -6126,9 +6133,15 @@ body.eq-sheet-open {
 }
 
 .leaflet-focus-circle {
-  stroke: #00d4ff;
-  stroke-width: 5;
-  fill: rgba(0, 212, 255, 0.16);
+  stroke: #7af6ff;
+  stroke-width: 6;
+  fill: rgba(0, 212, 255, 0.22);
+}
+
+.leaflet-focus-circle-halo {
+  stroke: #ffffff;
+  stroke-width: 12;
+  fill: none;
 }
 
 .status-ok {
