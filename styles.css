@@ -4516,6 +4516,11 @@ input[type="checkbox"] {
   opacity: 0.4;
 }
 
+.legend-item-btn.legend-item-locked,
+.legend-item-btn.legend-item-locked.is-category-hidden {
+  opacity: 1;
+}
+
 .legend-item-btn.legend-item-empty:hover {
   background: transparent;
 }

@@ -692,6 +692,7 @@ const DISASTER_LEGEND_KEYS = [
   "earthquake"
 ];
 const mapCategoryUserOff = new Set();
+const ALWAYS_ON_MAP_CATEGORIES = new Set(["city-focus"]);
 const TAIWAN_MAP_BOUNDS = [
   [21.8, 119.15],
   [25.35, 122.05]
@@ -10819,7 +10820,14 @@ function scheduleFitMapToLocateRange({ animate = false, attempts = 3 } = {}) {
   run();
 }
 
+function isAlwaysOnMapCategory(key) {
+  return ALWAYS_ON_MAP_CATEGORIES.has(key);
+}
+
 function isMapCategoryVisible(key) {
+  if (isAlwaysOnMapCategory(key)) {
+    return true;
+  }
   return mapCategoryVisibility[key] !== false;
 }
 
@@ -10941,9 +10949,28 @@ function addVisibleLegendMarkers(layer, keys) {
   });
 }
 
+function unwrapLegendLayerSwitch(item) {
+  const row = item?.parentElement?.classList.contains("legend-item-row")
+    ? item.parentElement
+    : item?.closest(".legend-item-row");
+  if (!row || !item) {
+    return;
+  }
+  const parent = row.parentElement;
+  if (!parent) {
+    return;
+  }
+  parent.insertBefore(item, row);
+  row.remove();
+}
+
 function ensureLegendLayerSwitch(item) {
   const key = item?.dataset?.legendKey;
   if (!key) {
+    return null;
+  }
+  if (isAlwaysOnMapCategory(key)) {
+    unwrapLegendLayerSwitch(item);
     return null;
   }
   const host = item.parentElement;
@@ -11205,6 +11232,11 @@ function toggleMapCategory(key, nextValue) {
   if (!Object.prototype.hasOwnProperty.call(mapCategoryVisibility, key)) {
     return;
   }
+  if (isAlwaysOnMapCategory(key)) {
+    mapCategoryVisibility[key] = true;
+    mapCategoryUserOff.delete(key);
+    return;
+  }
   const next = typeof nextValue === "boolean" ? nextValue : !isMapCategoryVisible(key);
   mapCategoryVisibility[key] = next;
   if (next) {
@@ -11350,10 +11382,10 @@ function updateCityFocusLayer() {
   mapCityFocusLayer.addLayer(center);
   mapLegendMarkers["city-focus"].push(center);
 
-  mapLayerVisibility["city-focus"] = isMapCategoryVisible("city-focus");
-  if (isMapCategoryVisible("city-focus")) {
-    mapCityFocusLayer.addTo(warningMap);
-  }
+  mapCategoryVisibility["city-focus"] = true;
+  mapCategoryUserOff.delete("city-focus");
+  mapLayerVisibility["city-focus"] = true;
+  mapCityFocusLayer.addTo(warningMap);
   syncMapLayerVisibility("city-focus");
   syncMapLegendState();
 }
@@ -11682,6 +11714,7 @@ function syncMapLegendState() {
     }
     item.classList.toggle("legend-item-empty", isDisaster && !isActive);
     item.classList.toggle("legend-item-fixed", alwaysShowRow);
+    item.classList.toggle("legend-item-locked", isAlwaysOnMapCategory(key));
     item.classList.toggle("is-category-hidden", !isMapCategoryVisible(key));
     const toggle = ensureLegendLayerSwitch(item);
     if (toggle) {
