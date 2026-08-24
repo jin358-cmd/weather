@@ -1,12 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="????">
-  <defs>
-    <linearGradient id="g512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1f5ae1"/>
-      <stop offset="100%" stop-color="#4b82f3"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="108" fill="url(#g512)"/>
-  <circle cx="256" cy="208" r="92" fill="#ffffff" opacity="0.92"/>
-  <path d="M138 352c32-48 76-76 118-76s86 28 118 76" fill="none" stroke="#ffffff" stroke-width="24" stroke-linecap="round"/>
-  <path d="M314 154c28 6 50 28 56 56" fill="none" stroke="#1f5ae1" stroke-width="16" stroke-linecap="round"/>
+  <rect width="512" height="512" fill="#ffffff"/>
+  <g transform="translate(36 48)">
+    <path d="M86 196c-28-6-50-34-50-66 0-36 28-66 64-66 10-34 42-58 80-58 28 0 52 12 68 32 16-10 34-16 54-16 50 0 90 38 94 86 32 8 54 36 54 70 0 40-32 72-72 72H118c-12 0-24-2-32-22z" fill="#3a3f46"/>
+    <path d="M140 92c18-28 48-46 84-46 16 0 32 4 46 12 12-18 32-30 56-30 28 0 52 16 64 40" fill="none" stroke="#9aa3ad" stroke-width="18" stroke-linecap="round" opacity="0.55"/>
+    <path d="M248 236 L214 318 H262 L228 412 L332 300 H274 L318 236 Z" fill="#f4c430"/>
+    <g fill="#2f9ed8">
+      <ellipse cx="132" cy="348" rx="16" ry="22" transform="rotate(-28 132 348)"/>
+      <ellipse cx="176" cy="372" rx="14" ry="20" transform="rotate(-28 176 372)"/>
+      <ellipse cx="214" cy="338" rx="12" ry="17" transform="rotate(-28 214 338)"/>
+      <ellipse cx="292" cy="360" rx="15" ry="21" transform="rotate(-28 292 360)"/>
+      <ellipse cx="338" cy="392" rx="13" ry="18" transform="rotate(-28 338 392)"/>
+      <ellipse cx="368" cy="346" rx="11" ry="16" transform="rotate(-28 368 346)"/>
+    </g>
+  </g>
 </svg>
