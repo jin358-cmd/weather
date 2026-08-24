@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v210-flood-alert-active";
+const SW_VERSION = "jin-v211-legend-active-inside";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
