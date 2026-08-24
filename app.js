@@ -12020,7 +12020,6 @@ function syncMapLegendState() {
     );
   });
   const activeDisasterCount = syncLegendActivePlacement(legend);
-  const foldedCount = DISASTER_LEGEND_KEYS.length - activeDisasterCount;
   const disasterGroup = legend.querySelector("#legendDisasterGroup");
   const disasterSummary = legend.querySelector("#legendDisasterSummary");
   if (disasterGroup) {
@@ -12032,7 +12031,7 @@ function syncMapLegendState() {
   }
   if (disasterSummary) {
     disasterSummary.textContent =
-      activeDisasterCount > 0 ? `已收入 ${foldedCount} 類` : "目前無災害";
+      activeDisasterCount > 0 ? `開啟中 ${activeDisasterCount} 類` : "目前無災害";
   }
   let emptyNote = legend.querySelector(".map-legend-empty");
   if (!emptyNote) {

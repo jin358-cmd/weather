@@ -4071,6 +4071,10 @@ input[type="checkbox"] {
   background: color-mix(in srgb, var(--card-solid, var(--card)) 88%, #b71c1c 12%);
 }
 
+.legend-disaster-group > .legend-active-block {
+  margin: 10px 0 8px;
+}
+
 .legend-active-block[hidden] {
   display: none;
 }
