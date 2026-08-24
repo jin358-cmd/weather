@@ -1,20 +1,24 @@
 (function () {
-  // 從 Channel Talk 桌面 → 設定 → 一般設定 → 管理外掛 複製 Plugin Key 貼到這裡。
-  const CHANNEL_TALK_PLUGIN_KEY = "";
+  // 弘泰科技 Channel Talk lounge: https://51y0d.channel.io
+  const CHANNEL_TALK_PLUGIN_KEY = "f0792141-b167-4021-9c6d-93ef8a8f893d";
+  const CHANNEL_TALK_LOUNGE_URL = "https://51y0d.channel.io";
   const FEEDBACK_MAIL = "jin358@gmail.com";
+  const BOOT_TIMEOUT_MS = 12000;
 
   function loadChannelTalkSdk() {
-    if (window.ChannelIO) {
+    if (window.ChannelIOInitialized && window.ChannelIO) {
       return;
     }
-    const ch = function () {
-      ch.c(arguments);
-    };
-    ch.q = [];
-    ch.c = function (args) {
-      ch.q.push(args);
-    };
-    window.ChannelIO = ch;
+    if (!window.ChannelIO) {
+      const ch = function () {
+        ch.c(arguments);
+      };
+      ch.q = [];
+      ch.c = function (args) {
+        ch.q.push(args);
+      };
+      window.ChannelIO = ch;
+    }
     function inject() {
       if (window.ChannelIOInitialized) {
         return;
@@ -31,16 +35,19 @@
         document.head.append(script);
       }
     }
-    if (document.readyState === "complete") {
-      inject();
-    } else {
+    if (document.readyState === "loading") {
       window.addEventListener("DOMContentLoaded", inject);
       window.addEventListener("load", inject);
+    } else {
+      inject();
     }
   }
 
-  function openFallbackMail() {
-    window.location.href = `mailto:${FEEDBACK_MAIL}?subject=${encodeURIComponent("災害通報平台｜即時留言回饋")}`;
+  function openLoungeOrMail() {
+    const lounge = window.open(CHANNEL_TALK_LOUNGE_URL, "channelTalkLounge", "noopener,noreferrer");
+    if (!lounge) {
+      window.location.href = `mailto:${FEEDBACK_MAIL}?subject=${encodeURIComponent("災害通報平台｜即時留言回饋")}`;
+    }
   }
 
   function openChannelTalk() {
@@ -48,24 +55,52 @@
       window.ChannelIO("showMessenger");
       return;
     }
-    openFallbackMail();
+    const waitMs = window.__channelTalkBooting ? 8000 : 0;
+    if (!waitMs) {
+      openLoungeOrMail();
+      return;
+    }
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      if (window.__channelTalkReady && typeof window.ChannelIO === "function") {
+        window.clearInterval(timer);
+        window.ChannelIO("showMessenger");
+        return;
+      }
+      if (!window.__channelTalkBooting || Date.now() - startedAt > waitMs) {
+        window.clearInterval(timer);
+        if (window.__channelTalkReady && typeof window.ChannelIO === "function") {
+          window.ChannelIO("showMessenger");
+        } else {
+          openLoungeOrMail();
+        }
+      }
+    }, 200);
   }
 
   function bootChannelTalk(pluginKey) {
     loadChannelTalkSdk();
+    window.__channelTalkBooting = true;
+    const bootWatch = window.setTimeout(() => {
+      if (!window.__channelTalkReady) {
+        window.__channelTalkBooting = false;
+        console.warn("Channel Talk 啟動逾時，留言改開官方對話頁。");
+      }
+    }, BOOT_TIMEOUT_MS);
     window.ChannelIO(
       "boot",
       {
         pluginKey,
-        language: "zh-TW",
         appearance: "light",
-        zIndex: 2200,
+        zIndex: 2400,
         hideChannelButtonOnBoot: false
       },
       function onBoot(error) {
+        window.clearTimeout(bootWatch);
+        window.__channelTalkBooting = false;
         window.__channelTalkReady = !error;
         if (error) {
-          console.warn("Channel Talk 啟動失敗，留言改寄 Email。", error);
+          console.warn("Channel Talk 啟動失敗，留言改開官方對話頁。", error);
           return;
         }
         document.documentElement.classList.add("has-channel-talk");
