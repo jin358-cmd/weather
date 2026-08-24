@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v218-city-cctv-map-match";
+const SW_VERSION = "jin-v219-pwa-weather-torch";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -12,7 +12,9 @@ const PWA_PRECACHE_URLS = [
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icons/apple-touch-icon.png",
+  "./icons/torch-off-96.png",
+  "./icons/torch-on-96.png"
 ];
 const CWA_WARNING_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
 const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
@@ -22,6 +24,39 @@ const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
 const LAST_DIGEST_KEY = "lastDigest";
 const LAST_MESSAGES_KEY = "lastMessages";
+const WEATHER_STATUS_KEY = "weatherStatus";
+const WEATHER_STATUS_NOTIFY_TAG = "jin-weather-status";
+const WEATHER_STATUS_PERIODIC_TAG = "jin-weather-status";
+const WEATHER_CODE_LABEL = {
+  0: "晴朗",
+  1: "大致晴",
+  2: "局部多雲",
+  3: "陰天",
+  45: "有霧",
+  48: "霧凇",
+  51: "毛毛雨",
+  53: "小雨",
+  55: "中雨",
+  56: "凍毛雨",
+  57: "凍毛雨偏強",
+  61: "小雨",
+  63: "中雨",
+  65: "大雨",
+  66: "凍雨",
+  67: "凍雨偏強",
+  71: "小雪",
+  73: "中雪",
+  75: "大雪",
+  77: "雪粒",
+  80: "陣雨",
+  81: "陣雨偏強",
+  82: "強烈陣雨",
+  85: "陣雪",
+  86: "強烈陣雪",
+  95: "雷雨",
+  96: "雷雨伴冰雹",
+  99: "強雷雨伴冰雹"
+};
 const FLOOD_LATEST_API =
   "https://opendata.wra.gov.tw/api/v2/1b991bbb-ad85-4e7a-b931-06ce8749d3ed?format=JSON";
 const FLOOD_SAFE_DEPTH_CM = 15;
@@ -103,21 +138,128 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("notificationclick", (event) => {
+  const tag = event.notification?.tag || "";
+  const kind = event.notification?.data?.kind || "";
+  const isWeatherStatus = tag === WEATHER_STATUS_NOTIFY_TAG || kind === "weather-status";
+  if (isWeatherStatus && event.action === "torch-toggle") {
+    event.waitUntil(handleWeatherTorchToggle());
+    return;
+  }
   event.notification.close();
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsArr) => {
-      for (const client of clientsArr) {
-        if ("focus" in client) {
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow("./");
-      }
-      return undefined;
-    })
-  );
+  event.waitUntil(focusOrOpenClient("./"));
 });
+
+async function focusOrOpenClient(path = "./") {
+  const clientsArr = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  for (const client of clientsArr) {
+    if ("focus" in client) {
+      await client.focus();
+      return client;
+    }
+  }
+  if (self.clients.openWindow) {
+    return self.clients.openWindow(path);
+  }
+  return undefined;
+}
+
+async function handleWeatherTorchToggle() {
+  const clientsArr = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  if (clientsArr.length) {
+    await Promise.all(
+      clientsArr.map(async (client) => {
+        client.postMessage({ type: "TORCH_TOGGLE" });
+        if ("focus" in client) {
+          await client.focus();
+        }
+      })
+    );
+    return;
+  }
+  await focusOrOpenClient("./?source=pwa&torch=toggle");
+}
+
+async function showWeatherStatusNotification(payload = {}) {
+  const snapshot = {
+    ...((await idbGet(WEATHER_STATUS_KEY)) || {}),
+    ...payload,
+    updatedAt: new Date().toISOString()
+  };
+  await idbSet(WEATHER_STATUS_KEY, snapshot);
+  const torchOn = Boolean(snapshot.torchOn);
+  const torchAvailable = snapshot.torchAvailable !== false;
+  const title = snapshot.title || "天氣讀取中";
+  const body = snapshot.body || snapshot.place || "災防通報";
+  const actions = torchAvailable
+    ? [
+        {
+          action: "torch-toggle",
+          title: torchOn ? "關閉手電筒" : "開啟手電筒",
+          icon: torchOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png"
+        }
+      ]
+    : [];
+  const options = {
+    body,
+    tag: WEATHER_STATUS_NOTIFY_TAG,
+    silent: true,
+    renotify: false,
+    requireInteraction: false,
+    ongoing: true,
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
+    actions,
+    data: {
+      kind: "weather-status",
+      torchOn,
+      place: snapshot.place || ""
+    }
+  };
+  try {
+    await self.registration.showNotification(title, options);
+  } catch {
+    try {
+      delete options.ongoing;
+      await self.registration.showNotification(title, options);
+    } catch {
+      /* permission or platform may reject status notifications */
+    }
+  }
+}
+
+async function refreshWeatherStatusFromNetwork() {
+  const snapshot = (await idbGet(WEATHER_STATUS_KEY)) || {};
+  const lat = Number(snapshot.lat);
+  const lon = Number(snapshot.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return false;
+  }
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  url.searchParams.set("latitude", String(lat));
+  url.searchParams.set("longitude", String(lon));
+  url.searchParams.set("current", "temperature_2m,weather_code");
+  url.searchParams.set("timezone", "Asia/Taipei");
+  const response = await fetch(url.toString(), { cache: "no-store" });
+  if (!response.ok) {
+    return false;
+  }
+  const payload = await response.json();
+  const tempRaw = Number(payload.current?.temperature_2m);
+  const temperature = Number.isFinite(tempRaw) ? Math.round(tempRaw) : null;
+  const status = WEATHER_CODE_LABEL[Number(payload.current?.weather_code)] || "天氣更新中";
+  const torchOn = Boolean(snapshot.torchOn);
+  const torchAvailable = snapshot.torchAvailable !== false;
+  const place = snapshot.place || "所選位置";
+  const torchText = torchAvailable ? `｜手電筒 ${torchOn ? "開" : "關"}` : "";
+  await showWeatherStatusNotification({
+    ...snapshot,
+    temperature,
+    status,
+    title: temperature !== null ? `${temperature}° ${status}` : status,
+    body: `${place}${torchText}`
+  });
+  return true;
+}
 
 function openPrefsDb() {
   return new Promise((resolve, reject) => {
@@ -1230,6 +1372,27 @@ self.addEventListener("message", (event) => {
     event.waitUntil(showNotificationBatch(data.payload?.items || []));
     return;
   }
+  if (data.type === "SHOW_WEATHER_STATUS") {
+    event.waitUntil(showWeatherStatusNotification(data.payload || {}));
+    return;
+  }
+  if (data.type === "SET_TORCH_STATE") {
+    event.waitUntil(
+      (async () => {
+        const current = (await idbGet(WEATHER_STATUS_KEY)) || {};
+        const torchOn = Boolean(data.payload?.on);
+        const torchAvailable = current.torchAvailable !== false;
+        const place = current.place || "所選位置";
+        const torchText = torchAvailable ? `｜手電筒 ${torchOn ? "開" : "關"}` : "";
+        await showWeatherStatusNotification({
+          ...current,
+          torchOn,
+          body: `${place}${torchText}`
+        });
+      })()
+    );
+    return;
+  }
   if (data.type !== "SHOW_NOTIFICATION") {
     return;
   }
@@ -1250,6 +1413,9 @@ self.addEventListener("message", (event) => {
 self.addEventListener("periodicsync", (event) => {
   if (event.tag === "jin-disaster-check") {
     event.waitUntil(runBackgroundSubscriptionCheck());
+  }
+  if (event.tag === WEATHER_STATUS_PERIODIC_TAG) {
+    event.waitUntil(refreshWeatherStatusFromNetwork());
   }
 });
 
