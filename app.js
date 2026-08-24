@@ -3142,7 +3142,85 @@ function setVerifiedCityCameras(cameras = []) {
   updateCameraMapLayer();
 }
 
+function toHantStreetName(text = "") {
+  const map = {
+    门: "門",
+    号: "號",
+    东: "東",
+    区: "區",
+    镇: "鎮",
+    乡: "鄉",
+    与: "與",
+    邻: "鄰",
+    桥: "橋",
+    线: "線",
+    环: "環",
+    国: "國",
+    广: "廣",
+    场: "場",
+    乐: "樂",
+    义: "義",
+    华: "華",
+    汉: "漢",
+    湾: "灣",
+    点: "點",
+    连: "連",
+    过: "過"
+  };
+  return String(text || "").replace(/[门号东区镇乡与邻桥线环国广场乐义华汉湾点连过]/g, (ch) => map[ch] || ch);
+}
+
+function getCachedCameraPlace(camera) {
+  const key = getCameraCoordKey(camera);
+  if (!key) {
+    return null;
+  }
+  const cached = loadCctvRoadCache()[key];
+  if (!cached || typeof cached !== "object" || !cached.label) {
+    return null;
+  }
+  return cached;
+}
+
+function setCachedCameraPlace(camera, place) {
+  const key = getCameraCoordKey(camera);
+  if (!key || !place?.label) {
+    return;
+  }
+  loadCctvRoadCache()[key] = place;
+  saveCctvRoadCache();
+}
+
+function applyCameraMapPlace(camera, place) {
+  if (!camera || !place?.label) {
+    return place;
+  }
+  camera.mapPlace = place;
+  if (place.type === "intersection" && Array.isArray(place.roads) && place.roads[0]) {
+    camera.displayRoadName = place.roads[0];
+    camera.displayCrossRoad = place.roads[1] || "";
+  } else if (place.road) {
+    camera.displayRoadName = place.house ? `${place.road} ${place.house}` : place.road;
+    camera.displayCrossRoad = "";
+    camera.nearestHouse = place.house || "";
+  }
+  return place;
+}
+
 function getCameraDisplayRoads(camera) {
+  const place = camera?.mapPlace || getCachedCameraPlace(camera);
+  if (place) {
+    applyCameraMapPlace(camera, place);
+    if (place.type === "intersection" && Array.isArray(place.roads) && place.roads.length >= 2) {
+      return [place.roads[0], place.roads[1]];
+    }
+    if (place.road) {
+      return [place.house ? `${place.road} ${place.house}` : place.road, ""];
+    }
+    if (place.label) {
+      return [place.label, ""];
+    }
+  }
   const [roadA, roadB] = getCameraIntersectionRoads(camera, { allowLookup: false });
   const cleanA =
     roadA && roadA !== "未提供路名" && !looksLikeCameraCode(roadA) ? roadA : "";
@@ -3157,6 +3235,11 @@ function getCameraDisplayRoads(camera) {
 }
 
 function formatCameraIntersectionShort(camera) {
+  const place = camera?.mapPlace || getCachedCameraPlace(camera);
+  if (place?.label) {
+    applyCameraMapPlace(camera, place);
+    return place.label;
+  }
   const [cleanA, cleanB] = getCameraDisplayRoads(camera);
   if (cleanA && cleanB) {
     return `${cleanA} × ${cleanB}`;
@@ -3382,9 +3465,10 @@ function isLikelyDirectImageStream(url = "") {
   return true;
 }
 
-const CCTV_ROAD_CACHE_KEY = "cctv-cross-road-cache-v1";
+const CCTV_ROAD_CACHE_KEY = "cctv-place-label-cache-v3";
 const CCTV_MISSING_CROSS_LABEL = "交叉路名待補";
 const CCTV_CROSS_LOOKUP_LABEL = "交叉路名查詢中…";
+const CCTV_INTERSECTION_MAX_M = 55;
 let cctvRoadCache = null;
 let cctvRoadLookupQueue = Promise.resolve();
 let cityCameraRoadIndex = null;
@@ -3452,6 +3536,218 @@ function saveCctvRoadCache() {
   } catch {
     /* ignore quota */
   }
+}
+
+function isIntersectionRoadName(name = "") {
+  const token = normalizeRoadToken(toHantStreetName(name));
+  if (!token || looksLikeCameraCode(token) || /^\d+[巷弄號]$/.test(token)) {
+    return false;
+  }
+  return /路|街|大道|大橋|快速道路|公路|便道|國道|省道|縣道|交流道|匝道|引道/.test(token) || /橋/.test(token);
+}
+
+function parseStreetIntRoads(address = "") {
+  return toHantStreetName(address)
+    .split(/\s*(?:&|與|\/|／)\s*/)
+    .map((part) => normalizeRoadToken(part))
+    .filter((part) => isIntersectionRoadName(part))
+    .slice(0, 2);
+}
+
+function splitRoadAndHouse(address = "", addNum = "") {
+  const raw = toHantStreetName(address).replace(/\s+/g, "");
+  const num = String(addNum || "").replace(/號/g, "").trim();
+  if (num && raw.endsWith(`${num}號`)) {
+    return { road: raw.slice(0, -`${num}號`.length), house: `${num}號` };
+  }
+  if (num && raw.endsWith(num)) {
+    return { road: raw.slice(0, -num.length), house: `${num}號` };
+  }
+  const match = raw.match(/^(.*?)(\d+(?:[-之]\d+)*)號$/);
+  if (match && /[路街巷弄大道橋]/.test(match[1])) {
+    return { road: match[1], house: `${match[2]}號` };
+  }
+  return { road: raw, house: num ? `${num}號` : "" };
+}
+
+function arcGisPlaceDistanceM(lat, lon, payload) {
+  const loc = payload?.location;
+  const y = Number(loc?.y);
+  const x = Number(loc?.x);
+  if (!Number.isFinite(y) || !Number.isFinite(x)) {
+    return Infinity;
+  }
+  return getDistanceKm(lat, lon, y, x) * 1000;
+}
+
+async function reverseGeocodeArcGis(lat, lon, featureTypes) {
+  const url = new URL("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode");
+  url.searchParams.set("f", "pjson");
+  url.searchParams.set("location", `${lon},${lat}`);
+  url.searchParams.set("langCode", "zh-TW");
+  url.searchParams.set("featureTypes", featureTypes);
+  url.searchParams.set("outSR", "4326");
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    return null;
+  }
+  const payload = await response.json();
+  if (!payload?.address || payload.error) {
+    return null;
+  }
+  return payload;
+}
+
+function buildIntersectionPlace(camera, roads = []) {
+  const unique = [];
+  roads.forEach((name) => {
+    const token = aliasProvincialRoadName(camera, toHantStreetName(name));
+    if (
+      token &&
+      isIntersectionRoadName(token) &&
+      !unique.some((existing) => areRelatedRoadNames(existing, token))
+    ) {
+      unique.push(token);
+    }
+  });
+  if (unique.length < 2) {
+    return null;
+  }
+  return {
+    type: "intersection",
+    roads: unique.slice(0, 2),
+    label: `${unique[0]} × ${unique[1]}`,
+    source: "live-map"
+  };
+}
+
+function buildSegmentPlace(camera, road = "", house = "") {
+  const token = aliasProvincialRoadName(camera, toHantStreetName(road));
+  if (!token || looksLikeCameraCode(token)) {
+    return null;
+  }
+  const houseLabel = house && !token.includes(house) ? house : "";
+  return {
+    type: "segment",
+    road: token,
+    house: houseLabel,
+    label: houseLabel ? `${token} ${houseLabel}` : token,
+    source: "live-map"
+  };
+}
+
+async function lookupNearbyNamedRoads(lat, lon) {
+  try {
+    const query = `[out:json][timeout:20];(way(around:40,${lat},${lon})["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified|living_street)$"]["name"];);out tags;`;
+    const response = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: `data=${encodeURIComponent(query)}`
+    });
+    if (!response.ok) {
+      return [];
+    }
+    const payload = await response.json();
+    const names = [];
+    (payload.elements || []).forEach((el) => {
+      const token = normalizeRoadToken(el?.tags?.name);
+      if (token && !names.includes(token)) {
+        names.push(token);
+      }
+    });
+    return names;
+  } catch {
+    return [];
+  }
+}
+
+async function lookupCameraPlaceFromLiveMaps(camera) {
+  const lat = Number(camera.gisy);
+  const lon = Number(camera.gisx);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return null;
+  }
+  const cached = getCachedCameraPlace(camera);
+  if (cached) {
+    return applyCameraMapPlace(camera, cached);
+  }
+
+  try {
+    const streetInt = await reverseGeocodeArcGis(lat, lon, "StreetInt");
+    if (streetInt && arcGisPlaceDistanceM(lat, lon, streetInt) <= CCTV_INTERSECTION_MAX_M) {
+      const roads = parseStreetIntRoads(streetInt.address?.Address || streetInt.address?.ShortLabel || "");
+      const place = buildIntersectionPlace(camera, roads);
+      if (place) {
+        setCachedCameraPlace(camera, place);
+        return applyCameraMapPlace(camera, place);
+      }
+    }
+  } catch {
+    /* try address next */
+  }
+
+  try {
+    const point =
+      (await reverseGeocodeArcGis(lat, lon, "PointAddress")) ||
+      (await reverseGeocodeArcGis(lat, lon, "StreetAddress"));
+    if (point && arcGisPlaceDistanceM(lat, lon, point) <= 80) {
+      const split = splitRoadAndHouse(point.address?.Address || point.address?.ShortLabel || "", point.address?.AddNum);
+      const place = buildSegmentPlace(camera, split.road, split.house);
+      if (place) {
+        setCachedCameraPlace(camera, place);
+        return applyCameraMapPlace(camera, place);
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+
+  const nearbyRoads = await lookupNearbyNamedRoads(lat, lon);
+  const intersection = buildIntersectionPlace(camera, nearbyRoads);
+  if (intersection) {
+    setCachedCameraPlace(camera, intersection);
+    return applyCameraMapPlace(camera, intersection);
+  }
+
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lon));
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("zoom", "18");
+    url.searchParams.set("addressdetails", "1");
+    const response = await fetch(url.toString(), {
+      headers: { Accept: "application/json", "User-Agent": "jin-weather-cctv-labels/1.0" }
+    });
+    if (response.ok) {
+      const payload = await response.json();
+      const address = payload.address || {};
+      const road = address.road || address.pedestrian || address.residential || "";
+      const house = address.house_number || "";
+      const place = buildSegmentPlace(camera, road, /號$/.test(house) ? house : house ? `${house}號` : "");
+      if (place) {
+        setCachedCameraPlace(camera, place);
+        return applyCameraMapPlace(camera, place);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const street = await reverseGeocodeArcGis(lat, lon, "StreetName");
+    if (street && arcGisPlaceDistanceM(lat, lon, street) <= 80) {
+      const name = toHantStreetName(street.address?.Address || street.address?.ShortLabel || "");
+      const place = buildSegmentPlace(camera, name, "");
+      if (place) {
+        setCachedCameraPlace(camera, place);
+        return applyCameraMapPlace(camera, place);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
 }
 
 function getCameraCoordKey(camera) {
@@ -3598,8 +3894,12 @@ function getCameraIntersectionRoads(camera, { allowLookup = true } = {}) {
   pushUnique(camera.crossRoad);
 
   if (allowLookup && parts.length === 1) {
-    const cached = loadCctvRoadCache()[getCameraCoordKey(camera)];
-    pushUnique(cached);
+    const cached = getCachedCameraPlace(camera);
+    if (cached?.roads) {
+      cached.roads.forEach((name) => pushUnique(name));
+    } else if (cached?.road) {
+      pushUnique(cached.road);
+    }
   }
   if (allowLookup && parts.length === 1) {
     pushUnique(findNeighborCrossRoad(camera));
@@ -3690,10 +3990,30 @@ async function lookupCrossRoadFromMap(lat, lon, primaryRoad = "") {
 
 function queueCrossRoadLookup(task) {
   cctvRoadLookupQueue = cctvRoadLookupQueue
-    .then(() => new Promise((resolve) => setTimeout(resolve, 1100)))
+    .then(() => new Promise((resolve) => setTimeout(resolve, 280)))
     .then(task)
     .catch(() => {});
   return cctvRoadLookupQueue;
+}
+
+function refreshCctvMarkerPlace(camera) {
+  const label = formatCameraIntersectionShort(camera);
+  (mapLegendMarkers.cctv || []).forEach((marker) => {
+    if (marker._cctvCamera?.id !== camera.id) {
+      return;
+    }
+    marker._legendPlace = label;
+    marker._cctvCamera = camera;
+    try {
+      marker.setIcon(getCctvThumbIcon(camera));
+      marker.setPopupContent(buildCctvMapPopupHtml(camera));
+      if (marker.options) {
+        marker.options.title = label;
+      }
+    } catch {
+      /* ignore */
+    }
+  });
 }
 
 function scheduleCameraCrossRoadEnrichment(card, camera) {
@@ -3701,9 +4021,12 @@ function scheduleCameraCrossRoadEnrichment(card, camera) {
   if (!roadEl || roadEl.dataset.lookupState === "done") {
     return;
   }
-  const [roadA, roadB] = getCameraIntersectionRoads(camera);
-  if (roadB !== CCTV_MISSING_CROSS_LABEL) {
+  const cached = getCachedCameraPlace(camera);
+  if (cached) {
+    applyCameraMapPlace(camera, cached);
+    roadEl.textContent = formatCityCameraCaption(camera);
     roadEl.dataset.lookupState = "done";
+    refreshCctvMarkerPlace(camera);
     return;
   }
   const lat = Number(camera.gisy);
@@ -3713,18 +4036,42 @@ function scheduleCameraCrossRoadEnrichment(card, camera) {
     return;
   }
 
-  roadEl.textContent = `交叉路口：${roadA} × ${CCTV_CROSS_LOOKUP_LABEL}`;
+  roadEl.textContent = `${formatCityCameraCaption(camera)}（路名更新中）`;
   roadEl.dataset.lookupState = "pending";
   queueCrossRoadLookup(async () => {
-    const found = await lookupCrossRoadFromMap(lat, lon, roadA);
-    if (found) {
-      camera.crossRoad = found;
-      camera.crossRoadSource = camera.crossRoadSource || "map-lookup";
-      roadEl.textContent = `交叉路口：${roadA} × ${found}`;
+    const place = await lookupCameraPlaceFromLiveMaps(camera);
+    if (place?.label) {
+      roadEl.textContent = formatCityCameraCaption(camera);
+      refreshCctvMarkerPlace(camera);
     } else {
-      roadEl.textContent = `交叉路口：${roadA} × ${CCTV_MISSING_CROSS_LABEL}`;
+      const [roadA, roadB] = getCameraIntersectionRoads(camera, { allowLookup: false });
+      roadEl.textContent =
+        roadA && roadB && roadB !== CCTV_MISSING_CROSS_LABEL
+          ? `交叉路口：${roadA} × ${roadB}`
+          : formatCityCameraCaption(camera);
     }
     roadEl.dataset.lookupState = "done";
+  });
+}
+
+function scheduleCameraMapPlaceEnrichment(camera) {
+  if (!camera || getCachedCameraPlace(camera)?.label || camera._placeLookupQueued) {
+    if (getCachedCameraPlace(camera)) {
+      applyCameraMapPlace(camera, getCachedCameraPlace(camera));
+    }
+    return;
+  }
+  const lat = Number(camera.gisy);
+  const lon = Number(camera.gisx);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return;
+  }
+  camera._placeLookupQueued = true;
+  queueCrossRoadLookup(async () => {
+    const place = await lookupCameraPlaceFromLiveMaps(camera);
+    if (place?.label) {
+      refreshCctvMarkerPlace(camera);
+    }
   });
 }
 
@@ -4075,6 +4422,13 @@ function looksLikeCameraCode(text = "") {
 }
 
 function formatCityCameraCaption(camera) {
+  const place = camera?.mapPlace || getCachedCameraPlace(camera);
+  if (place?.type === "intersection" && place.label) {
+    return `交叉路口：${place.label}`;
+  }
+  if (place?.label) {
+    return place.label;
+  }
   const [roadA, roadB] = getCameraIntersectionRoads(camera);
   const hasRoadA = roadA && !looksLikeCameraCode(roadA);
   const hasRoadB =
@@ -4086,7 +4440,7 @@ function formatCityCameraCaption(camera) {
     return `交叉路口：${roadA} × ${roadB}`;
   }
   if (hasRoadA) {
-    return hasRoadB ? `交叉路口：${roadA} × ${roadB}` : roadA;
+    return roadA;
   }
   const landTown = camera?.landTown || resolveCameraLandDistrict(camera);
   if (landTown) {
@@ -11701,19 +12055,49 @@ function getCameraPreviewHtml(camera, className = "cctv-map-popup-media") {
     : `<iframe class="${className} cctv-map-popup-frame" src="${safeUrl}" title="${alt}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
 }
 
+function getCctvMapRoadLabelHtml(camera) {
+  const place = camera?.mapPlace || getCachedCameraPlace(camera);
+  let roads = [];
+  if (place?.type === "intersection" && Array.isArray(place.roads)) {
+    roads = place.roads.map((name) => String(name || "").trim()).filter(Boolean).slice(0, 2);
+  }
+  if (roads.length < 2) {
+    const [roadA, roadB] = getCameraDisplayRoads(camera);
+    if (roadA && roadB) {
+      roads = [roadA, roadB];
+    }
+  }
+  if (roads.length >= 2) {
+    return `<span class="cctv-map-road-label cctv-map-road-label-int"><span>${escapeMapLegendHtml(
+      roads[0]
+    )}</span><span>${escapeMapLegendHtml(roads[1])}</span></span>`;
+  }
+  const label = formatCameraIntersectionShort(camera);
+  if (
+    !label ||
+    label === "路口" ||
+    label === CCTV_MISSING_CROSS_LABEL ||
+    label === CCTV_CROSS_LOOKUP_LABEL
+  ) {
+    return "";
+  }
+  return `<span class="cctv-map-road-label">${escapeMapLegendHtml(label)}</span>`;
+}
+
 function getCctvThumbIcon(camera) {
   const streamUrl = String(camera?.html || "").trim();
+  const labelHtml = getCctvMapRoadLabelHtml(camera);
   if (isLikelyDirectImageStream(streamUrl)) {
     return L.divIcon({
       className: "cctv-map-thumb-marker",
-      html: `<span class="cctv-map-thumb">${getCameraPreviewHtml(camera, "cctv-map-thumb-media")}</span>`,
+      html: `<span class="cctv-map-pin">${labelHtml}<span class="cctv-map-thumb">${getCameraPreviewHtml(camera, "cctv-map-thumb-media")}</span></span>`,
       iconSize: [44, 34],
       iconAnchor: [22, 17]
     });
   }
   return L.divIcon({
     className: "cctv-map-thumb-marker",
-    html: `<span class="cctv-map-ring" aria-hidden="true"></span>`,
+    html: `<span class="cctv-map-pin">${labelHtml}<span class="cctv-map-ring" aria-hidden="true"></span></span>`,
     iconSize: [16, 16],
     iconAnchor: [8, 8]
   });
@@ -11769,6 +12153,7 @@ function updateCameraMapLayer() {
     marker._cctvNameOnly = true;
     marker._cctvCamera = camera;
     mapLegendMarkers.cctv.push(marker);
+    scheduleCameraMapPlaceEnrichment(camera);
   });
   addVisibleLegendMarkers(mapCameraLayer, ["cctv"]);
   mapLayerVisibility["cctv-points"] = isMapCategoryVisible("cctv");
