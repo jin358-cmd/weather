@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v206-locate-halo-05mm";
+const SW_VERSION = "jin-v207-merge-category-notices";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -426,6 +426,86 @@ async function filterCooldownMessages(messages, city, { force = false } = {}) {
 
 function isRecoveryNotificationLine(text) {
   return /消退|解除|已恢復/.test(String(text || ""));
+}
+
+const NOTIFY_CATEGORY_ORDER = [
+  "closure",
+  "flood",
+  "typhoon",
+  "earthquake",
+  "power",
+  "water",
+  "cwa-warning",
+  "weather",
+  "air",
+  "other"
+];
+
+function getNotifyCategoryKey(text = "") {
+  const raw = String(text || "");
+  if (/停班停課/.test(raw)) {
+    return "closure";
+  }
+  if (/積淹水/.test(raw)) {
+    return "flood";
+  }
+  if (/停電/.test(raw)) {
+    return "power";
+  }
+  if (/停水/.test(raw)) {
+    return "water";
+  }
+  if (/地震/.test(raw)) {
+    return "earthquake";
+  }
+  if (/颱風/.test(raw)) {
+    return "typhoon";
+  }
+  if (/空氣/.test(raw)) {
+    return "air";
+  }
+  if (/氣象署警特報|【氣象署/.test(raw)) {
+    return "cwa-warning";
+  }
+  if (/【天氣】|【降雨】/.test(raw)) {
+    return "weather";
+  }
+  return "other";
+}
+
+function mergeNotifyLinesByCategory(lines = []) {
+  const groups = new Map();
+  (lines || []).forEach((line) => {
+    const text = String(line || "").trim();
+    if (!text) {
+      return;
+    }
+    const key = getNotifyCategoryKey(text);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    const list = groups.get(key);
+    if (!list.includes(text)) {
+      list.push(text);
+    }
+  });
+  return NOTIFY_CATEGORY_ORDER.filter((key) => groups.has(key)).flatMap((key) => groups.get(key));
+}
+
+function getMergedNotifyBatchTitle(lines = []) {
+  const rows = (lines || []).map((line) => String(line || "").trim()).filter(Boolean);
+  if (!rows.length) {
+    return "災害狀態更新";
+  }
+  const allRecovery = rows.every(isRecoveryNotificationLine);
+  const anyRecovery = rows.some(isRecoveryNotificationLine);
+  if (allRecovery) {
+    return "災害警戒解除";
+  }
+  if (anyRecovery) {
+    return "災害狀態更新";
+  }
+  return "災害警戒通知";
 }
 
 async function fetchNearbyFloodRows(lat, lon) {
@@ -1033,21 +1113,27 @@ async function showSystemNotification(title, body, tag) {
 }
 
 async function showNotificationBatch(items = []) {
-  for (const [index, item] of (items || []).entries()) {
-    const body = String(item?.body || "")
+  const lines = [];
+  (items || []).forEach((item) => {
+    String(item?.body || "")
       .split(/\n+/)
       .map((line) => line.trim())
       .filter((line) => line && !isDroppedNcdrAlertText(line))
-      .join("\n");
-    if (!body) {
-      continue;
-    }
-    await showSystemNotification(
-      item.title || "預報訂閱通知",
-      body,
-      item.tag || `jin-bg-${Date.now()}-${index}`
-    );
+      .forEach((line) => {
+        if (!lines.includes(line)) {
+          lines.push(line);
+        }
+      });
+  });
+  const merged = mergeNotifyLinesByCategory(lines);
+  if (!merged.length) {
+    return;
   }
+  const title =
+    items.length === 1 && items[0]?.title
+      ? items[0].title
+      : getMergedNotifyBatchTitle(merged);
+  await showSystemNotification(title, merged.join("\n"), items[0]?.tag || `jin-bg-${Date.now()}`);
 }
 
 async function saveSubscriptionDigest(payload = {}) {
@@ -1089,14 +1175,16 @@ async function runBackgroundSubscriptionCheck() {
   const previousSet = new Set(previousMessages);
   const changed = outgoing.filter((line) => !previousSet.has(line));
   const fresh = await filterCooldownMessages(changed, prefs.city || "", { force: false });
-  if (!fresh.length) {
+  const merged = mergeNotifyLinesByCategory(fresh);
+  if (!merged.length) {
     await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
     return { checked: true, notified: false, reason: "unchanged" };
   }
-  for (const [index, message] of fresh.entries()) {
-    const title = isRecoveryNotificationLine(message) ? "災害警戒解除" : "預報訂閱通知";
-    await showSystemNotification(title, message, `jin-bg-${Date.now()}-${index}`);
-  }
+  await showSystemNotification(
+    getMergedNotifyBatchTitle(merged),
+    merged.join("\n"),
+    `jin-bg-${Date.now()}`
+  );
   await idbSet(LAST_DIGEST_KEY, outgoing.join("\n"));
   await idbSet(LAST_MESSAGES_KEY, outgoing);
   await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
@@ -1184,12 +1272,12 @@ self.addEventListener("push", (event) => {
         .map((item) => item.trim())
         .filter(Boolean);
   event.waitUntil(
-    showNotificationBatch(
-      bodies.map((body, index) => ({
-        title: payload.title || "預報訂閱通知",
-        body,
-        tag: payload.tag ? `${payload.tag}-${index}` : `jin-push-${Date.now()}-${index}`
-      }))
-    )
+    showNotificationBatch([
+      {
+        title: payload.title || getMergedNotifyBatchTitle(bodies),
+        body: mergeNotifyLinesByCategory(bodies).join("\n"),
+        tag: payload.tag || `jin-push-${Date.now()}`
+      }
+    ])
   );
 });
