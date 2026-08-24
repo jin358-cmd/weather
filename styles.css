@@ -4968,7 +4968,8 @@ body.eq-sheet-open {
 .leaflet-overlay-pane,
 .leaflet-overlay-pane svg,
 .leaflet-pane.leaflet-focusPane-pane,
-.leaflet-pane.leaflet-focusPane-pane svg {
+.leaflet-pane.leaflet-focusPane-pane svg,
+.leaflet-pane.leaflet-cameraPane-pane {
   overflow: visible !important;
 }
 
