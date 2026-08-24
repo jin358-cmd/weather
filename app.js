@@ -9118,7 +9118,7 @@ let torchStream = null;
 let torchTrack = null;
 
 function isWebTorchLikely() {
-  if (isDesktopBrowser() || isLikelyIosDevice()) {
+  if (!isLikelyAndroidDevice()) {
     return false;
   }
   return Boolean(navigator.mediaDevices?.getUserMedia);
