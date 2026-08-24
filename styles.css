@@ -4427,16 +4427,22 @@ input[type="checkbox"] {
   cursor: default;
 }
 
+.leaflet-focus-circle,
+.leaflet-focus-circle-halo {
+  --focus-ring-width: 6px;
+  --focus-halo-width: 0.5mm;
+}
+
 .leaflet-focus-circle {
   stroke: #7af6ff !important;
-  stroke-width: 6px !important;
+  stroke-width: var(--focus-ring-width) !important;
   stroke-dasharray: none !important;
   fill: rgba(0, 212, 255, 0.22) !important;
 }
 
 .leaflet-focus-circle-halo {
   stroke: #ffffff !important;
-  stroke-width: 12px !important;
+  stroke-width: calc(var(--focus-ring-width) + (2 * var(--focus-halo-width))) !important;
   stroke-dasharray: none !important;
   fill: none !important;
 }
@@ -6088,15 +6094,21 @@ body.eq-sheet-open {
   }
 }
 
+.leaflet-focus-circle,
+.leaflet-focus-circle-halo {
+  --focus-ring-width: 6px;
+  --focus-halo-width: 0.5mm;
+}
+
 .leaflet-focus-circle {
   stroke: #7af6ff;
-  stroke-width: 6;
+  stroke-width: var(--focus-ring-width);
   fill: rgba(0, 212, 255, 0.22);
 }
 
 .leaflet-focus-circle-halo {
   stroke: #ffffff;
-  stroke-width: 12;
+  stroke-width: calc(var(--focus-ring-width) + (2 * var(--focus-halo-width)));
   fill: none;
 }
 
