@@ -473,18 +473,33 @@ body {
 }
 
 .pwa-splash-icon {
-  width: 96px;
-  height: 96px;
-  border-radius: 22px;
+  width: 144px;
+  height: 144px;
+  border-radius: 32px;
   object-fit: cover;
 }
 
 .pwa-splash-title {
   margin: 0;
-  font-size: 28px;
+  max-width: min(92vw, 28rem);
+  font-size: clamp(22px, 3.4vw, 30px);
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  text-align: center;
   color: #f4efe6;
+}
+
+@media (min-width: 861px) {
+  .pwa-splash-icon {
+    width: 216px;
+    height: 216px;
+    border-radius: 48px;
+  }
+
+  .pwa-splash-title {
+    font-size: 32px;
+  }
 }
 
 html.pwa-splash-open,
