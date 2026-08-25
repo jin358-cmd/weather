@@ -5282,13 +5282,14 @@ body.eq-sheet-open {
 
 .cctv-map-thumb {
   display: block;
-  width: 44px;
-  height: 34px;
+  width: 80px;
+  height: 60px;
   overflow: hidden;
   border-radius: 6px;
   border: 2px solid #0096c7;
   background: #123;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  position: relative;
 }
 
 .cctv-map-thumb-media,
@@ -5300,6 +5301,20 @@ body.eq-sheet-open {
   object-fit: cover;
   border: 0;
   pointer-events: none;
+}
+
+.cctv-map-thumb.cctv-map-thumb--frame iframe,
+.cctv-map-thumb--frame iframe.cctv-map-thumb-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 320px;
+  height: 240px;
+  transform: scale(0.25);
+  transform-origin: top left;
+  pointer-events: none;
+  border: 0;
+  background: #111;
 }
 
 .cctv-map-thumb-fallback {

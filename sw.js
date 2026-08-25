@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v223-cctv-filters-channel";
+const SW_VERSION = "jin-v224-cctv-thumbs";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
