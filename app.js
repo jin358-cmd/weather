@@ -613,6 +613,7 @@ const aiAlertList = document.querySelector("#aiAlertList");
 const earthquakeMeta = document.querySelector("#earthquakeMeta");
 const earthquakeSummary = document.querySelector("#earthquakeSummary");
 const earthquakeList = document.querySelector("#earthquakeList");
+const earthquakeMoreList = document.querySelector("#earthquakeMoreList");
 const earthquakeListDetails = document.querySelector("#earthquakeListDetails");
 const earthquakeListSummary = document.querySelector("#earthquakeListSummary");
 const earthquakeListCollapseBtn = document.querySelector("#earthquakeListCollapseBtn");
@@ -811,6 +812,7 @@ const EARTHQUAKE_NATIONAL_INTENSITY = 4;
 const EARTHQUAKE_RECENT_HOURS = 168;
 const EARTHQUAKE_COORD_CACHE_KEY = "cwaEarthquakeCoordCacheV1";
 const EARTHQUAKE_DETAIL_ENRICH_LIMIT = 12;
+const EARTHQUAKE_PREVIEW_LIMIT = 3;
 const EARTHQUAKE_LIST_DAYS = 2;
 const EARTHQUAKE_MAP_LIMIT = 4;
 const EARTHQUAKE_SCWEB_PAGE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
@@ -8237,24 +8239,28 @@ function syncEarthquakeListCollapse(count, options = {}) {
   if (!earthquakeListDetails || !earthquakeListSummary) {
     return;
   }
-  earthquakeListDetails.dataset.count = String(Number(count) || 0);
-  earthquakeListDetails.dataset.error = options.error ? "1" : "0";
+  const n = Number(count) || 0;
+  const error = Boolean(options.error);
+  const show = !error && n > 0;
+  earthquakeListDetails.hidden = !show;
+  earthquakeListDetails.dataset.count = String(n);
+  earthquakeListDetails.dataset.error = error ? "1" : "0";
+  if (!show) {
+    earthquakeListDetails.open = false;
+    if (earthquakeListCollapseBtn) {
+      earthquakeListCollapseBtn.hidden = true;
+    }
+    return;
+  }
   const updateLabels = () => {
     const open = earthquakeListDetails.open;
-    const n = Number(earthquakeListDetails.dataset.count) || 0;
-    const error = earthquakeListDetails.dataset.error === "1";
-    if (error) {
-      earthquakeListSummary.textContent = open ? "▾ 收合讀取失敗說明" : "▸ 地震資料讀取失敗";
-    } else {
-      earthquakeListSummary.textContent = open
-        ? `▾ 收合 2 日內地震通報（${n} 筆）`
-        : `▸ 展開 2 日內地震通報（${n} 筆）`;
-    }
+    const restCount = Number(earthquakeListDetails.dataset.count) || 0;
+    earthquakeListSummary.textContent = open
+      ? `▾ 收合其餘 2 日內地震通報（${restCount} 筆）`
+      : `▸ 展開其餘 2 日內地震通報（${restCount} 筆）`;
     if (earthquakeListCollapseBtn) {
       earthquakeListCollapseBtn.hidden = !open;
-      earthquakeListCollapseBtn.textContent = error
-        ? "▾ 收合讀取失敗說明"
-        : `▾ 收合 2 日內地震通報（${n} 筆）`;
+      earthquakeListCollapseBtn.textContent = `▾ 收合其餘 2 日內地震通報（${restCount} 筆）`;
     }
   };
   if (earthquakeListDetails.dataset.boundToggle !== "1") {
@@ -8282,6 +8288,9 @@ function renderEarthquakePanel() {
   appState.earthquakes = allQuakes;
   const quakes = getRecentEarthquakesForList();
   earthquakeList.innerHTML = "";
+  if (earthquakeMoreList) {
+    earthquakeMoreList.innerHTML = "";
+  }
   if (earthquakeSummary) {
     earthquakeSummary.hidden = true;
   }
@@ -8293,10 +8302,15 @@ function renderEarthquakePanel() {
     return;
   }
 
-  quakes.forEach((quake, index) => {
+  const preview = quakes.slice(0, EARTHQUAKE_PREVIEW_LIMIT);
+  const rest = quakes.slice(EARTHQUAKE_PREVIEW_LIMIT);
+  preview.forEach((quake, index) => {
     earthquakeList.append(createEarthquakeListItem(quake, { pinned: index === 0 }));
   });
-  syncEarthquakeListCollapse(quakes.length);
+  rest.forEach((quake) => {
+    earthquakeMoreList?.append(createEarthquakeListItem(quake));
+  });
+  syncEarthquakeListCollapse(rest.length);
 }
 
 function buildEarthquakePopupHtml(quake) {
@@ -8514,6 +8528,9 @@ async function fetchEarthquakeData() {
       }
       if (earthquakeList) {
         earthquakeList.innerHTML = `<li class="status-warn">請稍後重試，或改看 <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>。</li>`;
+      }
+      if (earthquakeMoreList) {
+        earthquakeMoreList.innerHTML = "";
       }
       syncEarthquakeListCollapse(0, { error: true });
       updateEarthquakeMapLayer();

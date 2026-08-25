@@ -17,7 +17,7 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=232" />
+    <link rel="stylesheet" href="./styles.css?v=233" />
     <link rel="stylesheet" href="./legacy-themes.css?v=204" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -290,11 +290,12 @@
           <p id="earthquakeMeta" class="timestamp earthquake-meta">讀取中...</p>
         </div>
         <p id="earthquakeSummary" class="earthquake-summary" hidden>資料讀取中...</p>
-        <details class="earthquake-list-details" id="earthquakeListDetails">
-          <summary class="earthquake-list-summary" id="earthquakeListSummary">▸ 展開 2 日內地震通報</summary>
-          <ul id="earthquakeList" class="analysis-list earthquake-list" aria-live="polite"></ul>
+        <ul id="earthquakeList" class="analysis-list earthquake-list" aria-live="polite"></ul>
+        <details class="earthquake-list-details" id="earthquakeListDetails" hidden>
+          <summary class="earthquake-list-summary" id="earthquakeListSummary">▸ 展開其餘 2 日內地震通報</summary>
+          <ul id="earthquakeMoreList" class="analysis-list earthquake-list earthquake-more-list"></ul>
           <button type="button" class="earthquake-list-collapse" id="earthquakeListCollapseBtn" hidden>
-            ▾ 收合 2 日內地震通報
+            ▾ 收合其餘 2 日內地震通報
           </button>
         </details>
       </section>
@@ -545,7 +546,7 @@
             <li>避難場所：內政部消防署開放資料「避難收容處所點位檔」，由各縣市政府核定。</li>
             <li>
               地震通報：中央氣象署台灣地區有感／顯著有感地震（測報中心公開頁面鏡像），並串接
-              公眾警示國家緊急訊息通報內容。列表提供台北時間 2 日內通報，整份列表收入合區，展開後可看全部；最上方鎖定最新通報。災害地圖僅標示當日最新最多 4 個震央點位，最新為亮紫脈動點、其餘為黃點。點選地震震央圖層時地圖會顯示全台灣範圍，方便檢視震央位置。
+              公眾警示國家緊急訊息通報內容。列表提供台北時間 2 日內通報：預設顯示 3 筆（最上方鎖定最新通報），其餘收入底部「展開其餘 2 日內地震通報」收合區，再點一次可收合。災害地圖僅標示當日最新最多 4 個震央點位，最新為亮紫脈動點、其餘為黃點。點選地震震央圖層時地圖會顯示全台灣範圍，方便檢視震央位置。
             </li>
             <li>停電區域：台電災害停電通報（XML）與計畫性工作停電公開資料（ZIP）。</li>
             <li>若公告暫無資料或來源暫時無法連線，頁面會顯示提示並保留上一筆成功結果。</li>
@@ -649,7 +650,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=228" defer></script>
+    <script src="./app.js?v=229" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=5" defer></script>
   </body>
