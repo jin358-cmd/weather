@@ -17,7 +17,7 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=219" />
+    <link rel="stylesheet" href="./styles.css?v=220" />
     <link rel="stylesheet" href="./legacy-themes.css?v=203" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -51,15 +51,6 @@
       </div>
     </aside>
     <video id="torchVideo" class="torch-video" playsinline muted autoplay></video>
-    <aside id="pwaUtilityBar" class="pwa-utility-bar" hidden>
-      <button type="button" id="pwaWeatherChip" class="pwa-weather-chip" aria-label="目前天氣狀態">
-        <span id="pwaWeatherChipText">天氣讀取中</span>
-      </button>
-      <button type="button" id="torchToggleBtn" class="pwa-torch-btn" aria-pressed="false" aria-label="手電筒">
-        <img src="./icons/torch-off-96.png" alt="" class="pwa-torch-icon" id="torchToggleIcon" width="22" height="22">
-        <span id="torchToggleLabel" class="pwa-torch-label">手電筒 關</span>
-      </button>
-    </aside>
     <div class="ambient-bg" aria-hidden="true">
       <span class="cyber-grid"></span>
       <span class="cyber-scanlines"></span>
@@ -646,7 +637,7 @@
             <li>區域記憶：瀏覽器 localStorage 保留上次選取的區域／縣市／鄉鎮。</li>
             <li>停班停課資料：行政院人事行政總處公告頁面（經公開鏡像讀取）。</li>
             <li>氣象署警特報：中央氣象署天氣特報頁（W29，經公開鏡像讀取）。</li>
-            <li>PWA：可安裝到主畫面；離線時顯示快取首頁或基本離線畫面。同一事件同一縣市推播有 30 分鐘冷卻。安裝後若已允許通知，手機會在通知列顯示目前天氣與溫度；手電筒圖示可開關（需裝置支援補光燈）。</li>
+            <li>PWA：可安裝到主畫面；離線時顯示快取首頁或基本離線畫面。同一事件同一縣市推播有 30 分鐘冷卻。安裝後若已允許系統通知，安卓手機會在由上往下拉開的系統通知列固定顯示目前天氣與溫度，並提供手電筒開關（需裝置支援補光燈）。這不是網頁內的列。</li>
             <li>定位點路口 CCTV：交通部運輸資料流通服務（各縣市 CCTV）。預設比照災害地圖，顯示定位範圍直徑 5 公里內路口監控（先列出約 6 組，其餘收合可點開查全部）；縣市可改選全台路口監控或其他縣市／地區，切換時會顯示讀取進度。</li>
             <li>國道CCTV監控：交通部公路局即時 CCTV（預設依定位點縣市最近國道監控點，北向／南向分畫面，可手動改選國道／縣市／監控點）。</li>
             <li>積淹水警示：經濟部水利署 IoW 即時淹水深度感測（公開 API）。</li>
@@ -735,7 +726,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=214" defer></script>
+    <script src="./app.js?v=215" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=2" defer></script>
   </body>

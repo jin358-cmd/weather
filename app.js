@@ -586,12 +586,6 @@ const pwaInstallBtn = document.querySelector("#pwaInstallBtn");
 const pwaInstallDismiss = document.querySelector("#pwaInstallDismiss");
 const pwaInstallTitle = document.querySelector("#pwaInstallTitle");
 const pwaInstallText = document.querySelector("#pwaInstallText");
-const pwaUtilityBar = document.querySelector("#pwaUtilityBar");
-const pwaWeatherChip = document.querySelector("#pwaWeatherChip");
-const pwaWeatherChipText = document.querySelector("#pwaWeatherChipText");
-const torchToggleBtn = document.querySelector("#torchToggleBtn");
-const torchToggleLabel = document.querySelector("#torchToggleLabel");
-const torchToggleIcon = document.querySelector("#torchToggleIcon");
 const torchVideo = document.querySelector("#torchVideo");
 const notificationHint = document.querySelector("#notificationHint");
 const inPageAlertHost = document.querySelector("#inPageAlertHost");
@@ -9044,7 +9038,7 @@ async function refreshPwaInstallBanner() {
     pwaInstallBanner.dataset.installed = "1";
     pwaInstallBanner.hidden = true;
     updatePwaTestChecklist();
-    syncPwaUtilityBar().catch(() => {});
+    pinAndroidWeatherStatusTray().catch(() => {});
     return;
   }
   delete pwaInstallBanner.dataset.installed;
@@ -9070,7 +9064,7 @@ function initPwaInstallExperience() {
       pwaInstallBanner.dataset.installed = "1";
     }
     renderPwaInstallBanner();
-    syncPwaUtilityBar().catch(() => {});
+    pinAndroidWeatherStatusTray().catch(() => {});
   });
   window.matchMedia("(display-mode: standalone)").addEventListener("change", () => {
     refreshPwaInstallBanner().catch(() => renderPwaInstallBanner());
@@ -9108,7 +9102,7 @@ function initPwaInstallExperience() {
     renderPwaInstallBanner();
   });
   refreshPwaInstallBanner().catch(() => renderPwaInstallBanner());
-  syncPwaUtilityBar().catch(() => {});
+  pinAndroidWeatherStatusTray().catch(() => {});
 }
 
 const WEATHER_STATUS_PERIODIC_TAG = "jin-weather-status";
@@ -9156,41 +9150,34 @@ function getWeatherStatusPayload() {
   };
 }
 
-function updatePwaWeatherChip() {
-  if (!pwaWeatherChipText) {
-    return;
-  }
-  const payload = getWeatherStatusPayload();
-  pwaWeatherChipText.textContent = payload.title;
-  if (pwaWeatherChip) {
-    pwaWeatherChip.title = payload.body;
-    pwaWeatherChip.setAttribute("aria-label", `目前天氣 ${payload.title}`);
-  }
-}
-
-function updateTorchButtonUi() {
-  if (!torchToggleBtn) {
-    return;
-  }
-  if (!isWebTorchLikely() || torchCapability === "no") {
-    torchToggleBtn.hidden = true;
-    torchToggleBtn.disabled = true;
-    torchToggleBtn.setAttribute("aria-pressed", "false");
-    if (torchToggleLabel) {
-      torchToggleLabel.textContent = "無手電筒";
+function buildWeatherNotificationOptions(payload) {
+  const torchAvailable = Boolean(payload.torchAvailable);
+  const isOn = Boolean(payload.torchOn);
+  return {
+    body: payload.body || payload.place || "災防通報",
+    tag: WEATHER_STATUS_NOTIFY_TAG,
+    silent: true,
+    renotify: false,
+    requireInteraction: false,
+    ongoing: true,
+    vibrate: [],
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
+    actions: torchAvailable
+      ? [
+          {
+            action: "torch-toggle",
+            title: isOn ? "關閉手電筒" : "開啟手電筒",
+            icon: isOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png"
+          }
+        ]
+      : [],
+    data: {
+      kind: "weather-status",
+      torchOn: isOn,
+      place: payload.place || ""
     }
-    return;
-  }
-  torchToggleBtn.hidden = false;
-  torchToggleBtn.disabled = false;
-  torchToggleBtn.setAttribute("aria-pressed", torchOn ? "true" : "false");
-  torchToggleBtn.title = torchOn ? "關閉手電筒" : "開啟手電筒";
-  if (torchToggleLabel) {
-    torchToggleLabel.textContent = torchOn ? "手電筒 開" : "手電筒 關";
-  }
-  if (torchToggleIcon) {
-    torchToggleIcon.src = torchOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png";
-  }
+  };
 }
 
 function stopTorchStream() {
@@ -9250,7 +9237,6 @@ async function setTorchEnabled(nextOn) {
   if (!isWebTorchLikely()) {
     torchCapability = "no";
     torchOn = false;
-    updateTorchButtonUi();
     return false;
   }
   if (!nextOn) {
@@ -9264,7 +9250,6 @@ async function setTorchEnabled(nextOn) {
     stopTorchStream();
     torchOn = false;
     torchCapability = "yes";
-    updateTorchButtonUi();
     publishWeatherStatusNotification().catch(() => {});
     return true;
   }
@@ -9276,14 +9261,12 @@ async function setTorchEnabled(nextOn) {
     await applyTorchConstraint(track, true);
     torchCapability = "yes";
     torchOn = true;
-    updateTorchButtonUi();
     publishWeatherStatusNotification().catch(() => {});
     return true;
   } catch {
     stopTorchStream();
     torchOn = false;
     torchCapability = "no";
-    updateTorchButtonUi();
     showInPageAlert("手電筒無法開啟", "請允許相機權限，或此裝置沒有補光燈。", {
       timeoutMs: 6000,
       variant: "not-open"
@@ -9297,9 +9280,29 @@ async function toggleTorchFromExternal() {
   await setTorchEnabled(!torchOn);
 }
 
+async function showWeatherStatusOnDevice(payload) {
+  const options = buildWeatherNotificationOptions(payload);
+  await initServiceWorker();
+  const registration = await getNotificationRegistration();
+  if (registration?.showNotification) {
+    try {
+      await registration.showNotification(payload.title, options);
+      return true;
+    } catch {
+      try {
+        const fallback = { ...options };
+        delete fallback.ongoing;
+        await registration.showNotification(payload.title, fallback);
+        return true;
+      } catch {
+        /* fall through */
+      }
+    }
+  }
+  return postToServiceWorker({ type: "SHOW_WEATHER_STATUS", payload });
+}
+
 async function publishWeatherStatusNotification() {
-  updatePwaWeatherChip();
-  updateTorchButtonUi();
   const installed = await isPwaInstalledForTray();
   if (!installed) {
     return false;
@@ -9308,12 +9311,12 @@ async function publishWeatherStatusNotification() {
     return false;
   }
   const payload = getWeatherStatusPayload();
-  await initServiceWorker();
-  return postToServiceWorker({ type: "SHOW_WEATHER_STATUS", payload });
+  const shown = await showWeatherStatusOnDevice(payload);
+  await postToServiceWorker({ type: "SHOW_WEATHER_STATUS", payload });
+  return shown;
 }
 
 function refreshPwaWeatherStatus() {
-  updatePwaWeatherChip();
   publishWeatherStatusNotification().catch(() => {});
 }
 
@@ -9336,20 +9339,14 @@ async function registerWeatherStatusPeriodicSync() {
   }
 }
 
-async function syncPwaUtilityBar() {
-  if (!pwaUtilityBar) {
-    return;
-  }
+async function pinAndroidWeatherStatusTray() {
   const installed = await isPwaInstalledForTray();
-  pwaUtilityBar.hidden = !installed;
   if (!installed) {
     return;
   }
   if (!isWebTorchLikely()) {
     torchCapability = "no";
   }
-  updatePwaWeatherChip();
-  updateTorchButtonUi();
   registerWeatherStatusPeriodicSync().catch(() => {});
   if (typeof Notification !== "undefined" && Notification.permission === "granted") {
     publishWeatherStatusNotification().catch(() => {});
@@ -9373,30 +9370,6 @@ function consumeTorchQuery() {
 }
 
 function initPwaWeatherTorchExperience() {
-  updateTorchButtonUi();
-  pwaWeatherChip?.addEventListener("click", async () => {
-    if (typeof Notification !== "undefined" && Notification.permission === "default") {
-      await ensureNotificationPermission();
-    }
-    const shown = await publishWeatherStatusNotification();
-    if (shown) {
-      showInPageAlert("通知列天氣", "已將目前天氣與溫度固定在通知列。", {
-        timeoutMs: 4500,
-        variant: "subscription"
-      });
-      return;
-    }
-    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-      showInPageAlert("無法顯示通知列天氣", getNotifyPermissionExplain().detail || "請允許系統通知。", {
-        timeoutMs: 7000,
-        variant: "not-open"
-      });
-    }
-  });
-  torchToggleBtn?.addEventListener("click", async (event) => {
-    event.preventDefault();
-    await setTorchEnabled(!torchOn);
-  });
   navigator.serviceWorker?.addEventListener("message", (event) => {
     const data = event.data || {};
     if (data.type === "TORCH_TOGGLE") {
@@ -9404,10 +9377,10 @@ function initPwaWeatherTorchExperience() {
     }
   });
   window.addEventListener("appinstalled", () => {
-    syncPwaUtilityBar().catch(() => {});
+    pinAndroidWeatherStatusTray().catch(() => {});
   });
   window.matchMedia("(display-mode: standalone)").addEventListener("change", () => {
-    syncPwaUtilityBar().catch(() => {});
+    pinAndroidWeatherStatusTray().catch(() => {});
   });
   window.addEventListener("pagehide", () => {
     if (!torchOn) {
@@ -9421,7 +9394,7 @@ function initPwaWeatherTorchExperience() {
     });
   });
   consumeTorchQuery();
-  syncPwaUtilityBar().catch(() => {});
+  pinAndroidWeatherStatusTray().catch(() => {});
 }
 
 function isOfficialWarningCatalogLine(line) {
@@ -13651,8 +13624,8 @@ enableNotifyBtn?.addEventListener("click", async () => {
     return;
   }
   if (mode === "granted") {
-    showInPageAlert("已允許系統通知", "之後警戒推播會同步出現在系統通知。", {
-      timeoutMs: 5000,
+    showInPageAlert("已允許系統通知", "警戒推播會出現在系統通知。安裝桌面版後，天氣與手電筒會固定在安卓由上往下拉開的通知列。", {
+      timeoutMs: 6000,
       variant: "subscription"
     });
     renderSubscriptionStatus("已允許系統通知。");
@@ -14153,7 +14126,7 @@ initServiceWorker()
     renderNotifyPermissionStatus();
     updatePwaTestChecklist();
     updateNotificationHint();
-    await syncPwaUtilityBar();
+    await pinAndroidWeatherStatusTray();
     if (appState.subscription?.email) {
       await enableBackgroundNotifications(appState.subscription).catch(() => {});
     }
