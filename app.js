@@ -6083,8 +6083,10 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
     row.innerHTML = `
       <span class="weekly-forecast-date">${day.monthDay}</span>
       <span class="weekly-forecast-weekday">${index === 0 ? "今天" : day.weekday}</span>
-      <div class="weekly-forecast-icon weekly-forecast-icon-png">${iconHtml}</div>
-      <span class="weekly-forecast-label">${day.label}</span>
+      <div class="weekly-forecast-status">
+        <div class="weekly-forecast-icon weekly-forecast-icon-png">${iconHtml}</div>
+        <span class="weekly-forecast-label">${day.label}</span>
+      </div>
       <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
       <span class="weekly-forecast-rain">
         <span class="weekly-forecast-rain-prob">降雨 ${rainProbText}</span>
