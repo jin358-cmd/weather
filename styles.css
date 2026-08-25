@@ -5107,11 +5107,12 @@ input[type="checkbox"] {
   gap: 10px;
 }
 
-.earthquake-card > .earthquake-list-details .earthquake-list {
+.earthquake-card > .earthquake-list {
   padding-left: 0;
   list-style: none;
 }
 
+.app .earthquake-card > .earthquake-list,
 .app .earthquake-card > .earthquake-list-details {
   width: min(90%, 34rem);
   max-width: 34rem;
@@ -5130,6 +5131,10 @@ input[type="checkbox"] {
   border-radius: 12px;
   background: #f8fafc;
   padding: 0;
+}
+
+.earthquake-list-details[hidden] {
+  display: none !important;
 }
 
 .earthquake-list-summary {

@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v236-eq-purple-collapse";
+const SW_VERSION = "jin-v237-eq-three-rest";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
