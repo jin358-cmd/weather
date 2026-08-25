@@ -590,8 +590,8 @@ body {
   margin: 0;
   padding: 4px 16px;
   border-radius: 999px;
-  background: #e8eaed;
-  color: #2b2924;
+  background: var(--btn-bg, #c2a36b);
+  color: var(--btn-text, #161d27);
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.2;
