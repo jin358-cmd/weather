@@ -14,6 +14,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SUBSCRIBERS_PATH = path.join(ROOT, "data", "subscribers.json");
+const SUBSCRIBERS_CSV_PATH = path.join(ROOT, "data", "subscribers.csv");
+const SUBSCRIBERS_MD_PATH = path.join(ROOT, "data", "subscribers.md");
+const GITHUB_CONTENTS_CSV =
+  "https://api.github.com/repos/jin358-cmd/weather/contents/data/subscribers.csv";
+const GITHUB_CONTENTS_JSON =
+  "https://api.github.com/repos/jin358-cmd/weather/contents/data/subscribers.json";
 // Must match app.js SITE_PUBLIC_URL — subscriber-facing platform link.
 const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
 const BACKUP_TO = process.env.SUBSCRIBER_BACKUP_TO || "jin358@gmail.com";
@@ -115,7 +121,45 @@ async function sendEmail(toEmail, subject, text) {
   return sendWithFormSubmit(toEmail, subject, text);
 }
 
-function buildBackupBody(payload, records) {
+async function testGithubContents(url, label) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "jin358-weather-daily-report"
+      }
+    });
+    const raw = await response.text();
+    let name = "";
+    try {
+      name = JSON.parse(raw)?.name || "";
+    } catch {
+      name = "";
+    }
+    return {
+      label,
+      ok: response.ok && Boolean(name),
+      status: response.status,
+      name: name || "-"
+    };
+  } catch (error) {
+    return {
+      label,
+      ok: false,
+      status: 0,
+      name: "-",
+      error: String(error?.message || error)
+    };
+  }
+}
+
+function formatConnectionLine(result) {
+  const mark = result.ok ? "正常" : "異常";
+  const extra = result.error ? `｜${result.error}` : "";
+  return `${result.label}：${mark}（HTTP ${result.status}｜${result.name}）${extra}`;
+}
+
+function buildBackupBody(payload, records, connectionResults, tablePreview) {
   const dateKey = taipeiDateKey();
   const listLines = records.length
     ? records
@@ -135,20 +179,27 @@ function buildBackupBody(payload, records) {
   };
 
   return [
-    "【訂閱者資料庫每日備份】",
+    "【訂閱者資料庫每日備份／連接回報】",
     `備份日期：${dateKey}（台北時間 ${taipeiDateTime()}）`,
     `收件備份信箱：${BACKUP_TO}`,
     `訂閱筆數：${records.length}`,
     `平台：${SITE_PUBLIC_URL}`,
     `資料來源：data/subscribers.json`,
+    `累計表格：data/subscribers.csv、data/subscribers.md`,
+    "",
+    "—— GitHub 上傳連接測試 ——",
+    ...connectionResults.map(formatConnectionLine),
     "",
     "—— 訂閱名單摘要 ——",
     listLines,
     "",
+    "—— 累計表格預覽 ——",
+    tablePreview || "（尚無表格）",
+    "",
     "—— 完整資料庫 JSON ——",
     JSON.stringify(database, null, 2),
     "",
-    "本信為系統自動每日備份，請妥善保存。"
+    "本信為系統自動每日備份與連接回報，請妥善保存。"
   ].join("\n");
 }
 
@@ -157,15 +208,34 @@ async function main() {
   const payload = JSON.parse(raw);
   const list = Array.isArray(payload.subscribers) ? payload.subscribers : [];
   const records = list.map(normalizeRecord).filter(Boolean);
+  let tablePreview = "";
+  try {
+    tablePreview = await readFile(SUBSCRIBERS_MD_PATH, "utf8");
+  } catch {
+    try {
+      tablePreview = await readFile(SUBSCRIBERS_CSV_PATH, "utf8");
+    } catch {
+      tablePreview = "（尚未產生表格檔）";
+    }
+  }
+
+  const connectionResults = await Promise.all([
+    testGithubContents(GITHUB_CONTENTS_CSV, "subscribers.csv"),
+    testGithubContents(GITHUB_CONTENTS_JSON, "subscribers.json")
+  ]);
 
   const dateKey = taipeiDateKey();
-  const subject = `【訂閱名單備份】${dateKey}｜${records.length} 筆`;
-  const body = buildBackupBody(payload, records);
+  const allOk = connectionResults.every((item) => item.ok);
+  const subject = `【訂閱名單備份】${dateKey}｜${records.length} 筆｜連接${allOk ? "正常" : "異常"}`;
+  const body = buildBackupBody(payload, records, connectionResults, tablePreview);
   const result = await sendEmail(BACKUP_TO, subject, body);
 
   console.log(
-    `Subscriber backup emailed to ${BACKUP_TO}: count=${records.length} via ${result.provider}`
+    `Subscriber backup emailed to ${BACKUP_TO}: count=${records.length} via ${result.provider} connect=${allOk ? "ok" : "fail"}`
   );
+  connectionResults.forEach((item) => {
+    console.log(formatConnectionLine(item));
+  });
 }
 
 main().catch((error) => {

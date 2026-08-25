@@ -610,11 +610,20 @@ body {
 
 .pwa-history-list {
   font-size: 12px;
+  padding-left: 0;
+  list-style: none;
 }
 
 .pwa-history-list li,
 .pwa-test-list li {
   line-height: 1.35;
+}
+
+.pwa-history-list li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f6f3eb;
+  color: #2b2924;
 }
 
 .pwa-test-list li.is-ok::marker {

@@ -621,7 +621,6 @@ const subscriptionForm = document.querySelector("#subscriptionForm");
 const subscriberEmail = document.querySelector("#subscriberEmail");
 const subscriptionStatus = document.querySelector("#subscriptionStatus");
 const testNotificationBtn = document.querySelector("#testNotificationBtn");
-const enableNotifyBtn = document.querySelector("#enableNotifyBtn");
 const notifyPermissionStatus = document.querySelector("#notifyPermissionStatus");
 const notifyHistoryList = document.querySelector("#notifyHistoryList");
 const pwaInstallBanner = document.querySelector("#pwaInstallBanner");
@@ -840,9 +839,11 @@ const WINDY_EMBED_WIDTH = 560;
 const RAIN_FORECAST_HOURS = 8;
 const VISITOR_COUNTER_NAMESPACE = "jin-weather-tw-v1";
 const VISITOR_COUNTER_KEY = "visits";
-const VISITOR_COUNTER_STORAGE_KEY = "siteVisitCountV1";
+const VISITOR_COUNTER_STORAGE_KEY = "siteVisitCountGlobalV2";
 const LIKE_COUNTER_KEY = "likes";
-const LIKE_COUNTER_STORAGE_KEY = "siteLikeCountV1";
+const LIKE_COUNTER_STORAGE_KEY = "siteLikeCountGlobalV2";
+const COUNTER_FLOOR_URL = "./data/counters.json";
+const COUNTER_ABACUS_BASE = "https://abacus.jasoncameron.dev";
 const LIKE_VOTED_STORAGE_KEY = "siteLikedV1";
 const CITY_CCTV_RADIUS_KM = MAP_LOCATE_RADIUS_KM;
 const CITY_CCTV_NEARBY_KM = 8;
@@ -7000,59 +7001,70 @@ function syncLikeButtonState(liked = hasUserLiked()) {
   }
 }
 
-async function fetchCountApi(path, { timeoutMs = 5000 } = {}) {
-  const normalized = String(path || "").replace(/^\/+|\/+$/g, "");
-  const endpoints = [
-    // counterapi.dev requires a trailing slash (otherwise 301 without JSON body)
-    `https://api.counterapi.dev/v1/${normalized}/`,
-    `https://api.countapi.xyz/${normalized}`
-  ];
-  for (const endpoint of endpoints) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const response = await fetch(endpoint, { signal: controller.signal, redirect: "follow" });
-      if (!response.ok) {
-        continue;
-      }
-      const payload = await response.json();
-      // counterapi.dev uses { count }, countapi.xyz uses { value }
-      const value = Number(payload?.count ?? payload?.value);
-      if (Number.isFinite(value)) {
-        return value;
-      }
-    } catch {
-      /* try next provider */
-    } finally {
-      clearTimeout(timeoutId);
-    }
+function readCachedGlobalCount(storageKey) {
+  const value = Number(localStorage.getItem(storageKey) || 0);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
+function rememberGlobalCount(storageKey, count) {
+  const next = Math.max(readCachedGlobalCount(storageKey), Math.max(0, Math.floor(Number(count) || 0)));
+  if (next > 0) {
+    localStorage.setItem(storageKey, String(next));
   }
-  return null;
+  return next;
+}
+
+async function fetchCounterFloor() {
+  try {
+    const response = await fetch(`${COUNTER_FLOOR_URL}?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) {
+      return { visits: 0, likes: 0 };
+    }
+    const payload = await response.json();
+    return {
+      visits: Math.max(0, Math.floor(Number(payload?.visits) || 0)),
+      likes: Math.max(0, Math.floor(Number(payload?.likes) || 0))
+    };
+  } catch {
+    return { visits: 0, likes: 0 };
+  }
+}
+
+async function fetchAbacusCounter(key, { increment = false, timeoutMs = 5000 } = {}) {
+  const action = increment ? "hit" : "get";
+  const url = `${COUNTER_ABACUS_BASE}/${action}/${VISITOR_COUNTER_NAMESPACE}/${encodeURIComponent(key)}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
+    if (!response.ok) {
+      return null;
+    }
+    const payload = await response.json();
+    const value = Number(payload?.value ?? payload?.count);
+    return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function initVisitorCounter() {
   if (!visitorCounter) {
     return;
   }
-  const previousLocal = Number(localStorage.getItem(VISITOR_COUNTER_STORAGE_KEY) || 0);
-  let totalCount = previousLocal + 1;
-  localStorage.setItem(VISITOR_COUNTER_STORAGE_KEY, String(totalCount));
+  const floor = await fetchCounterFloor();
+  const cached = readCachedGlobalCount(VISITOR_COUNTER_STORAGE_KEY);
+  let totalCount = Math.max(floor.visits, cached);
   setVisitorCountDisplay(totalCount);
 
-  const remoteCount = await fetchCountApi(
-    `${VISITOR_COUNTER_NAMESPACE}/${VISITOR_COUNTER_KEY}/up`
-  );
-  // Fallback old countapi path style
-  const legacyCount = Number.isFinite(remoteCount)
-    ? remoteCount
-    : await fetchCountApi(`hit/${VISITOR_COUNTER_NAMESPACE}/${VISITOR_COUNTER_KEY}`);
-  if (Number.isFinite(legacyCount)) {
-    totalCount = Math.max(totalCount, legacyCount);
-    localStorage.setItem(VISITOR_COUNTER_STORAGE_KEY, String(totalCount));
-    setVisitorCountDisplay(totalCount);
-  } else {
-    setVisitorCountDisplay(totalCount);
+  const remoteCount = await fetchAbacusCounter(VISITOR_COUNTER_KEY, { increment: true });
+  if (Number.isFinite(remoteCount)) {
+    totalCount = Math.max(totalCount, remoteCount);
   }
+  totalCount = rememberGlobalCount(VISITOR_COUNTER_STORAGE_KEY, totalCount);
+  setVisitorCountDisplay(totalCount);
 }
 
 async function initLikeCounter() {
@@ -7060,16 +7072,15 @@ async function initLikeCounter() {
     return;
   }
 
-  const localCount = Number(localStorage.getItem(LIKE_COUNTER_STORAGE_KEY) || 0);
-  setLikeCountDisplay(localCount);
+  const floor = await fetchCounterFloor();
+  const cached = readCachedGlobalCount(LIKE_COUNTER_STORAGE_KEY);
+  let totalCount = Math.max(floor.likes, cached);
+  setLikeCountDisplay(totalCount);
   syncLikeButtonState();
 
-  const remoteGet =
-    (await fetchCountApi(`${VISITOR_COUNTER_NAMESPACE}/${LIKE_COUNTER_KEY}`)) ??
-    (await fetchCountApi(`get/${VISITOR_COUNTER_NAMESPACE}/${LIKE_COUNTER_KEY}`));
+  const remoteGet = await fetchAbacusCounter(LIKE_COUNTER_KEY, { increment: false });
   if (Number.isFinite(remoteGet)) {
-    const totalCount = Math.max(localCount, remoteGet);
-    localStorage.setItem(LIKE_COUNTER_STORAGE_KEY, String(totalCount));
+    totalCount = rememberGlobalCount(LIKE_COUNTER_STORAGE_KEY, Math.max(totalCount, remoteGet));
     setLikeCountDisplay(totalCount);
   }
 
@@ -7078,20 +7089,17 @@ async function initLikeCounter() {
       return;
     }
     likeBtn.disabled = true;
-    const previous = Number(localStorage.getItem(LIKE_COUNTER_STORAGE_KEY) || 0);
-    let nextCount = previous + 1;
-    localStorage.setItem(LIKE_COUNTER_STORAGE_KEY, String(nextCount));
     markUserLiked();
-    setLikeCountDisplay(nextCount);
     syncLikeButtonState(true);
+    const optimistic = rememberGlobalCount(LIKE_COUNTER_STORAGE_KEY, totalCount + 1);
+    setLikeCountDisplay(optimistic);
 
-    const remoteHit =
-      (await fetchCountApi(`${VISITOR_COUNTER_NAMESPACE}/${LIKE_COUNTER_KEY}/up`)) ??
-      (await fetchCountApi(`hit/${VISITOR_COUNTER_NAMESPACE}/${LIKE_COUNTER_KEY}`));
+    const remoteHit = await fetchAbacusCounter(LIKE_COUNTER_KEY, { increment: true });
     if (Number.isFinite(remoteHit)) {
-      nextCount = Math.max(nextCount, remoteHit);
-      localStorage.setItem(LIKE_COUNTER_STORAGE_KEY, String(nextCount));
-      setLikeCountDisplay(nextCount);
+      totalCount = rememberGlobalCount(LIKE_COUNTER_STORAGE_KEY, Math.max(optimistic, remoteHit));
+      setLikeCountDisplay(totalCount);
+    } else {
+      totalCount = optimistic;
     }
   });
 }
@@ -9001,7 +9009,7 @@ function getNotifyPermissionExplain() {
   if (support.isIos && !support.isStandalone) {
     return {
       status: "iPhone 請先加入主畫面",
-      detail: "Safari 分頁不能發系統通知。請用分享 → 加入主畫面後再開，再按「允許系統通知」。"
+      detail: "Safari 分頁不能發系統通知。請用分享 → 加入主畫面後再開；或改用頁面內提醒／測試通知。"
     };
   }
   if (!support.apiAvailable) {
@@ -9018,12 +9026,12 @@ function getNotifyPermissionExplain() {
       status: "已被拒絕，改用頁面內提醒",
       detail: support.isIos
         ? "請到設定 → 通知 → 災防通報改為允許；或刪除主畫面圖示後重新加入。"
-        : "瀏覽器已封鎖本站通知（先前點過拒絕，或把權限彈窗關掉）。請點網址列左側圖示 → 網站設定 → 通知 → 允許，再按「允許系統通知」。"
+        : "瀏覽器已封鎖本站通知（先前點過拒絕，或把權限彈窗關掉）。請點網址列左側圖示 → 網站設定 → 通知 → 允許。"
     };
   }
   return {
     status: "尚未詢問",
-    detail: "請按「允許系統通知」，在彈窗選允許。"
+    detail: "可用「測試通知」確認提醒。系統通知請在瀏覽器網站設定允許。"
   };
 }
 
@@ -13808,30 +13816,6 @@ subscriptionForm.addEventListener("submit", async (event) => {
     renderSubscriptionStatus(["訂閱已儲存，通知已發布。", mailStatus].filter(Boolean).join(""));
   }
   clearSubscriptionHint();
-});
-
-enableNotifyBtn?.addEventListener("click", async () => {
-  const mode = await ensureNotificationPermission();
-  renderNotifyPermissionStatus();
-  updatePwaTestChecklist();
-  if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-    showInPageAlert("通知權限已被拒絕", getNotifyPermissionExplain().detail || "請到瀏覽器網站設定重新允許通知。目前改用頁面內提醒。", {
-      timeoutMs: 9000,
-      variant: "not-open"
-    });
-    renderSubscriptionStatus("通知權限已被拒絕，改用頁面內提醒。");
-    return;
-  }
-  if (mode === "granted") {
-    showInPageAlert("已允許系統通知", "請從手機頂端往下滑，即可看到目前天氣、溫度與手電筒開關。", {
-      timeoutMs: 7000,
-      variant: "subscription"
-    });
-    renderSubscriptionStatus("已允許系統通知。");
-    publishWeatherStatusNotification().catch(() => {});
-    return;
-  }
-  renderSubscriptionStatus("此環境改用頁面內提醒。");
 });
 
 testNotificationBtn?.addEventListener("click", async () => {

@@ -17,7 +17,7 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=229" />
+    <link rel="stylesheet" href="./styles.css?v=230" />
     <link rel="stylesheet" href="./legacy-themes.css?v=204" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -359,7 +359,6 @@
             >
             <div class="subscription-actions">
               <button type="submit" class="refresh-btn">儲存訂閱</button>
-              <button id="enableNotifyBtn" type="button" class="ghost-btn">允許系統通知</button>
               <button id="testNotificationBtn" type="button" class="ghost-btn">測試通知</button>
             </div>
           </form>
@@ -529,7 +528,7 @@
             <li>區域記憶：瀏覽器 localStorage 保留上次選取的區域／縣市／鄉鎮。</li>
             <li>停班停課資料：行政院人事行政總處公告頁面（經公開鏡像讀取）。</li>
             <li>氣象署警特報：中央氣象署天氣特報頁（W29，經公開鏡像讀取）。</li>
-            <li>PWA：可安裝到主畫面；離線時顯示快取首頁或基本離線畫面。同一事件同一縣市推播有 30 分鐘冷卻。安卓允許系統通知後，由手機頂端往下滑的系統通知列會固定顯示目前天氣與溫度，並提供手電筒開關（需裝置支援補光燈）。這不是網頁內的列。</li>
+            <li>PWA：可安裝到主畫面；離線時顯示快取首頁或基本離線畫面。同一事件同一縣市推播有 30 分鐘冷卻。安卓允許系統通知後，由手機頂端往下滑的系統通知列會固定顯示目前天氣與溫度，並提供手電筒開關（需裝置支援補光燈）。這不是網頁內的列。觀看人數與按讚為全站累進，不因裝置或重新整理歸零。</li>
             <li>定位點路口 CCTV：交通部運輸資料流通服務（各縣市 CCTV）。災害地圖僅顯示定位範圍直徑 5 公里內鏡頭，並以預覽縮影標示位置；點入預覽後可再點擊放大畫面。</li>
             <li>積淹水警示：經濟部水利署 IoW 即時淹水深度感測（公開 API）。</li>
             <li>颱風分析：中央氣象署颱風消息／警報頁面即時解析。</li>
@@ -544,6 +543,7 @@
             </li>
             <li>停電區域：台電災害停電通報（XML）與計畫性工作停電公開資料（ZIP）。</li>
             <li>若公告暫無資料或來源暫時無法連線，頁面會顯示提示並保留上一筆成功結果。</li>
+            <li>訂閱者名單每日累計製成表格寫入 GitHub（data/subscribers.csv、data/subscribers.md），並寄送連接測試回報。</li>
           </ul>
         </details>
       </section>
@@ -643,7 +643,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=224" defer></script>
+    <script src="./app.js?v=225" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=5" defer></script>
   </body>
