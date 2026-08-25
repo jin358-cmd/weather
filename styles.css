@@ -1829,15 +1829,18 @@ html.channel-talk-open .channel-talk-overlay-close {
   font-size: 13px;
   text-align: center;
   width: 100%;
+  color: #f4efe6;
 }
 
 .site-credit a {
-  color: #1f5ae1;
+  color: #f4efe6;
   font-weight: 700;
   text-decoration: none;
 }
 
-.site-credit a:hover {
+.site-credit a:hover,
+.site-credit a:focus-visible {
+  color: #fbf7ef;
   text-decoration: underline;
 }
 
