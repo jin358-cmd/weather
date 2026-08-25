@@ -1614,6 +1614,10 @@ html.has-channel-talk .site-footer {
   padding-bottom: calc(88px + env(safe-area-inset-bottom));
 }
 
+#ch-plugin-entry {
+  display: none !important;
+}
+
 .footer-stats {
   display: inline-flex;
   flex-wrap: wrap;

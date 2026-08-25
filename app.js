@@ -54,6 +54,17 @@ const TOWNSHIP_LOCATIONS = [
   { city: "新北市", town: "林口區", lat: 25.077, lon: 121.388 },
   { city: "新北市", town: "鶯歌區", lat: 24.954, lon: 121.353 },
   { city: "新北市", town: "三芝區", lat: 25.258, lon: 121.501 },
+  { city: "新北市", town: "石門區", lat: 25.292, lon: 121.567 },
+  { city: "新北市", town: "八里區", lat: 25.146, lon: 121.398 },
+  { city: "新北市", town: "平溪區", lat: 25.026, lon: 121.738 },
+  { city: "新北市", town: "雙溪區", lat: 25.037, lon: 121.866 },
+  { city: "新北市", town: "貢寮區", lat: 25.022, lon: 121.908 },
+  { city: "新北市", town: "金山區", lat: 25.223, lon: 121.638 },
+  { city: "新北市", town: "萬里區", lat: 25.18, lon: 121.689 },
+  { city: "新北市", town: "深坑區", lat: 25.002, lon: 121.615 },
+  { city: "新北市", town: "石碇區", lat: 24.991, lon: 121.657 },
+  { city: "新北市", town: "坪林區", lat: 24.936, lon: 121.711 },
+  { city: "新北市", town: "烏來區", lat: 24.863, lon: 121.551 },
   { city: "基隆市", town: "中正區", lat: 25.151, lon: 121.774 },
   { city: "基隆市", town: "七堵區", lat: 25.095, lon: 121.713 },
   { city: "基隆市", town: "暖暖區", lat: 25.08, lon: 121.745 },
@@ -102,6 +113,12 @@ const TOWNSHIP_LOCATIONS = [
   { city: "苗栗縣", town: "銅鑼鄉", lat: 24.487, lon: 120.786 },
   { city: "苗栗縣", town: "南庄鄉", lat: 24.597, lon: 121.0 },
   { city: "苗栗縣", town: "三義鄉", lat: 24.354, lon: 120.773 },
+  { city: "苗栗縣", town: "造橋鄉", lat: 24.645, lon: 120.876 },
+  { city: "苗栗縣", town: "頭屋鄉", lat: 24.575, lon: 120.851 },
+  { city: "苗栗縣", town: "三灣鄉", lat: 24.656, lon: 120.952 },
+  { city: "苗栗縣", town: "西湖鄉", lat: 24.547, lon: 120.761 },
+  { city: "苗栗縣", town: "獅潭鄉", lat: 24.541, lon: 120.921 },
+  { city: "苗栗縣", town: "泰安鄉", lat: 24.415, lon: 120.908 },
   { city: "臺中市", town: "中區", lat: 24.1417, lon: 120.68 },
   { city: "臺中市", town: "東區", lat: 24.137, lon: 120.697 },
   { city: "臺中市", town: "南區", lat: 24.121, lon: 120.664 },
@@ -120,6 +137,17 @@ const TOWNSHIP_LOCATIONS = [
   { city: "臺中市", town: "烏日區", lat: 24.104, lon: 120.623 },
   { city: "臺中市", town: "大雅區", lat: 24.227, lon: 120.647 },
   { city: "臺中市", town: "潭子區", lat: 24.209, lon: 120.705 },
+  { city: "臺中市", town: "梧棲區", lat: 24.257, lon: 120.53 },
+  { city: "臺中市", town: "龍井區", lat: 24.201, lon: 120.546 },
+  { city: "臺中市", town: "大肚區", lat: 24.154, lon: 120.543 },
+  { city: "臺中市", town: "霧峰區", lat: 24.062, lon: 120.7 },
+  { city: "臺中市", town: "后里區", lat: 24.305, lon: 120.715 },
+  { city: "臺中市", town: "神岡區", lat: 24.256, lon: 120.661 },
+  { city: "臺中市", town: "石岡區", lat: 24.275, lon: 120.779 },
+  { city: "臺中市", town: "新社區", lat: 24.234, lon: 120.808 },
+  { city: "臺中市", town: "外埔區", lat: 24.332, lon: 120.655 },
+  { city: "臺中市", town: "大安區", lat: 24.347, lon: 120.586 },
+  { city: "臺中市", town: "和平區", lat: 24.175, lon: 121.14 },
   { city: "彰化縣", town: "彰化市", lat: 24.0685, lon: 120.5575 },
   { city: "彰化縣", town: "員林市", lat: 23.959, lon: 120.572 },
   { city: "彰化縣", town: "和美鎮", lat: 24.114, lon: 120.494 },
@@ -131,7 +159,21 @@ const TOWNSHIP_LOCATIONS = [
   { city: "彰化縣", town: "線西鄉", lat: 24.131, lon: 120.467 },
   { city: "彰化縣", town: "伸港鄉", lat: 24.146, lon: 120.486 },
   { city: "彰化縣", town: "福興鄉", lat: 24.047, lon: 120.431 },
+  { city: "彰化縣", town: "秀水鄉", lat: 24.033, lon: 120.504 },
   { city: "彰化縣", town: "花壇鄉", lat: 24.03, lon: 120.547 },
+  { city: "彰化縣", town: "芬園鄉", lat: 24.014, lon: 120.63 },
+  { city: "彰化縣", town: "大村鄉", lat: 23.992, lon: 120.545 },
+  { city: "彰化縣", town: "埔鹽鄉", lat: 24.0, lon: 120.463 },
+  { city: "彰化縣", town: "埔心鄉", lat: 23.953, lon: 120.544 },
+  { city: "彰化縣", town: "永靖鄉", lat: 23.924, lon: 120.548 },
+  { city: "彰化縣", town: "社頭鄉", lat: 23.897, lon: 120.581 },
+  { city: "彰化縣", town: "二水鄉", lat: 23.809, lon: 120.618 },
+  { city: "彰化縣", town: "田尾鄉", lat: 23.899, lon: 120.522 },
+  { city: "彰化縣", town: "埤頭鄉", lat: 23.846, lon: 120.462 },
+  { city: "彰化縣", town: "芳苑鄉", lat: 23.924, lon: 120.32 },
+  { city: "彰化縣", town: "大城鄉", lat: 23.852, lon: 120.311 },
+  { city: "彰化縣", town: "竹塘鄉", lat: 23.86, lon: 120.428 },
+  { city: "彰化縣", town: "溪州鄉", lat: 23.851, lon: 120.499 },
   { city: "南投縣", town: "南投市", lat: 23.908, lon: 120.6853 },
   { city: "南投縣", town: "埔里鎮", lat: 23.966, lon: 120.968 },
   { city: "南投縣", town: "草屯鎮", lat: 23.974, lon: 120.683 },
@@ -245,6 +287,7 @@ const TOWNSHIP_LOCATIONS = [
   { city: "高雄市", town: "彌陀區", lat: 22.783, lon: 120.248 },
   { city: "高雄市", town: "永安區", lat: 22.818, lon: 120.225 },
   { city: "高雄市", town: "湖內區", lat: 22.885, lon: 120.212 },
+  { city: "高雄市", town: "茄萣區", lat: 22.907, lon: 120.183 },
   { city: "高雄市", town: "鳳山區", lat: 22.627, lon: 120.357 },
   { city: "高雄市", town: "大寮區", lat: 22.606, lon: 120.395 },
   { city: "高雄市", town: "林園區", lat: 22.508, lon: 120.395 },
@@ -1004,6 +1047,28 @@ function isWithinMapLocateRange(lat, lon) {
   return getDistanceKm(focus.lat, focus.lon, pointLat, pointLon) <= MAP_LOCATE_RADIUS_KM + 0.0001;
 }
 
+function isCameraInDisasterMapView(lat, lon) {
+  const pointLat = Number(lat);
+  const pointLon = Number(lon);
+  if (!Number.isFinite(pointLat) || !Number.isFinite(pointLon)) {
+    return false;
+  }
+  if (warningMap?.getBounds) {
+    try {
+      const bounds = warningMap.getBounds();
+      if (bounds?.isValid?.() && bounds.contains([pointLat, pointLon])) {
+        return true;
+      }
+      if (bounds?.isValid?.()) {
+        return false;
+      }
+    } catch {
+      /* fall through to locate range */
+    }
+  }
+  return isWithinMapLocateRange(pointLat, pointLon);
+}
+
 function getMapDeclutterSeparationKm(zoom) {
   const z = Number(zoom);
   if (!Number.isFinite(z) || z >= 17) {
@@ -1547,7 +1612,7 @@ function fillCameraDistrictSelect(preferredTown = "") {
 
   const allOption = document.createElement("option");
   allOption.value = CAMERA_DISTRICT_ALL_CITY;
-  allOption.textContent = cityName ? `${cityName}全部` : "全台";
+  allOption.textContent = "全部地區";
   cameraRegionSelect.append(allOption);
   if (!cityName) {
     cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
@@ -1584,13 +1649,16 @@ function fillCameraCitySelectOptions(selectElement, defaultValue = "follow", lab
   selectElement.innerHTML = "";
   const allOption = document.createElement("option");
   allOption.value = "all";
-  allOption.textContent = labels.all || "全部縣市";
-  selectElement.append(allOption);
-
+  allOption.textContent = labels.all || "全台";
   const followOption = document.createElement("option");
   followOption.value = "follow";
-  followOption.textContent = labels.follow || "跟隨上方所選縣市";
-  selectElement.append(followOption);
+  followOption.textContent = labels.follow || "定位範圍";
+
+  if (labels.followFirst) {
+    selectElement.append(followOption, allOption);
+  } else {
+    selectElement.append(allOption, followOption);
+  }
 
   CITY_LOCATIONS.forEach((city) => {
     const option = document.createElement("option");
@@ -1603,8 +1671,9 @@ function fillCameraCitySelectOptions(selectElement, defaultValue = "follow", lab
 
 function initCameraCitySelect() {
   fillCameraCitySelectOptions(cameraCitySelect, "follow", {
-    all: "全台路口監控",
-    follow: "跟隨定位範圍"
+    all: "全台",
+    follow: "定位範圍",
+    followFirst: true
   });
   syncCityCameraScopeToLocator();
 }
@@ -2353,7 +2422,7 @@ function getSelectedCameraDistrict() {
     const city = CITY_LOCATIONS.find((item) => item.name === cityName);
     return {
       id: CAMERA_DISTRICT_ALL_CITY,
-      label: cityName ? `${cityName}全部` : "全國",
+      label: "全部地區",
       lat: location?.lat ?? city?.lat,
       lon: location?.lon ?? city?.lon,
       radiusKm: CITY_CCTV_RADIUS_KM,
@@ -2376,7 +2445,7 @@ function getSelectedCameraDistrict() {
   const city = CITY_LOCATIONS.find((item) => item.name === cityName);
   return {
     id: CAMERA_DISTRICT_ALL_CITY,
-    label: cityName ? `${cityName}全部` : "全國",
+    label: "全部地區",
     lat: location?.lat ?? city?.lat,
     lon: location?.lon ?? city?.lon,
     radiusKm: 9999,
@@ -2434,22 +2503,11 @@ function syncCameraScopeToLocatorCityForKeyword() {
   if (!keyword) {
     return;
   }
-  if (isNationwideCameraCity(cameraCitySelect) || !isLocatorFollowCameraCity(cameraCitySelect)) {
-    if (cameraRegionSelect && !isNationwideCameraCity(cameraCitySelect)) {
-      cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
-    }
+  if (isNationwideCameraCity(cameraCitySelect) || getSelectedCameraDistrict()?.town) {
     return;
   }
-  const locatorCity = String(citySelect?.value || "").trim();
-  const allCityLabel = [...(cameraRegionSelect?.options || [])].find(
-    (option) => option.value === CAMERA_DISTRICT_ALL_CITY
-  )?.textContent || "";
-  const districtCityMismatch = Boolean(locatorCity) && allCityLabel && !allCityLabel.includes(locatorCity);
-  if (!cameraRegionSelect?.options?.length || districtCityMismatch) {
+  if (!cameraRegionSelect?.options?.length) {
     fillCameraDistrictSelect("");
-  }
-  if (cameraRegionSelect) {
-    cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
   }
 }
 
@@ -2559,6 +2617,39 @@ function getCityCameraFocusPoint() {
 
 function getFreewayCameraFocusPoint() {
   return getFreewayBrowseFocus();
+}
+
+function syncDisasterMapToCameraScope() {
+  if (!warningMap || typeof L === "undefined") {
+    return;
+  }
+  const keyword = getCameraKeywordQuery();
+  const townName = getSelectedCameraDistrict()?.town || "";
+  if (isLocatorFollowCameraCity(cameraCitySelect) && !townName && !keyword) {
+    scheduleFitMapToLocateRange({ animate: true });
+    return;
+  }
+  if (isNationwideCameraCity(cameraCitySelect) && !townName && !keyword) {
+    fitMapToTaiwan(true);
+    return;
+  }
+  const district = getSelectedCameraDistrict();
+  const lat = Number(district?.lat);
+  const lon = Number(district?.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return;
+  }
+  ignoreShelterZoomEvents += 1;
+  warningMap.invalidateSize();
+  warningMap.fitBounds(L.latLng(lat, lon).toBounds(townName ? 4000 : 14000), {
+    padding: [20, 20],
+    maxZoom: townName ? 15 : 12,
+    animate: true
+  });
+  window.setTimeout(() => {
+    ignoreShelterZoomEvents = Math.max(0, ignoreShelterZoomEvents - 1);
+    updateCameraMapLayer();
+  }, 450);
 }
 
 function isFreewayCameraStream(url = "") {
@@ -3286,18 +3377,10 @@ function getCityCamerasForDisasterMap() {
   if (!cityCameraDataset || !Array.isArray(cityCameraDataset.cameras)) {
     return [];
   }
-  const focus = getMapLocatePoint();
-  if (!focus) {
-    return [];
-  }
-  const focusPoint = { lat: focus.lat, lon: focus.lon };
+  const filtered = getFilteredSortedCityCameras({ forMap: true });
   return declutterMapItems(
     dedupeCamerasByIdentity(
-      cityCameraDataset.cameras
-        .filter((camera) => Number.isFinite(Number(camera.gisy)) && Number.isFinite(Number(camera.gisx)))
-        .map((camera) => enrichCityCameraForMap(camera, focusPoint, focus))
-        .filter((camera) => isWithinMapLocateRange(Number(camera.gisy), Number(camera.gisx)))
-        .sort((a, b) => a.distanceKm - b.distanceKm)
+      filtered.filter((camera) => isCameraInDisasterMapView(Number(camera.gisy), Number(camera.gisx)))
     ),
     (camera) => ({ lat: Number(camera.gisy), lon: Number(camera.gisx) })
   );
@@ -5007,7 +5090,7 @@ async function renderCameraList() {
         ? `目前沒有符合「${cityName}${district.town}」的路口監控。`
         : nationwide
           ? "目前沒有可顯示的全台路口監控。"
-          : `定位範圍直徑 ${MAP_LOCATE_DIAMETER_KM} 公里內目前沒有路口監控。可改選全台路口監控、縣市或輸入路名關鍵字。`;
+          : `定位範圍直徑 ${MAP_LOCATE_DIAMETER_KM} 公里內目前沒有路口監控。可改選全台、縣市、地區或輸入路名關鍵字。`;
     showCityCameraListMessage(emptyLabel);
     hideCityCameraLoadProgress();
     return;
@@ -13611,23 +13694,18 @@ cameraKeyword.addEventListener("input", () => {
 });
 
 cameraRegionSelect.addEventListener("change", () => {
+  syncDisasterMapToCameraScope();
   updateCameraMetaText();
   renderCameraList();
   updateCameraMapLayer();
 });
 
 cameraCitySelect?.addEventListener("change", () => {
-  if (isNationwideCameraCity(cameraCitySelect)) {
-    fillCameraDistrictSelect("");
-    if (cameraRegionSelect) {
-      cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
-    }
-  } else {
-    fillCameraDistrictSelect("");
-    if (cameraRegionSelect) {
-      cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
-    }
+  fillCameraDistrictSelect("");
+  if (cameraRegionSelect) {
+    cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
   }
+  syncDisasterMapToCameraScope();
   updateCameraMetaText();
   renderAllCameraLists();
   updateCameraMapLayer();
