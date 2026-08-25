@@ -14412,5 +14412,9 @@ initVisitorCounter();
 initLikeCounter();
 performFullRefresh("manual");
 fetchRoadCameras();
-initWarningMap();
+try {
+  initWarningMap();
+} catch (error) {
+  console.warn("災害地圖初始化失敗", error);
+}
 startAutoRefreshTimers();

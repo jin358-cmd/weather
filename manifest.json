@@ -3,7 +3,7 @@
   "name": "停班停課+即時災害通報平台",
   "short_name": "防災通報",
   "description": "全台停班停課、氣象署警特報與即時災防通報",
-  "start_url": "./index.html?source=pwa",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
