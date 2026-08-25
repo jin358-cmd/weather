@@ -809,7 +809,7 @@ const EARTHQUAKE_NATIONAL_INTENSITY = 4;
 const EARTHQUAKE_RECENT_HOURS = 168;
 const EARTHQUAKE_COORD_CACHE_KEY = "cwaEarthquakeCoordCacheV1";
 const EARTHQUAKE_DETAIL_ENRICH_LIMIT = 12;
-const EARTHQUAKE_PREVIEW_LIMIT = 2;
+const EARTHQUAKE_PREVIEW_LIMIT = 5;
 const EARTHQUAKE_SCWEB_PAGE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
 const EARTHQUAKE_SCWEB_MAP_BASE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/imgs";
 const SUBSCRIBE_OWNER_INBOX = "jin358@gmail.com";
@@ -1150,9 +1150,24 @@ function sameTaiwanTownshipName(a, b) {
 }
 
 function getTaiwanDateSlash() {
-  return new Date()
-    .toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" })
-    .replace(/-/g, "/");
+  return getTaiwanDateKey().replace(/-/g, "/");
+}
+
+function getTaiwanDateKey(value = Date.now()) {
+  const timeMs = Number(value);
+  const date = Number.isFinite(timeMs) ? new Date(timeMs) : new Date();
+  return date.toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" });
+}
+
+function isEarthquakeOnTaiwanToday(timeMs) {
+  const stamp = Number(timeMs);
+  return Number.isFinite(stamp) && getTaiwanDateKey(stamp) === getTaiwanDateKey();
+}
+
+function getTodayEarthquakesForMap() {
+  return (appState.earthquakes || []).filter(
+    (quake) => isEarthquakeOnTaiwanToday(quake.timeMs) && Number.isFinite(quake.lat) && Number.isFinite(quake.lon)
+  );
 }
 
 function geocodeOutageArea(areaText) {
@@ -8186,48 +8201,9 @@ function renderEarthquakePanel() {
   renderEarthquakeSourceMeta(Date.now());
 
   const preview = quakes.slice(0, EARTHQUAKE_PREVIEW_LIMIT);
-  const rest = quakes.slice(EARTHQUAKE_PREVIEW_LIMIT);
   preview.forEach((quake) => {
     earthquakeList.append(createEarthquakeListItem(quake));
   });
-
-  if (rest.length) {
-    const wrap = document.createElement("li");
-    wrap.className = "earthquake-more-wrap";
-    const details = document.createElement("details");
-    details.className = "earthquake-more-details";
-    const topSummary = document.createElement("summary");
-    topSummary.className = "earthquake-more-summary";
-    topSummary.textContent = `▸ 展開其餘 ${rest.length} 筆通報`;
-    const restList = document.createElement("ul");
-    restList.className = "earthquake-list earthquake-more-list";
-    rest.forEach((quake) => {
-      restList.append(createEarthquakeListItem(quake));
-    });
-    const footer = document.createElement("button");
-    footer.type = "button";
-    footer.className = "earthquake-more-footer";
-    footer.textContent = `▾ 收合其餘 ${rest.length} 筆通報`;
-    footer.hidden = true;
-    footer.addEventListener("click", (event) => {
-      event.preventDefault();
-      details.open = false;
-      window.requestAnimationFrame(() => {
-        const earthquakeTitle = document.querySelector(".visual-break-earthquake");
-        earthquakeTitle?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    });
-    const syncCollapseLabels = () => {
-      topSummary.textContent = details.open
-        ? `▾ 收合其餘 ${rest.length} 筆通報`
-        : `▸ 展開其餘 ${rest.length} 筆通報`;
-      footer.hidden = !details.open;
-    };
-    details.addEventListener("toggle", syncCollapseLabels);
-    details.append(topSummary, restList, footer);
-    wrap.append(details);
-    earthquakeList.append(wrap);
-  }
 }
 
 function buildEarthquakePopupHtml(quake) {
@@ -8315,7 +8291,7 @@ function updateEarthquakeMapLayer() {
   mapLegendMarkers.earthquake = [];
 
   declutterMapItems(
-    appState.earthquakes || [],
+    getTodayEarthquakesForMap(),
     (quake) => ({
       lat: quake.lat,
       lon: quake.lon
