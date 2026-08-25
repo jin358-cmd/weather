@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v246-pwa-single-splash";
+const SW_VERSION = "jin-v247-weather-place-type";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
