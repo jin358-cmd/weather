@@ -13711,8 +13711,8 @@ enableNotifyBtn?.addEventListener("click", async () => {
     return;
   }
   if (mode === "granted") {
-    showInPageAlert("已允許系統通知", "警戒推播會出現在系統通知。安裝桌面版後，天氣與手電筒會固定在安卓由上往下拉開的通知列。", {
-      timeoutMs: 6000,
+    showInPageAlert("已允許系統通知", "請從手機頂端往下滑，即可看到目前天氣、溫度與手電筒開關。", {
+      timeoutMs: 7000,
       variant: "subscription"
     });
     renderSubscriptionStatus("已允許系統通知。");
