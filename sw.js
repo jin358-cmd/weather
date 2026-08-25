@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v227-eq-pulse-yellow";
+const SW_VERSION = "jin-v228-cctv-zoom-close";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
