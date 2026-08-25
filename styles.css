@@ -4930,9 +4930,10 @@ input[type="checkbox"] {
 }
 
 .legend-swatch.earthquake-point {
-  background: #f5c400;
-  border-color: #3f3200;
+  background: #ffe600;
+  border-color: #fff8c4;
   border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 230, 0, 0.45);
 }
 
 .legend-swatch.shelter-point {
@@ -5118,20 +5119,23 @@ input[type="checkbox"] {
   align-items: center;
   justify-content: center;
   overscroll-behavior: contain;
+  pointer-events: none;
 }
 
 .eq-detail-sheet-backdrop {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(15, 22, 34, 0.48);
+  background: rgba(15, 22, 34, 0.28);
+  pointer-events: auto;
 }
 
 .eq-detail-sheet-panel {
   position: relative;
   z-index: 1;
-  width: min(96vw, 560px);
-  max-height: min(88dvh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px));
+  width: 60%;
+  max-width: 60vw;
+  max-height: 60dvh;
   margin: 0;
   border-radius: 18px;
   background: #fff;
@@ -5142,6 +5146,7 @@ input[type="checkbox"] {
   gap: 10px;
   overflow: hidden;
   min-height: 0;
+  pointer-events: auto;
 }
 
 .eq-detail-sheet-toolbar {
@@ -6396,6 +6401,7 @@ body.eq-sheet-open {
 }
 
 .leaflet-div-icon.map-focus-pulse,
+.leaflet-div-icon.eq-map-pulse,
 .leaflet-div-icon.map-focus-range-label,
 .leaflet-div-icon.map-closure-marker {
   background: transparent;
@@ -6499,6 +6505,53 @@ body.eq-sheet-open {
   }
 }
 
+.eq-map-pulse-dot {
+  position: relative;
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffe600;
+  border: 2px solid #fffde8;
+  box-shadow: 0 0 0 0 rgba(255, 230, 0, 0.55);
+  animation: eq-map-pulse 1.6s ease-out infinite;
+}
+
+.eq-map-pulse-dot::before,
+.eq-map-pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 230, 0, 0.7);
+  animation: eq-map-ring 1.8s ease-out infinite;
+}
+
+.eq-map-pulse-dot::after {
+  animation-delay: 0.9s;
+}
+
+@keyframes eq-map-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 230, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(255, 230, 0, 0);
+  }
+}
+
+@keyframes eq-map-ring {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .map-focus-pulse-dot {
     animation: none;
@@ -6509,6 +6562,18 @@ body.eq-sheet-open {
   .map-focus-pulse-dot::after {
     animation: none;
     opacity: 0.32;
+    transform: scale(1.08);
+  }
+
+  .eq-map-pulse-dot {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(255, 230, 0, 0.45);
+  }
+
+  .eq-map-pulse-dot::before,
+  .eq-map-pulse-dot::after {
+    animation: none;
+    opacity: 0.4;
     transform: scale(1.08);
   }
 }

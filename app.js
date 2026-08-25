@@ -677,7 +677,7 @@ const MAP_LEGEND_CALLOUT_CONFIG = {
   "power-planned": { title: "計畫停電", color: "#c77dff", layer: "power-outage", skipCallout: true },
   "water-outage": { title: "停水公告", color: "#0f766e", layer: "water-outage", skipCallout: true },
   closure: { title: "停班停課", color: "#b71c1c", layer: "closure-points", skipCallout: true },
-  earthquake: { title: "地震震央", color: "#f5c400", layer: "earthquake-points", skipCallout: true },
+  earthquake: { title: "地震震央", color: "#ffe600", layer: "earthquake-points", skipCallout: true },
   shelter: { title: "避難場所", color: "#15803d", layer: "shelter-points", skipCallout: true },
   cctv: { title: "路口監控", color: "#0096c7", layer: "cctv-points", skipCallout: true, alwaysShow: true },
   "city-focus": { title: "定位範圍", color: "#e11d48", layer: "city-focus", skipCallout: true, alwaysShow: true, flash: true }
@@ -7768,14 +7768,23 @@ function parseAiAlertPresentation(text) {
 
 function getEarthquakeMapPinStyle() {
   return {
-    color: "#3f3200",
-    fillColor: "#f5c400",
+    color: "#ffe600",
+    fillColor: "#ffe600",
     radius: 7,
     weight: 2,
     fillOpacity: 0.95,
-    className: "eq-epicenter-blink",
+    className: "eq-map-pulse",
     label: "地震震央"
   };
+}
+
+function getEarthquakePulseIcon() {
+  return L.divIcon({
+    className: "eq-map-pulse",
+    html: '<span class="eq-map-pulse-dot" aria-hidden="true"></span>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
 }
 
 function getEarthquakeMarkerStyle(quake) {
@@ -8317,18 +8326,13 @@ function updateEarthquakeMapLayer() {
       return;
     }
     const style = getEarthquakeMapPinStyle();
-    const marker = L.circleMarker(
-      [quake.lat, quake.lon],
-      getMapCircleMarkerOptions({
-        pane: "earthquakePane",
-        radius: style.radius,
-        color: style.color,
-        fillColor: style.fillColor,
-        fillOpacity: style.fillOpacity,
-        weight: style.weight,
-        className: style.className
-      })
-    );
+    const marker = L.marker([quake.lat, quake.lon], {
+      pane: "earthquakePane",
+      keyboard: false,
+      icon: getEarthquakePulseIcon(),
+      title: style.label,
+      zIndexOffset: 500
+    });
     const popupHtml = buildEarthquakePopupHtml(quake);
     marker.bindPopup(popupHtml, getMapPopupOptions({ className: "eq-popup-wrap disaster-map-popup" }));
     marker.on("click", () => {
@@ -13025,7 +13029,7 @@ const ALERT_BADGE_CONFIG = [
   { key: "power-planned", label: "計畫停電", bg: "#7c3aed" },
   { key: "water-outage", label: "停水公告", bg: "#0f766e" },
   { key: "closure", label: "停班停課", bg: "#b71c1c" },
-  { key: "earthquake", label: "地震震央", bg: "#dc2626" },
+  { key: "earthquake", label: "地震震央", bg: "#ffe600", color: "#3f3200" },
   { key: "shelter", label: "避難場所", bg: "#15803d" },
   { key: "cctv", label: "路口監控", bg: "#0096c7" },
   { key: "city-focus", label: "定位範圍", bg: "#e11d48" }
@@ -13274,6 +13278,10 @@ function initWarningMap() {
   warningMap.createPane("waterPane");
   warningMap.createPane("closurePane");
   warningMap.createPane("earthquakePane");
+  const earthquakePane = warningMap.getPane("earthquakePane");
+  if (earthquakePane) {
+    earthquakePane.style.overflow = "visible";
+  }
   warningMap.createPane("shelterPane");
   warningMap.createPane("cameraPane");
   const cameraPane = warningMap.getPane("cameraPane");
