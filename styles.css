@@ -455,6 +455,43 @@ body {
   }
 }
 
+.pwa-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #161d27;
+  color: #f4efe6;
+}
+
+.pwa-splash[hidden] {
+  display: none !important;
+}
+
+.pwa-splash-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+  object-fit: cover;
+}
+
+.pwa-splash-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #f4efe6;
+}
+
+html.pwa-splash-open,
+html.pwa-splash-open body {
+  overflow: hidden;
+}
+
 .pwa-install-banner {
   position: relative;
   z-index: 50;
@@ -611,10 +648,10 @@ body {
 
 .pwa-history-list {
   font-size: 12px;
-  padding: 10px 12px;
+  padding: 14px 22px;
   list-style: none;
   background: #e8eaed;
-  border-radius: 10px;
+  border-radius: 999px;
 }
 
 .pwa-history-list li,
@@ -623,8 +660,8 @@ body {
 }
 
 .pwa-history-list li {
-  padding: 8px 2px;
-  border-radius: 0;
+  padding: 6px 8px;
+  border-radius: 999px;
   background: transparent;
   color: #2b2924;
 }
@@ -1842,18 +1879,7 @@ html.channel-talk-open .channel-talk-overlay-close {
   text-align: center;
   width: 100%;
   color: #f4efe6;
-}
-
-.site-credit a {
-  color: #f4efe6;
   font-weight: 700;
-  text-decoration: none;
-}
-
-.site-credit a:hover,
-.site-credit a:focus-visible {
-  color: #fbf7ef;
-  text-decoration: underline;
 }
 
 .channel-talk-footer {
@@ -6429,7 +6455,7 @@ body.eq-sheet-open {
 }
 
 .closure-group.closure-normal .closure-group-label {
-  color: #0d47a1;
+  color: #7dd8ff;
 }
 
 .closure-item {
@@ -6465,13 +6491,13 @@ body.eq-sheet-open {
 }
 
 .closure-item.closure-normal {
-  background: #bbdefb;
-  border: 1px solid #64b5f6;
+  background: #12344c;
+  border: 1px solid #7dd8ff;
 }
 
 .closure-item.closure-normal h3,
 .closure-item.closure-normal p {
-  color: #0d47a1;
+  color: #7dd8ff;
 }
 
 .legend-swatch.city-focus-swatch {
