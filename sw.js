@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v231-eq-taiwan-red";
+const SW_VERSION = "jin-v232-credit-ricewhite";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
