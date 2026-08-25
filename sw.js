@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v224-cctv-thumbs";
+const SW_VERSION = "jin-v225-remove-cctv-lists";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
