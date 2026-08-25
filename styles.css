@@ -3391,19 +3391,19 @@ input[type="checkbox"] {
   --weekly-date-col: 3.6em;
   --weekly-weekday-col: 2.8em;
   --weekly-icon-col: 48px;
-  --weekly-label-col: minmax(3.2em, 4.6em);
+  --weekly-label-col: fit-content(4.8em);
   display: grid;
   grid-template-columns:
     var(--weekly-date-col)
     var(--weekly-weekday-col)
     var(--weekly-icon-col)
     var(--weekly-label-col)
-    auto
-    minmax(0, 1fr);
+    max-content
+    minmax(4.2em, 1fr);
   align-items: center;
   column-gap: 6px;
   row-gap: 2px;
-  padding: 8px 18px 8px 10px;
+  padding: 8px 22px 8px 10px;
   border-radius: 12px;
   background: rgba(238, 244, 255, 0.85);
   border: 1px solid #c7daf8;
@@ -3477,14 +3477,13 @@ input[type="checkbox"] {
 
 .weekly-forecast-temps {
   justify-self: start;
-  margin-left: -2px;
   font-size: clamp(17px, 4.2vw, 22px);
   font-weight: 800;
   color: #0b3fad;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
   white-space: nowrap;
-  min-width: 0;
+  min-width: max-content;
 }
 
 .weekly-forecast-rain {
@@ -3493,7 +3492,7 @@ input[type="checkbox"] {
   align-items: flex-end;
   justify-content: center;
   justify-self: end;
-  margin-right: 6px;
+  margin-right: 4px;
   gap: 1px;
   font-size: clamp(12px, 3vw, 15px);
   color: #5b6b86;
@@ -3925,12 +3924,12 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-row {
-    --weekly-date-col: 3.2em;
-    --weekly-weekday-col: 2.6em;
+    --weekly-date-col: 3.1em;
+    --weekly-weekday-col: 2.5em;
     --weekly-icon-col: 42px;
-    --weekly-label-col: minmax(2.8em, 4.2em);
-    column-gap: 5px;
-    padding: 8px 16px 8px 8px;
+    --weekly-label-col: fit-content(3.8em);
+    column-gap: 4px;
+    padding: 8px 18px 8px 8px;
   }
 
   .weekly-forecast-icon {
@@ -7451,12 +7450,12 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-row {
-    --weekly-date-col: 3.1em;
-    --weekly-weekday-col: 2.5em;
+    --weekly-date-col: 3em;
+    --weekly-weekday-col: 2.4em;
     --weekly-icon-col: 40px;
-    --weekly-label-col: minmax(2.6em, 4em);
-    column-gap: 5px;
-    padding: 8px 16px 8px 8px;
+    --weekly-label-col: fit-content(3.6em);
+    column-gap: 4px;
+    padding: 8px 18px 8px 8px;
   }
 
   .weekly-forecast-icon {
