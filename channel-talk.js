@@ -50,41 +50,48 @@
     }
   }
 
+  function hideLauncher() {
+    try {
+      if (typeof window.ChannelIO === "function") {
+        window.ChannelIO("hideChannelButton");
+      }
+    } catch {
+      /* ignore */
+    }
+    const entry = document.getElementById("ch-plugin-entry");
+    if (entry) {
+      entry.style.setProperty("display", "none", "important");
+      entry.setAttribute("hidden", "");
+    }
+  }
+
   function openChannelTalk() {
+    const pluginKey = String(CHANNEL_TALK_PLUGIN_KEY || window.CHANNEL_TALK_PLUGIN_KEY || "").trim();
     if (typeof window.ChannelIO === "function" && window.__channelTalkReady) {
+      hideLauncher();
       window.ChannelIO("showMessenger");
       return;
     }
-    const waitMs = window.__channelTalkBooting ? 8000 : 0;
-    if (!waitMs) {
+    if (!pluginKey || pluginKey === "YOUR_PLUGIN_KEY") {
       openLoungeOrMail();
       return;
     }
-    const startedAt = Date.now();
-    const timer = window.setInterval(() => {
-      if (window.__channelTalkReady && typeof window.ChannelIO === "function") {
-        window.clearInterval(timer);
-        window.ChannelIO("showMessenger");
-        return;
-      }
-      if (!window.__channelTalkBooting || Date.now() - startedAt > waitMs) {
-        window.clearInterval(timer);
-        if (window.__channelTalkReady && typeof window.ChannelIO === "function") {
-          window.ChannelIO("showMessenger");
-        } else {
-          openLoungeOrMail();
-        }
-      }
-    }, 200);
+    bootChannelTalk(pluginKey, true);
   }
 
-  function bootChannelTalk(pluginKey) {
+  function bootChannelTalk(pluginKey, thenShow) {
+    if (window.__channelTalkBooting) {
+      return;
+    }
     loadChannelTalkSdk();
     window.__channelTalkBooting = true;
     const bootWatch = window.setTimeout(() => {
       if (!window.__channelTalkReady) {
         window.__channelTalkBooting = false;
         console.warn("Channel Talk 啟動逾時，留言改開官方對話頁。");
+        if (thenShow) {
+          openLoungeOrMail();
+        }
       }
     }, BOOT_TIMEOUT_MS);
     window.ChannelIO(
@@ -101,12 +108,14 @@
         window.__channelTalkReady = !error;
         if (error) {
           console.warn("Channel Talk 啟動失敗，留言改開官方對話頁。", error);
+          if (thenShow) {
+            openLoungeOrMail();
+          }
           return;
         }
-        try {
-          window.ChannelIO("hideChannelButton");
-        } catch {
-          /* launcher hide is best-effort */
+        hideLauncher();
+        if (thenShow) {
+          window.ChannelIO("showMessenger");
         }
       }
     );
@@ -118,11 +127,6 @@
       event.preventDefault();
       openChannelTalk();
     });
-    const pluginKey = String(CHANNEL_TALK_PLUGIN_KEY || window.CHANNEL_TALK_PLUGIN_KEY || "").trim();
-    if (!pluginKey || pluginKey === "YOUR_PLUGIN_KEY") {
-      return;
-    }
-    bootChannelTalk(pluginKey);
   }
 
   if (document.readyState === "loading") {
