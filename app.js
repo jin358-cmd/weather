@@ -7790,7 +7790,18 @@ function parseAiAlertPresentation(text) {
   };
 }
 
-function getEarthquakeMapPinStyle() {
+function getEarthquakeMapPinStyle(isLatest = false) {
+  if (isLatest) {
+    return {
+      color: "#7f1d1d",
+      fillColor: "#dc2626",
+      radius: 8,
+      weight: 2,
+      fillOpacity: 0.95,
+      className: "eq-map-pulse eq-map-pulse-latest",
+      label: "最新地震震央"
+    };
+  }
   return {
     color: "#ffe600",
     fillColor: "#ffe600",
@@ -7802,10 +7813,10 @@ function getEarthquakeMapPinStyle() {
   };
 }
 
-function getEarthquakePulseIcon() {
+function getEarthquakePulseIcon(isLatest = false) {
   return L.divIcon({
-    className: "eq-map-pulse",
-    html: '<span class="eq-map-pulse-dot" aria-hidden="true"></span>',
+    className: isLatest ? "eq-map-pulse eq-map-pulse-latest" : "eq-map-pulse",
+    html: `<span class="eq-map-pulse-dot${isLatest ? " is-latest" : ""}" aria-hidden="true"></span>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14]
   });
@@ -8310,17 +8321,20 @@ function updateEarthquakeMapLayer() {
   mapEarthquakeLayer.clearLayers();
   mapLegendMarkers.earthquake = [];
 
-  getTodayEarthquakesForMap().forEach((quake) => {
+  const todayQuakes = getTodayEarthquakesForMap();
+  const latestQuake = todayQuakes.find((quake) => Number.isFinite(quake.lat) && Number.isFinite(quake.lon));
+  todayQuakes.forEach((quake) => {
     if (!Number.isFinite(quake.lat) || !Number.isFinite(quake.lon)) {
       return;
     }
-    const style = getEarthquakeMapPinStyle();
+    const isLatest = Boolean(latestQuake && quake.id === latestQuake.id);
+    const style = getEarthquakeMapPinStyle(isLatest);
     const marker = L.marker([quake.lat, quake.lon], {
       pane: "earthquakePane",
       keyboard: false,
-      icon: getEarthquakePulseIcon(),
+      icon: getEarthquakePulseIcon(isLatest),
       title: style.label,
-      zIndexOffset: 500
+      zIndexOffset: isLatest ? 820 : 500
     });
     const popupHtml = buildEarthquakePopupHtml(quake);
     marker.bindPopup(popupHtml, getMapPopupOptions({ className: "eq-popup-wrap disaster-map-popup" }));
@@ -12413,6 +12427,9 @@ function toggleMapCategory(key, nextValue) {
   } catch (error) {
     console.warn("圖層切換後重新繪製失敗：", error);
   }
+  if (key === "earthquake" && isMapCategoryVisible("earthquake")) {
+    fitMapToTaiwan(true);
+  }
 }
 
 function renderMapCategoryFilters() {
@@ -13123,6 +13140,10 @@ function focusMapLegendMarkers(legendKey) {
     }
   }
   const markers = mapLegendMarkers[legendKey] || [];
+  if (legendKey === "earthquake") {
+    fitMapToTaiwan(true);
+    return;
+  }
   if (!markers.length) {
     return;
   }

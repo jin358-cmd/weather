@@ -6574,6 +6574,13 @@ body.eq-sheet-open {
   animation: eq-map-pulse 1.6s ease-out infinite;
 }
 
+.eq-map-pulse-dot.is-latest {
+  background: #dc2626;
+  border-color: #fee2e2;
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55);
+  animation-name: eq-map-pulse-latest;
+}
+
 .eq-map-pulse-dot::before,
 .eq-map-pulse-dot::after {
   content: "";
@@ -6582,6 +6589,12 @@ body.eq-sheet-open {
   border-radius: 50%;
   border: 2px solid rgba(255, 230, 0, 0.7);
   animation: eq-map-ring 1.8s ease-out infinite;
+}
+
+.eq-map-pulse-dot.is-latest::before,
+.eq-map-pulse-dot.is-latest::after {
+  border-color: rgba(220, 38, 38, 0.7);
+  animation-name: eq-map-ring-latest;
 }
 
 .eq-map-pulse-dot::after {
@@ -6598,7 +6611,28 @@ body.eq-sheet-open {
   }
 }
 
+@keyframes eq-map-pulse-latest {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(220, 38, 38, 0);
+  }
+}
+
 @keyframes eq-map-ring {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes eq-map-ring-latest {
   0% {
     transform: scale(0.72);
     opacity: 0.75;
@@ -6625,6 +6659,10 @@ body.eq-sheet-open {
   .eq-map-pulse-dot {
     animation: none;
     box-shadow: 0 0 0 3px rgba(255, 230, 0, 0.45);
+  }
+
+  .eq-map-pulse-dot.is-latest {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.45);
   }
 
   .eq-map-pulse-dot::before,
