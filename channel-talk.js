@@ -54,6 +54,7 @@
     try {
       if (typeof window.ChannelIO === "function") {
         window.ChannelIO("hideChannelButton");
+        window.ChannelIO("hideMessenger");
       }
     } catch {
       /* ignore */
@@ -65,10 +66,56 @@
     }
   }
 
+  function getOverlay() {
+    return document.querySelector("#channelTalkOverlay");
+  }
+
+  function getOverlayFrame() {
+    return document.querySelector("#channelTalkOverlayFrame");
+  }
+
+  function isOverlayOpen() {
+    const overlay = getOverlay();
+    return Boolean(overlay && !overlay.hidden);
+  }
+
+  function closeChannelTalk() {
+    const overlay = getOverlay();
+    const frame = getOverlayFrame();
+    if (overlay) {
+      overlay.hidden = true;
+    }
+    document.documentElement.classList.remove("channel-talk-open");
+    if (frame) {
+      frame.removeAttribute("src");
+    }
+    hideLauncher();
+  }
+
+  function openChannelTalkOverlay() {
+    const overlay = getOverlay();
+    const frame = getOverlayFrame();
+    if (!overlay || !frame) {
+      openLoungeOrMail();
+      return false;
+    }
+    if (!frame.getAttribute("src")) {
+      frame.src = CHANNEL_TALK_LOUNGE_URL;
+    }
+    overlay.hidden = false;
+    document.documentElement.classList.add("channel-talk-open");
+    hideLauncher();
+    document.querySelector("#channelTalkOverlayClose")?.focus();
+    return true;
+  }
+
   function openChannelTalk() {
+    hideLauncher();
+    if (openChannelTalkOverlay()) {
+      return;
+    }
     const pluginKey = String(CHANNEL_TALK_PLUGIN_KEY || window.CHANNEL_TALK_PLUGIN_KEY || "").trim();
     if (typeof window.ChannelIO === "function" && window.__channelTalkReady) {
-      hideLauncher();
       window.ChannelIO("showMessenger");
       return;
     }
@@ -115,7 +162,7 @@
         }
         hideLauncher();
         if (thenShow) {
-          window.ChannelIO("showMessenger");
+          openChannelTalkOverlay();
         }
       }
     );
@@ -126,6 +173,20 @@
     button?.addEventListener("click", (event) => {
       event.preventDefault();
       openChannelTalk();
+    });
+    document.querySelector("#channelTalkOverlayBackdrop")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      closeChannelTalk();
+    });
+    document.querySelector("#channelTalkOverlayClose")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      closeChannelTalk();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && isOverlayOpen()) {
+        event.preventDefault();
+        closeChannelTalk();
+      }
     });
   }
 

@@ -17,7 +17,7 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=223" />
+    <link rel="stylesheet" href="./styles.css?v=224" />
     <link rel="stylesheet" href="./legacy-themes.css?v=203" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -612,6 +612,32 @@
       </div>
     </div>
 
+    <div id="channelTalkOverlay" class="channel-talk-overlay" hidden>
+      <button
+        type="button"
+        id="channelTalkOverlayBackdrop"
+        class="channel-talk-overlay-backdrop"
+        aria-label="關閉留言並回到主畫面"
+      ></button>
+      <div
+        class="channel-talk-overlay-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="channelTalkOverlayTitle"
+      >
+        <div class="channel-talk-overlay-bar">
+          <p id="channelTalkOverlayTitle" class="channel-talk-overlay-title">即時留言回饋</p>
+          <button type="button" id="channelTalkOverlayClose" class="channel-talk-overlay-close">關閉</button>
+        </div>
+        <iframe
+          id="channelTalkOverlayFrame"
+          class="channel-talk-overlay-frame"
+          title="即時留言回饋"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      </div>
+    </div>
+
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -619,6 +645,6 @@
     ></script>
     <script src="./app.js?v=220" defer></script>
     <script src="./legacy-theme.js" defer></script>
-    <script src="./channel-talk.js?v=4" defer></script>
+    <script src="./channel-talk.js?v=5" defer></script>
   </body>
 </html>
