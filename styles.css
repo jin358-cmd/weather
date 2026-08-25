@@ -6491,13 +6491,14 @@ body.eq-sheet-open {
 }
 
 .closure-item.closure-normal {
-  background: #12344c;
-  border: 1px solid #7dd8ff;
+  background: #4fc3f7;
+  border: 2px solid #29b6f6;
+  box-shadow: 0 0 0 1px rgba(3, 155, 229, 0.35);
 }
 
 .closure-item.closure-normal h3,
 .closure-item.closure-normal p {
-  color: #7dd8ff;
+  color: #04325c;
 }
 
 .legend-swatch.city-focus-swatch {
