@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v241-backup-20260825";
+const SW_VERSION = "jin-v242-weekly-row-order";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

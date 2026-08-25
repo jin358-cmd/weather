@@ -3388,13 +3388,20 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-row {
+  --weekly-date-col: 3.8em;
+  --weekly-weekday-col: 3em;
+  --weekly-status-col: 3.6em;
   display: grid;
-  grid-template-columns: var(--weather-icon-col) auto minmax(0, 1fr);
-  grid-template-areas: "icon day side";
+  grid-template-columns:
+    var(--weekly-date-col)
+    var(--weekly-weekday-col)
+    var(--weekly-status-col)
+    minmax(4.8em, auto)
+    minmax(0, 1fr);
   align-items: center;
-  column-gap: 14px;
-  row-gap: 4px;
-  padding: 8px 0;
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 8px 10px;
   border-radius: 12px;
   background: rgba(238, 244, 255, 0.85);
   border: 1px solid #c7daf8;
@@ -3406,31 +3413,27 @@ input[type="checkbox"] {
   border-color: #e6c56b;
 }
 
-.weekly-forecast-day {
-  grid-area: day;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: baseline;
-  gap: 6px;
-  flex: 0 0 auto;
+.weekly-forecast-date,
+.weekly-forecast-weekday {
   min-width: 0;
-}
-
-.weekly-forecast-day strong {
-  font-size: clamp(20px, 5vw, 25px);
-  font-weight: 900;
   color: #0b3fad;
   line-height: 1.15;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.weekly-forecast-day span {
-  font-size: clamp(17px, 4.2vw, 21px);
+.weekly-forecast-date {
+  justify-self: start;
+  font-size: clamp(16px, 4vw, 20px);
   font-weight: 800;
-  color: #0b3fad;
-  line-height: 1.2;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+}
+
+.weekly-forecast-weekday {
+  justify-self: start;
+  font-size: clamp(16px, 4vw, 20px);
+  font-weight: 900;
 }
 
 .weekly-forecast-icon {
@@ -3453,29 +3456,16 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-status {
-  grid-area: icon;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  width: var(--weather-icon-col);
-  max-width: var(--weather-icon-col);
+  width: 100%;
+  max-width: none;
   min-width: 0;
-  justify-self: start;
+  justify-self: stretch;
   text-align: center;
-}
-
-.weekly-forecast-side {
-  grid-area: side;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 1 1 auto;
-  justify-content: flex-end;
-  text-align: right;
 }
 
 .weekly-forecast-label {
@@ -3495,13 +3485,14 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-temps {
-  font-size: clamp(19px, 4.7vw, 24px);
+  justify-self: start;
+  font-size: clamp(17px, 4.2vw, 22px);
   font-weight: 800;
   color: #0b3fad;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
   white-space: nowrap;
-  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .weekly-forecast-rain {
@@ -3509,13 +3500,14 @@ input[type="checkbox"] {
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
+  justify-self: end;
   gap: 1px;
-  font-size: clamp(13px, 3.2vw, 16px);
+  font-size: clamp(12px, 3vw, 15px);
   color: #5b6b86;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .weekly-forecast-rain-prob,
@@ -3940,8 +3932,11 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-row {
-    column-gap: 14px;
-    padding: 8px 0;
+    --weekly-date-col: 3.4em;
+    --weekly-weekday-col: 2.8em;
+    --weekly-status-col: 3.4em;
+    column-gap: 6px;
+    padding: 8px 8px;
   }
 
   .weekly-forecast-icon {
@@ -3956,15 +3951,9 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-status {
-    width: var(--weather-icon-col);
-    max-width: var(--weather-icon-col);
+    width: 100%;
+    max-width: none;
     min-width: 0;
-  }
-
-  .weekly-forecast-side {
-    gap: 6px;
-    justify-content: flex-end;
-    text-align: right;
   }
 
   .weekly-forecast-rain {
@@ -7474,8 +7463,11 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-row {
-    column-gap: 14px;
-    padding: 8px 0;
+    --weekly-date-col: 3.3em;
+    --weekly-weekday-col: 2.7em;
+    --weekly-status-col: 3.3em;
+    column-gap: 6px;
+    padding: 8px 8px;
   }
 
   .weekly-forecast-icon {
@@ -7490,20 +7482,14 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-status {
-    width: var(--weather-icon-col);
-    max-width: var(--weather-icon-col);
+    width: 100%;
+    max-width: none;
     min-width: 0;
   }
 
-  .weekly-forecast-day strong {
-    font-size: clamp(19px, 5vw, 23px);
-    font-weight: 900;
-  }
-
-  .weekly-forecast-day span {
-    font-size: clamp(16px, 4.2vw, 19px);
-    font-weight: 800;
-    color: #0b3fad;
+  .weekly-forecast-date,
+  .weekly-forecast-weekday {
+    font-size: clamp(15px, 4vw, 18px);
   }
 
   .weekly-forecast-label {
@@ -7511,12 +7497,7 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-temps {
-    font-size: clamp(18px, 4.7vw, 22px);
-  }
-
-  .weekly-forecast-side {
-    gap: 6px;
-    justify-content: flex-end;
+    font-size: clamp(16px, 4.2vw, 20px);
   }
 
   .weekly-forecast-rain {
