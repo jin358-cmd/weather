@@ -1534,11 +1534,7 @@ function applyDeviceLocateToSiteDisplays(nearest, latitude, longitude, accuracy)
   syncCityCameraScopeToLocator();
   syncFreewayCameraScopeToLocator();
   setLocateCompleteMeta(nearest.city, nearest.town);
-  renderAllCameraLists();
   updateMapForCityChange();
-  prefetchCityMonitorStreams(nearest.city, { label: nearest.city }).catch(() => {
-    /* background prefetch should not block locate UX */
-  });
 }
 
 function applyRegionSelection(regionName, cityName, townName, { persist = true, updateMeta = true } = {}) {
@@ -5032,6 +5028,10 @@ function syncCityCameraMoreBottomPanel(extraCameras = [], scopeLabel = "所選�
 }
 
 async function renderCameraList() {
+  if (!cameraList) {
+    updateCameraMapLayer();
+    return;
+  }
   const token = ++cityCameraRenderToken;
   const isCurrent = () => token === cityCameraRenderToken;
   showCityCameraLoadProgress();
@@ -5422,6 +5422,10 @@ async function renderFreewayCameraList() {
 }
 
 async function renderAllCameraLists() {
+  if (!cameraList && !freewayCameraList) {
+    updateCameraMapLayer();
+    return;
+  }
   await renderCameraList();
   await renderFreewayCameraList();
 }
@@ -13351,28 +13355,18 @@ function initWarningMap() {
 
 async function fetchRoadCameras() {
   try {
-    const [cityResponse, freewayResponse] = await Promise.all([
-      fetch("./data/city_cctv.json"),
-      fetch("./data/freeway_cctv.json")
-    ]);
+    const cityResponse = await fetch("./data/city_cctv.json");
     if (!cityResponse.ok) {
       throw new Error(`市區監控資料讀取失敗：${cityResponse.status}`);
     }
     cityCameraDataset = await cityResponse.json();
     enrichCityCameraCrossRoadsFromNeighbors();
     blackScreenCameraIds = loadBlackScreenCameraIds();
-
-    if (freewayResponse.ok) {
-      freewayCameraDataset = await freewayResponse.json();
-      freewayInterchangeIndex = buildFreewayInterchangeIndex(freewayCameraDataset.cameras || []);
-      applyLocateDefaultFreewayScope();
-    } else if (freewayCameraMeta) {
-      freewayCameraMeta.textContent = `國道監控資料暫時無法更新：HTTP ${freewayResponse.status}`;
-    }
-
-    renderAllCameraLists();
+    updateCameraMapLayer();
   } catch (error) {
-    cameraMeta.textContent = `市區監控資料暫時無法更新：${error.message}`;
+    if (cameraMeta) {
+      cameraMeta.textContent = `市區監控資料暫時無法更新：${error.message}`;
+    }
     showCityCameraListMessage("請稍後重試或改用來源網址查詢。");
   }
 }
@@ -13665,11 +13659,7 @@ citySelect.addEventListener("change", () => {
   refreshCityCameraDistrictOptions();
   syncFreewayCameraScopeToLocator();
   performFullRefresh("manual");
-  renderAllCameraLists();
   updateMapForCityChange();
-  prefetchCityMonitorStreams(citySelect.value, { label: citySelect.value }).catch(() => {
-    /* background prefetch should not block region switching */
-  });
 });
 
 townshipSelect.addEventListener("change", () => {
@@ -13682,11 +13672,7 @@ townshipSelect.addEventListener("change", () => {
   refreshCityCameraDistrictOptions();
   syncFreewayCameraScopeToLocator();
   performFullRefresh("manual");
-  renderAllCameraLists();
   updateMapForCityChange();
-  prefetchCityMonitorStreams(citySelect.value, { label: citySelect.value }).catch(() => {
-    /* background prefetch should not block region switching */
-  });
 });
 
 locateBtn?.addEventListener("click", (event) => {
@@ -13708,14 +13694,14 @@ refreshBtn.addEventListener("click", () => {
   });
 });
 
-cameraKeyword.addEventListener("input", () => {
+cameraKeyword?.addEventListener("input", () => {
   syncCameraScopeToLocatorCityForKeyword();
   updateCameraMetaText();
   renderAllCameraLists();
   updateCameraMapLayer();
 });
 
-cameraRegionSelect.addEventListener("change", () => {
+cameraRegionSelect?.addEventListener("change", () => {
   updateCameraMetaText();
   renderCameraList();
   updateCameraMapLayer();
@@ -14269,10 +14255,6 @@ function scheduleHeroTextFit() {
 
 initRegionSelectors();
 initWeatherIconThemePicker();
-initCameraRegionSelect();
-initCameraCitySelect();
-initFreewayRegionSelect();
-initFreewayCitySelect();
 loadSubscription();
 renderSubscriptionStatus();
 updateNotificationHint();
