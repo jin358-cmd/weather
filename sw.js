@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v242-weekly-row-order";
+const SW_VERSION = "jin-v243-weekly-icon-right";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
