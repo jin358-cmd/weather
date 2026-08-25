@@ -1,0 +1,5 @@
+{
+  "updatedAt": null,
+  "description": "訂閱者資料庫（Email／主題／地區）。每日累計製成表格寫入 data/subscribers.csv 與 data/subscribers.md，並郵寄連接測試回報至 jin358@gmail.com",
+  "subscribers": []
+}
