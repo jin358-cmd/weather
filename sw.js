@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v238-pwa-desktop-splash";
+const SW_VERSION = "jin-v239-closure-normal-blue";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
