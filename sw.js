@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v226-channel-talk-clickaway";
+const SW_VERSION = "jin-v227-eq-pulse-yellow";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
