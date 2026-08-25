@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v219-pwa-weather-torch";
+const SW_VERSION = "jin-v220-android-shade-weather";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -206,6 +206,7 @@ async function showWeatherStatusNotification(payload = {}) {
     renotify: false,
     requireInteraction: false,
     ongoing: true,
+    vibrate: [],
     icon: "./icons/icon-192.png",
     badge: "./icons/icon-192.png",
     actions,
