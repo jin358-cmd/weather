@@ -17,9 +17,9 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=241" />
+    <link rel="stylesheet" href="./styles.css?v=242" />
     <link rel="stylesheet" href="./legacy-themes.css?v=204" />
-    <link rel="manifest" href="./manifest.json?v=7" />
+    <link rel="manifest" href="./manifest.json?v=8" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
     <meta name="theme-color" content="#161d27" />
@@ -41,25 +41,6 @@
     </script>
   </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
-    <div id="pwaSplash" class="pwa-splash" hidden>
-      <img class="pwa-splash-icon" src="./icons/icon-512.png" width="192" height="192" alt="防災通報" />
-      <p class="pwa-splash-title">停班停課+災害通報</p>
-    </div>
-    <script>
-      (function () {
-        var standalone =
-          window.matchMedia("(display-mode: standalone)").matches ||
-          window.matchMedia("(display-mode: fullscreen)").matches ||
-          window.matchMedia("(display-mode: minimal-ui)").matches ||
-          Boolean(navigator.standalone) ||
-          /(?:\?|&)source=pwa(?:&|$)/.test(location.search);
-        var splash = document.getElementById("pwaSplash");
-        if (standalone && splash) {
-          splash.hidden = false;
-          document.documentElement.classList.add("pwa-splash-open");
-        }
-      })();
-    </script>
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
       <div class="pwa-install-inner">
         <div class="pwa-install-copy">
@@ -676,7 +657,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=233" defer></script>
+    <script src="./app.js?v=234" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=5" defer></script>
   </body>

@@ -9157,24 +9157,6 @@ async function promptDesktopPwaInstall() {
   return true;
 }
 
-function hidePwaSplash() {
-  const splash = document.querySelector("#pwaSplash");
-  document.documentElement.classList.remove("pwa-splash-open");
-  if (splash) {
-    splash.hidden = true;
-  }
-}
-
-function initPwaSplashScreen() {
-  const splash = document.querySelector("#pwaSplash");
-  if (!splash || splash.hidden) {
-    return;
-  }
-  const close = () => hidePwaSplash();
-  window.setTimeout(close, 1600);
-  window.addEventListener("load", () => window.setTimeout(close, 400), { once: true });
-}
-
 function renderPwaInstallBanner() {
   if (!pwaInstallBanner) {
     return;
@@ -9246,7 +9228,6 @@ async function refreshPwaInstallBanner() {
 }
 
 function initPwaInstallExperience() {
-  initPwaSplashScreen();
   if (window.__jinPwaPrompt) {
     deferredPwaPrompt = window.__jinPwaPrompt;
   }
