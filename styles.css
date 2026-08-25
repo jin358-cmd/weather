@@ -3405,18 +3405,16 @@ input[type="checkbox"] {
 .weekly-forecast-row {
   --weekly-date-col: 3.6em;
   --weekly-weekday-col: 2.8em;
-  --weekly-icon-col: 48px;
-  --weekly-label-col: fit-content(4.8em);
+  --weekly-status-col: 4.6em;
   display: grid;
   grid-template-columns:
     var(--weekly-date-col)
     var(--weekly-weekday-col)
-    var(--weekly-icon-col)
-    var(--weekly-label-col)
+    var(--weekly-status-col)
     max-content
     minmax(4.2em, 1fr);
   align-items: center;
-  column-gap: 6px;
+  column-gap: 8px;
   row-gap: 2px;
   padding: 8px 22px 8px 10px;
   border-radius: 12px;
@@ -3454,13 +3452,12 @@ input[type="checkbox"] {
 }
 
 .weekly-forecast-icon {
-  width: var(--weekly-icon-col, 48px);
+  width: 48px;
   height: 48px;
   margin: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  justify-self: center;
   flex: 0 0 auto;
 }
 
@@ -3471,6 +3468,18 @@ input[type="checkbox"] {
   display: block;
   background: transparent;
   object-fit: contain;
+}
+
+.weekly-forecast-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  justify-self: stretch;
+  text-align: center;
 }
 
 .weekly-forecast-label {
@@ -3484,8 +3493,7 @@ input[type="checkbox"] {
   color: #1f2a44;
   line-height: 1.15;
   min-width: 0;
-  justify-self: start;
-  text-align: left;
+  text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -3939,16 +3947,15 @@ input[type="checkbox"] {
   }
 
   .weekly-forecast-row {
-    --weekly-date-col: 3.1em;
-    --weekly-weekday-col: 2.5em;
-    --weekly-icon-col: 42px;
-    --weekly-label-col: fit-content(3.8em);
-    column-gap: 4px;
+    --weekly-date-col: 3.2em;
+    --weekly-weekday-col: 2.6em;
+    --weekly-status-col: 4.2em;
+    column-gap: 6px;
     padding: 8px 18px 8px 8px;
   }
 
   .weekly-forecast-icon {
-    width: var(--weekly-icon-col, 42px);
+    width: 42px;
     height: 42px;
   }
 
@@ -7465,16 +7472,15 @@ body.eq-sheet-open {
   }
 
   .weekly-forecast-row {
-    --weekly-date-col: 3em;
-    --weekly-weekday-col: 2.4em;
-    --weekly-icon-col: 40px;
-    --weekly-label-col: fit-content(3.6em);
-    column-gap: 4px;
+    --weekly-date-col: 3.1em;
+    --weekly-weekday-col: 2.5em;
+    --weekly-status-col: 4em;
+    column-gap: 6px;
     padding: 8px 18px 8px 8px;
   }
 
   .weekly-forecast-icon {
-    width: var(--weekly-icon-col, 40px);
+    width: 40px;
     height: 40px;
   }
 
