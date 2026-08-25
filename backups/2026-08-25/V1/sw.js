@@ -1,62 +1,9 @@
-const SW_VERSION = "jin-v241-backup-20260825";
-const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
-const PWA_PRECACHE_URLS = [
-  "./",
-  "./index.html",
-  "./offline.html",
-  "./styles.css",
-  "./legacy-themes.css",
-  "./app.js",
-  "./legacy-theme.js",
-  "./channel-talk.js",
-  "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png",
-  "./icons/torch-off-96.png",
-  "./icons/torch-on-96.png"
-];
-const CWA_WARNING_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
-const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
-const COOLDOWN_KEY = "notifyCooldown";
+const SW_VERSION = "jin-v134-cctv-locate-nearby";
 const PREFS_DB = "jin-bg-prefs-v1";
 const PREFS_STORE = "prefs";
 const PREFS_KEY = "subscription";
 const LAST_DIGEST_KEY = "lastDigest";
 const LAST_MESSAGES_KEY = "lastMessages";
-const WEATHER_STATUS_KEY = "weatherStatus";
-const WEATHER_STATUS_NOTIFY_TAG = "jin-weather-status";
-const WEATHER_STATUS_PERIODIC_TAG = "jin-weather-status";
-const WEATHER_CODE_LABEL = {
-  0: "晴朗",
-  1: "大致晴",
-  2: "局部多雲",
-  3: "陰天",
-  45: "有霧",
-  48: "霧凇",
-  51: "毛毛雨",
-  53: "小雨",
-  55: "中雨",
-  56: "凍毛雨",
-  57: "凍毛雨偏強",
-  61: "小雨",
-  63: "中雨",
-  65: "大雨",
-  66: "凍雨",
-  67: "凍雨偏強",
-  71: "小雪",
-  73: "中雪",
-  75: "大雪",
-  77: "雪粒",
-  80: "陣雨",
-  81: "陣雨偏強",
-  82: "強烈陣雨",
-  85: "陣雪",
-  86: "強烈陣雪",
-  95: "雷雨",
-  96: "雷雨伴冰雹",
-  99: "強雷雨伴冰雹"
-};
 const FLOOD_LATEST_API =
   "https://opendata.wra.gov.tw/api/v2/1b991bbb-ad85-4e7a-b931-06ce8749d3ed?format=JSON";
 const FLOOD_SAFE_DEPTH_CM = 15;
@@ -65,212 +12,35 @@ const POWER_OUTAGE_NOTIFY_RADIUS_KM = 10;
 const TAIPOWER_DISASTER_OUTAGE_URL =
   "https://service.taipower.com.tw/data/opendata/apply/file/d006012/001.xml";
 const CLOSURE_OFFICIAL_MIRROR = "https://r.jina.ai/https://www.dgpa.gov.tw/typh/daily/nds.html";
-const TYPHOON_WARN_MIRROR = "https://r.jina.ai/https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_WARN.html";
 const EARTHQUAKE_CWA_LIST_MIRROR =
   "https://r.jina.ai/https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
 const EARTHQUAKE_NATIONAL_INTENSITY = 4;
 const EARTHQUAKE_RECENT_MS = 168 * 60 * 60 * 1000;
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(PWA_CACHE_NAME).then(async (cache) => {
-      await Promise.all(PWA_PRECACHE_URLS.map((url) => cache.add(url).catch(() => undefined)));
-      await self.skipWaiting();
-    })
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys.filter((key) => key.startsWith("jin-pwa-") && key !== PWA_CACHE_NAME).map((key) => caches.delete(key))
-      );
-      await self.clients.claim();
-      const snapshot = await idbGet(WEATHER_STATUS_KEY).catch(() => null);
-      if (snapshot?.title) {
-        await showWeatherStatusNotification(snapshot);
-      }
-    })()
-  );
-});
-
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  if (request.method !== "GET") {
-    return;
-  }
-  const url = new URL(request.url);
-  const sameOrigin = url.origin === self.location.origin;
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(PWA_CACHE_NAME).then((cache) => cache.put("./index.html", copy)).catch(() => {});
-          return response;
-        })
-        .catch(async () => {
-          const cache = await caches.open(PWA_CACHE_NAME);
-          return (
-            (await cache.match("./index.html")) ||
-            (await cache.match("./")) ||
-            (await cache.match("./offline.html")) ||
-            new Response("目前離線", { headers: { "Content-Type": "text/plain; charset=utf-8" } })
-          );
-        })
-    );
-    return;
-  }
-  if (!sameOrigin) {
-    return;
-  }
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const networked = fetch(request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(PWA_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || networked;
-    })
-  );
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener("notificationclick", (event) => {
-  const tag = event.notification?.tag || "";
-  const kind = event.notification?.data?.kind || "";
-  const isWeatherStatus = tag === WEATHER_STATUS_NOTIFY_TAG || kind === "weather-status";
-  if (isWeatherStatus && event.action === "torch-toggle") {
-    event.waitUntil(handleWeatherTorchToggle());
-    return;
-  }
   event.notification.close();
-  event.waitUntil(focusOrOpenClient("./"));
-});
-
-async function focusOrOpenClient(path = "./") {
-  const clientsArr = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-  for (const client of clientsArr) {
-    if ("focus" in client) {
-      await client.focus();
-      return client;
-    }
-  }
-  if (self.clients.openWindow) {
-    return self.clients.openWindow(path);
-  }
-  return undefined;
-}
-
-async function handleWeatherTorchToggle() {
-  const clientsArr = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-  if (clientsArr.length) {
-    await Promise.all(
-      clientsArr.map(async (client) => {
-        client.postMessage({ type: "TORCH_TOGGLE" });
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsArr) => {
+      for (const client of clientsArr) {
         if ("focus" in client) {
-          await client.focus();
+          return client.focus();
         }
-      })
-    );
-    return;
-  }
-  await focusOrOpenClient("./?source=pwa&torch=toggle");
-}
-
-async function showWeatherStatusNotification(payload = {}) {
-  const snapshot = {
-    ...((await idbGet(WEATHER_STATUS_KEY)) || {}),
-    ...payload,
-    updatedAt: new Date().toISOString()
-  };
-  await idbSet(WEATHER_STATUS_KEY, snapshot);
-  const torchOn = Boolean(snapshot.torchOn);
-  const torchAvailable = snapshot.torchAvailable !== false;
-  const title = snapshot.title || "天氣讀取中";
-  const body = snapshot.body || snapshot.place || "災防通報";
-  const icon = new URL("./icons/icon-192.png", self.registration.scope).href;
-  const torchIcon = new URL(
-    torchOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png",
-    self.registration.scope
-  ).href;
-  const base = {
-    body,
-    tag: WEATHER_STATUS_NOTIFY_TAG,
-    silent: false,
-    renotify: false,
-    requireInteraction: false,
-    icon,
-    badge: icon,
-    data: {
-      kind: "weather-status",
-      torchOn,
-      place: snapshot.place || ""
-    }
-  };
-  const withActions = {
-    ...base,
-    actions: torchAvailable
-      ? [
-          {
-            action: "torch-toggle",
-            title: torchOn ? "關閉手電筒" : "開啟手電筒",
-            icon: torchIcon
-          }
-        ]
-      : []
-  };
-  const attempts = [withActions, base];
-  for (const options of attempts) {
-    try {
-      await self.registration.showNotification(title, options);
-      return true;
-    } catch {
-      /* try a simpler payload */
-    }
-  }
-  return false;
-}
-
-async function refreshWeatherStatusFromNetwork() {
-  const snapshot = (await idbGet(WEATHER_STATUS_KEY)) || {};
-  const lat = Number(snapshot.lat);
-  const lon = Number(snapshot.lon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    return false;
-  }
-  const url = new URL("https://api.open-meteo.com/v1/forecast");
-  url.searchParams.set("latitude", String(lat));
-  url.searchParams.set("longitude", String(lon));
-  url.searchParams.set("current", "temperature_2m,weather_code");
-  url.searchParams.set("timezone", "Asia/Taipei");
-  const response = await fetch(url.toString(), { cache: "no-store" });
-  if (!response.ok) {
-    return false;
-  }
-  const payload = await response.json();
-  const tempRaw = Number(payload.current?.temperature_2m);
-  const temperature = Number.isFinite(tempRaw) ? Math.round(tempRaw) : null;
-  const status = WEATHER_CODE_LABEL[Number(payload.current?.weather_code)] || "天氣更新中";
-  const torchOn = Boolean(snapshot.torchOn);
-  const torchAvailable = snapshot.torchAvailable !== false;
-  const place = snapshot.place || "所選位置";
-  const torchText = torchAvailable ? `｜手電筒 ${torchOn ? "開" : "關"}` : "";
-  await showWeatherStatusNotification({
-    ...snapshot,
-    temperature,
-    status,
-    title: temperature !== null ? `${temperature}° ${status}` : status,
-    body: `${place}${torchText}`
-  });
-  return true;
-}
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow("./");
+      }
+      return undefined;
+    })
+  );
+});
 
 function openPrefsDb() {
   return new Promise((resolve, reject) => {
@@ -386,280 +156,8 @@ function emptyRecoveryState() {
     powerOutages: {},
     waterOutages: {},
     earthquakes: {},
-    cityClosures: {},
     hasLandTyphoonWarning: false
   };
-}
-
-function isClosureStopMessage(message) {
-  const text = String(message || "");
-  return text.includes("停止上班") || text.includes("停止上課");
-}
-
-function getTaiwanDateParts(value = new Date()) {
-  const date = value instanceof Date ? value : new Date(value);
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Taipei",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(Number.isNaN(date.getTime()) ? new Date() : date);
-  return {
-    year: Number(parts.find((part) => part.type === "year")?.value),
-    month: Number(parts.find((part) => part.type === "month")?.value),
-    day: Number(parts.find((part) => part.type === "day")?.value)
-  };
-}
-
-function taiwanDateFromYmd(year, month, day) {
-  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 4, 0, 0));
-}
-
-function addTaiwanDays(value, days) {
-  const { year, month, day } = getTaiwanDateParts(value);
-  return new Date(Date.UTC(year, month - 1, day + Number(days || 0), 4, 0, 0));
-}
-
-function formatClosureDateLabel(value) {
-  const { year, month, day } = getTaiwanDateParts(value);
-  const weekday = ["日", "一", "二", "三", "四", "五", "六"][taiwanDateFromYmd(year, month, day).getUTCDay()];
-  return `${month}月${day}日（${weekday}）`;
-}
-
-function parseDgpaNoticeDate(text) {
-  const raw = String(text || "");
-  const iso = raw.match(/(20\d{2})[/\-](\d{1,2})[/\-](\d{1,2})/);
-  if (iso) {
-    return taiwanDateFromYmd(iso[1], iso[2], iso[3]);
-  }
-  const roc = raw.match(/(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
-  if (roc) {
-    return taiwanDateFromYmd(Number(roc[1]) + 1911, roc[2], roc[3]);
-  }
-  const { year, month, day } = getTaiwanDateParts();
-  return taiwanDateFromYmd(year, month, day);
-}
-
-function extractClosureApplyDates(message, noticeDate) {
-  const text = String(message || "");
-  if (!isClosureStopMessage(text)) {
-    return [];
-  }
-  const base = noticeDate instanceof Date ? noticeDate : parseDgpaNoticeDate(noticeDate);
-  const dates = [];
-  const addDate = (date) => {
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-      return;
-    }
-    const key = `${getTaiwanDateParts(date).month}/${getTaiwanDateParts(date).day}`;
-    if (!dates.some((item) => `${getTaiwanDateParts(item).month}/${getTaiwanDateParts(item).day}` === key)) {
-      dates.push(date);
-    }
-  };
-  const clauses = text.split(/[。；;\n]/).map((clause) => clause.trim()).filter(Boolean);
-  (clauses.length ? clauses : [text]).forEach((clause) => {
-    if (!clause || (/照常/.test(clause) && !/停止/.test(clause))) {
-      return;
-    }
-    if (!/停止上班|停止上課|已達停止/.test(clause)) {
-      return;
-    }
-    if (/明天|明日/.test(clause)) {
-      addDate(addTaiwanDays(base, 1));
-    }
-    if (/今天|今日|本日|今[（(]|已達停止/.test(clause)) {
-      addDate(base);
-    }
-  });
-  if (!dates.length) {
-    addDate(base);
-  }
-  return dates.sort((a, b) => a.getTime() - b.getTime());
-}
-
-function formatClosureNotifyMessage(markdown, message) {
-  if (!message) {
-    return null;
-  }
-  const noticeDate = parseDgpaNoticeDate(markdown);
-  const dates = extractClosureApplyDates(message, noticeDate);
-  const dateText = dates.map((date) => formatClosureDateLabel(date)).join("、");
-  return dateText ? `${dateText}：${message}` : message;
-}
-
-const TAIWAN_CITY_NAMES = [
-  "臺北市",
-  "新北市",
-  "基隆市",
-  "桃園市",
-  "新竹市",
-  "新竹縣",
-  "苗栗縣",
-  "臺中市",
-  "彰化縣",
-  "南投縣",
-  "雲林縣",
-  "嘉義市",
-  "嘉義縣",
-  "臺南市",
-  "高雄市",
-  "屏東縣",
-  "宜蘭縣",
-  "花蓮縣",
-  "臺東縣",
-  "澎湖縣",
-  "金門縣",
-  "連江縣"
-];
-
-function findCitiesInText(text) {
-  const hay = normalizeTaiwanPlaceText(text);
-  return TAIWAN_CITY_NAMES.filter((city) => hay.includes(normalizeTaiwanPlaceText(city)));
-}
-
-function stampSourceLine(source, body) {
-  const time = new Date().toLocaleString("zh-TW", { hour12: false, timeZone: "Asia/Taipei" });
-  return `${body}（來源：${source}｜${time}）`;
-}
-
-function isOfficialWarningCatalogLine(line) {
-  return /資料提供\s*:|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(line);
-}
-
-function isDroppedNcdrAlertText(text) {
-  return /【NCDR\s*示警】|地震警報由中央氣象署發布|內容包含地震規模及各地方震度/.test(String(text || ""));
-}
-
-function parseOfficialWarningMarkdown(markdown, cityName, { sourceLabel, keyword }) {
-  const city = normalizeTaiwanPlaceText(cityName);
-  const lines = String(markdown || "")
-    .split(/\n+/)
-    .map((line) => line.replace(/^#+\s*/, "").trim())
-    .filter((line) => line && !line.startsWith("![") && line.length < 280 && !isOfficialWarningCatalogLine(line));
-  const hits = lines.filter((line) => keyword.test(line) && (!city || normalizeTaiwanPlaceText(line).includes(city) || findCitiesInText(line).length > 0));
-  const cityHits = city
-    ? hits.filter((line) => normalizeTaiwanPlaceText(line).includes(city) || /全[臺台]|各地(?!方)/.test(line))
-    : hits;
-  const top = (cityHits[0] || hits[0] || "").replace(/\s+/g, " ").slice(0, 140);
-  if (!top) {
-    return null;
-  }
-  return stampSourceLine(sourceLabel, top);
-}
-
-function eventKeyFromMessage(message, city) {
-  const compact = String(message || "")
-    .replace(/\d{4}\/\d{1,2}\/\d{1,2}[^\s]*/g, "")
-    .replace(/\d{1,2}:\d{2}(?::\d{2})?/g, "")
-    .replace(/來源：[^｜|]+[｜|]\s*/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 96);
-  return `${normalizeTaiwanPlaceText(city)}|${compact}`;
-}
-
-async function filterCooldownMessages(messages, city, { force = false } = {}) {
-  const lines = (messages || []).map((item) => String(item || "").trim()).filter(Boolean);
-  if (force) {
-    return lines;
-  }
-  const now = Date.now();
-  const map = (await idbGet(COOLDOWN_KEY)) || {};
-  const kept = [];
-  lines.forEach((line) => {
-    const key = eventKeyFromMessage(line, city);
-    if (map[key] && now - Number(map[key]) < NOTIFY_COOLDOWN_MS) {
-      return;
-    }
-    map[key] = now;
-    kept.push(line);
-  });
-  await idbSet(COOLDOWN_KEY, map);
-  return kept;
-}
-
-function isRecoveryNotificationLine(text) {
-  return /消退|解除|已恢復/.test(String(text || ""));
-}
-
-const NOTIFY_CATEGORY_ORDER = [
-  "closure",
-  "flood",
-  "typhoon",
-  "earthquake",
-  "power",
-  "water",
-  "cwa-warning",
-  "weather",
-  "air",
-  "other"
-];
-
-function getNotifyCategoryKey(text = "") {
-  const raw = String(text || "");
-  if (/停班停課/.test(raw)) {
-    return "closure";
-  }
-  if (/積淹水/.test(raw)) {
-    return "flood";
-  }
-  if (/停電/.test(raw)) {
-    return "power";
-  }
-  if (/停水/.test(raw)) {
-    return "water";
-  }
-  if (/地震/.test(raw)) {
-    return "earthquake";
-  }
-  if (/颱風/.test(raw)) {
-    return "typhoon";
-  }
-  if (/空氣/.test(raw)) {
-    return "air";
-  }
-  if (/氣象署警特報|【氣象署/.test(raw)) {
-    return "cwa-warning";
-  }
-  if (/【天氣】|【降雨】/.test(raw)) {
-    return "weather";
-  }
-  return "other";
-}
-
-function mergeNotifyLinesByCategory(lines = []) {
-  const groups = new Map();
-  (lines || []).forEach((line) => {
-    const text = String(line || "").trim();
-    if (!text) {
-      return;
-    }
-    const key = getNotifyCategoryKey(text);
-    if (!groups.has(key)) {
-      groups.set(key, []);
-    }
-    const list = groups.get(key);
-    if (!list.includes(text)) {
-      list.push(text);
-    }
-  });
-  return NOTIFY_CATEGORY_ORDER.filter((key) => groups.has(key)).flatMap((key) => groups.get(key));
-}
-
-function getMergedNotifyBatchTitle(lines = []) {
-  const rows = (lines || []).map((line) => String(line || "").trim()).filter(Boolean);
-  if (!rows.length) {
-    return "災害狀態更新";
-  }
-  const allRecovery = rows.every(isRecoveryNotificationLine);
-  const anyRecovery = rows.some(isRecoveryNotificationLine);
-  if (allRecovery) {
-    return "災害警戒解除";
-  }
-  if (anyRecovery) {
-    return "災害狀態更新";
-  }
-  return "災害警戒通知";
 }
 
 async function fetchNearbyFloodRows(lat, lon) {
@@ -902,9 +400,7 @@ function isNationalEarthquakeAlert(quake) {
 async function buildBackgroundAlertMessages(prefs) {
   const messages = [];
   const recoveryMessages = [];
-  const topics = new Set(
-    (prefs?.topics || []).filter((topic) => topic !== "cwa-warning" && topic !== "ncdr-alert")
-  );
+  const topics = new Set(prefs?.topics || []);
   const lat = Number(prefs?.lat);
   const lon = Number(prefs?.lon);
   const label = prefs?.label || `${prefs?.city || ""}${prefs?.township || ""}` || "訂閱地區";
@@ -959,35 +455,16 @@ async function buildBackgroundAlertMessages(prefs) {
     }
   }
 
-  next.cityClosures = { ...(prev.cityClosures || {}) };
   if (topics.has("closure")) {
     try {
       const response = await fetch(CLOSURE_OFFICIAL_MIRROR, { cache: "no-store" });
       if (response.ok) {
-        const markdown = await response.text();
-        const message = parseClosureCityMessage(markdown, city);
-        const datedMessage = formatClosureNotifyMessage(markdown, message);
+        const message = parseClosureCityMessage(await response.text(), city);
         messages.push(
-          stampSourceLine(
-            "行政院人事行政總處",
-            datedMessage
-              ? `【停班停課】${label}：${datedMessage}`
-              : `【停班停課】${label}：目前無停班停課狀態`
-          )
+          message
+            ? `【停班停課】${label}：${message}`
+            : `【停班停課】${label}：目前無停班停課狀態`
         );
-        const active = isClosureStopMessage(message);
-        if (city && prev.cityClosures?.[city]?.active && !active) {
-          recoveryMessages.push(
-            `【停班停課解除】${label} 已解除停班停課警戒${
-              message ? `，目前${message}` : "，目前恢復照常上班上課"
-            }。`
-          );
-        }
-        if (city) {
-          next.cityClosures[city] = { active, message: message || "" };
-        }
-      } else {
-        messages.push(`【停班停課】${label}：目前無停班停課狀態`);
       }
     } catch {
       messages.push(`【停班停課】${label}：目前無停班停課狀態`);
@@ -1159,22 +636,6 @@ async function buildBackgroundAlertMessages(prefs) {
     next.waterOutages = prev.waterOutages || {};
   }
 
-  if (topics.has("cwa-warning")) {
-    try {
-      const response = await fetch(CWA_WARNING_MIRROR, { cache: "no-store" });
-      if (response.ok) {
-        const text = await response.text();
-        const parsed = parseOfficialWarningMarkdown(text, city, {
-          sourceLabel: "中央氣象署警特報",
-          keyword: /特報|警報|注意/
-        });
-        messages.push(parsed || stampSourceLine("中央氣象署警特報", `【氣象署警特報】${label} 目前無縣市對應警特報`));
-      }
-    } catch {
-      messages.push(stampSourceLine("中央氣象署警特報", `【氣象署警特報】${label} 資料暫時無法讀取`));
-    }
-  }
-
   if (topics.has("earthquake")) {
     try {
       const response = await fetch(EARTHQUAKE_CWA_LIST_MIRROR, { cache: "no-store" });
@@ -1189,10 +650,10 @@ async function buildBackgroundAlertMessages(prefs) {
         } else if (rows.length) {
           const top = rows[0];
           messages.push(
-            `【地震監測】${label} 最新：規模 ${top.magnitude.toFixed(1)}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${formatDateTime(top.timeMs)}），目前未達國家緊急訊息等級。`
+            `【地震監測｜中央氣象署】${label} 最新：規模 ${top.magnitude.toFixed(1)}、最大震度 ${formatIntensityLabel(top.intensityValue)}（${formatDateTime(top.timeMs)}），目前未達國家緊急訊息等級。`
           );
         } else {
-          messages.push(`【地震監測】${label} 目前無近期台灣地區有感地震通報。`);
+          messages.push(`【地震監測｜中央氣象署】${label} 目前無近期台灣地區有感地震通報。`);
         }
         const currentEarthquakes = {};
         recentNational.forEach((quake) => {
@@ -1226,29 +687,8 @@ async function buildBackgroundAlertMessages(prefs) {
     next.earthquakes = prev.earthquakes || {};
   }
 
-  try {
-    const response = await fetch(TYPHOON_WARN_MIRROR, { cache: "no-store" });
-    if (response.ok) {
-      const warnText = await response.text();
-      const hasWarning = !/目前無發布颱風警報/.test(warnText);
-      const hasLandWarning =
-        hasWarning && /陸上颱風警報/.test(warnText) && !/解除陸上颱風警報/.test(warnText);
-      if (prev.hasLandTyphoonWarning && !hasLandWarning) {
-        recoveryMessages.push(
-          `【解除颱風警報】中央氣象署已解除陸上颱風警報，${label} 請持續留意後續天氣與防災資訊。`
-        );
-      }
-      next.hasLandTyphoonWarning = hasLandWarning;
-    } else {
-      next.hasLandTyphoonWarning = Boolean(prev.hasLandTyphoonWarning);
-    }
-  } catch {
-    next.hasLandTyphoonWarning = Boolean(prev.hasLandTyphoonWarning);
-  }
-
   return {
-    messages: messages.filter((line) => line && !isDroppedNcdrAlertText(line)),
-    recoveryMessages: recoveryMessages.filter((line) => line && !isDroppedNcdrAlertText(line)),
+    messages: [...recoveryMessages, ...messages].filter(Boolean),
     recoveryState: next
   };
 }
@@ -1267,27 +707,17 @@ async function showSystemNotification(title, body, tag) {
 }
 
 async function showNotificationBatch(items = []) {
-  const lines = [];
-  (items || []).forEach((item) => {
-    String(item?.body || "")
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter((line) => line && !isDroppedNcdrAlertText(line))
-      .forEach((line) => {
-        if (!lines.includes(line)) {
-          lines.push(line);
-        }
-      });
-  });
-  const merged = mergeNotifyLinesByCategory(lines);
-  if (!merged.length) {
-    return;
+  for (const [index, item] of (items || []).entries()) {
+    const body = String(item?.body || "").trim();
+    if (!body) {
+      continue;
+    }
+    await showSystemNotification(
+      item.title || "預報訂閱通知",
+      body,
+      item.tag || `jin-bg-${Date.now()}-${index}`
+    );
   }
-  const title =
-    items.length === 1 && items[0]?.title
-      ? items[0].title
-      : getMergedNotifyBatchTitle(merged);
-  await showSystemNotification(title, merged.join("\n"), items[0]?.tag || `jin-bg-${Date.now()}`);
 }
 
 async function saveSubscriptionDigest(payload = {}) {
@@ -1306,18 +736,12 @@ async function runBackgroundSubscriptionCheck() {
   if (!prefs?.email || !Array.isArray(prefs.topics) || !prefs.topics.length) {
     return { checked: false, reason: "no-prefs" };
   }
-  const { messages, recoveryMessages, recoveryState } = await buildBackgroundAlertMessages(prefs);
-  const recoveryLines = (recoveryMessages || []).filter((line) => isRecoveryNotificationLine(line));
-  const digestLines = prefs.notifyArmedByLocate
-    ? [
-        ...(recoveryMessages || []).filter((line) => !isRecoveryNotificationLine(line)),
-        ...(messages || [])
-      ]
-    : [];
-  const outgoing = [...recoveryLines, ...digestLines].filter(Boolean);
-  if (!outgoing.length) {
-    await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
-    return { checked: true, notified: false, reason: prefs.notifyArmedByLocate ? "empty" : "recovery-only-empty" };
+  if (!prefs.notifyArmedByLocate) {
+    return { checked: true, notified: false, reason: "locate-required" };
+  }
+  const { messages, recoveryState } = await buildBackgroundAlertMessages(prefs);
+  if (!messages.length) {
+    return { checked: true, notified: false };
   }
   const storedMessages = await idbGet(LAST_MESSAGES_KEY);
   const previousMessages = Array.isArray(storedMessages)
@@ -1327,20 +751,16 @@ async function runBackgroundSubscriptionCheck() {
         .map((item) => item.trim())
         .filter(Boolean);
   const previousSet = new Set(previousMessages);
-  const changed = outgoing.filter((line) => !previousSet.has(line));
-  const fresh = await filterCooldownMessages(changed, prefs.city || "", { force: false });
-  const merged = mergeNotifyLinesByCategory(fresh);
-  if (!merged.length) {
+  const fresh = messages.filter((line) => !previousSet.has(line));
+  if (!fresh.length) {
     await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
     return { checked: true, notified: false, reason: "unchanged" };
   }
-  await showSystemNotification(
-    getMergedNotifyBatchTitle(merged),
-    merged.join("\n"),
-    `jin-bg-${Date.now()}`
-  );
-  await idbSet(LAST_DIGEST_KEY, outgoing.join("\n"));
-  await idbSet(LAST_MESSAGES_KEY, outgoing);
+  for (const [index, message] of fresh.entries()) {
+    await showSystemNotification("預報訂閱通知", message, `jin-bg-${Date.now()}-${index}`);
+  }
+  await idbSet(LAST_DIGEST_KEY, messages.join("\n"));
+  await idbSet(LAST_MESSAGES_KEY, messages);
   await idbSet(PREFS_KEY, { ...prefs, recoveryState, updatedAt: new Date().toISOString() });
   return { checked: true, notified: true, count: fresh.length };
 }
@@ -1383,27 +803,6 @@ self.addEventListener("message", (event) => {
     event.waitUntil(showNotificationBatch(data.payload?.items || []));
     return;
   }
-  if (data.type === "SHOW_WEATHER_STATUS") {
-    event.waitUntil(showWeatherStatusNotification(data.payload || {}));
-    return;
-  }
-  if (data.type === "SET_TORCH_STATE") {
-    event.waitUntil(
-      (async () => {
-        const current = (await idbGet(WEATHER_STATUS_KEY)) || {};
-        const torchOn = Boolean(data.payload?.on);
-        const torchAvailable = current.torchAvailable !== false;
-        const place = current.place || "所選位置";
-        const torchText = torchAvailable ? `｜手電筒 ${torchOn ? "開" : "關"}` : "";
-        await showWeatherStatusNotification({
-          ...current,
-          torchOn,
-          body: `${place}${torchText}`
-        });
-      })()
-    );
-    return;
-  }
   if (data.type !== "SHOW_NOTIFICATION") {
     return;
   }
@@ -1424,9 +823,6 @@ self.addEventListener("message", (event) => {
 self.addEventListener("periodicsync", (event) => {
   if (event.tag === "jin-disaster-check") {
     event.waitUntil(runBackgroundSubscriptionCheck());
-  }
-  if (event.tag === WEATHER_STATUS_PERIODIC_TAG) {
-    event.waitUntil(refreshWeatherStatusFromNetwork());
   }
 });
 
@@ -1450,12 +846,12 @@ self.addEventListener("push", (event) => {
         .map((item) => item.trim())
         .filter(Boolean);
   event.waitUntil(
-    showNotificationBatch([
-      {
-        title: payload.title || getMergedNotifyBatchTitle(bodies),
-        body: mergeNotifyLinesByCategory(bodies).join("\n"),
-        tag: payload.tag || `jin-push-${Date.now()}`
-      }
-    ])
+    showNotificationBatch(
+      bodies.map((body, index) => ({
+        title: payload.title || "預報訂閱通知",
+        body,
+        tag: payload.tag ? `${payload.tag}-${index}` : `jin-push-${Date.now()}-${index}`
+      }))
+    )
   );
 });
