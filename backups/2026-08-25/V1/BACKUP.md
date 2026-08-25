@@ -1,0 +1,11 @@
+# V1 程式碼備份
+
+這是網站當時正式版的完整備份（不含 `.git`）。
+
+- 來源：`main` @ `c4b4bc4`
+- 備份時間：2026-08-23 05:47 UTC
+- 內容：當時的 HTML／CSS／JS、資料檔、圖示與相關腳本
+
+線上正式版仍在網站根目錄。此資料夾僅作還原與對照用。
+
+下載檔：`../weather-v1.zip` 或 https://jin358-cmd.github.io/weather/weather-v1.zip

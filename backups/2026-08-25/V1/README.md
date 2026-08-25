@@ -54,26 +54,19 @@ python3 -m http.server 4173
 
 ## 公開網站（GitHub Pages）
 
-程式碼已在公開倉庫：https://github.com/jin358-cmd/weather
+程式碼已在公開倉庫：https://github.com/amjin358-svg/jin
 
 預期公開網址：
 
 **https://jin358-cmd.github.io/weather/**
 
-### 完整程式碼備份
-
-- 下載 ZIP：https://jin358-cmd.github.io/weather/weather-2026-08-25.zip
-- 下載頁：https://jin358-cmd.github.io/weather/download.html
-- GitHub 備份資料夾（標註日期）：[`backups/2026-08-25`](https://github.com/jin358-cmd/weather/tree/main/backups/2026-08-25)
-- 先前 V1：https://jin358-cmd.github.io/weather/weather-v1.zip
-
 ### 訂閱通知（每日天氣預報 Email）
 
-按下「儲存訂閱」後：
+勾選「每日天氣預報（Email，每天一次）」並儲存訂閱後：
 
-1. 系統會立即寄送**訂閱成功通知**到訂閱者信箱（列出已勾選主題與地區）  
-2. 若有勾選「每日天氣預報」，同一封信會附上今日預報，之後**每天一次**寄送該地區天氣預報  
-3. 首次寄送到新信箱時，請先點選服務商（FormSubmit）的確認信，之後即可穩定收信  
+1. 系統會立即寄送**訂閱確認＋今日天氣預報**到訂閱者信箱  
+2. 之後**每天一次**寄送該地區天氣預報  
+3. 首次寄送到新信箱時，請先點選服務商（FormSubmit）的確認信，之後才會穩定收信
 4. **關閉網站後仍可收到背景系統通知**（需允許通知權限；建議「加到主畫面／安裝 PWA」，Chrome 等瀏覽器會以背景定期檢查積淹水／天氣警戒）
 
 伺服器端每日排程（即使用戶未開啟網站也會寄）：
@@ -92,14 +85,14 @@ python3 -m http.server 4173
 
 目前 Actions 無法代替擁有者「第一次」開啟 Pages（權限限制）。請用擁有者帳號完成：
 
-1. 開啟 [Pages 設定](https://github.com/jin358-cmd/weather/settings/pages)
+1. 開啟 [Pages 設定](https://github.com/amjin358-svg/jin/settings/pages)
 2. **Build and deployment → Source** 選其中一種：
    - **最快**：`Deploy from a branch` → Branch 選 `main` → Folder `/ (root)` → Save  
    - 或：`GitHub Actions`（之後每次推 `main` 會自動部署）
-3. 若選 GitHub Actions，請再到 [Actions 權限](https://github.com/jin358-cmd/weather/settings/actions)：
+3. 若選 GitHub Actions，請再到 [Actions 權限](https://github.com/amjin358-svg/jin/settings/actions)：
    - Workflow permissions → **Read and write permissions** → Save
-4. 開啟 [Actions](https://github.com/jin358-cmd/weather/actions) 手動執行 **Deploy site to GitHub Pages**（或再推一次 `main`）
-5. 約 1～2 分鐘後造訪：https://jin358-cmd.github.io/weather/
+4. 開啟 [Actions](https://github.com/amjin358-svg/jin/actions) 手動執行 **Deploy site to GitHub Pages**（或再推一次 `main`）
+5. 約 1～2 分鐘後造訪：https://amjin358-svg.github.io/jin/
 
 ### 自動部署工作流程
 

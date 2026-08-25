@@ -1,0 +1,48 @@
+name: Daily subscriber database backup email
+
+on:
+  schedule:
+    # 07:10 Asia/Taipei (UTC+8) ≈ 23:10 UTC previous day
+    - cron: "10 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-subscriber-backup
+  cancel-in-progress: false
+
+jobs:
+  send-subscriber-backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Rebuild subscriber table and counter floor
+        run: node ./scripts/sync-daily-site-data.mjs
+
+      - name: Commit cumulative table to GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/subscribers.csv data/subscribers.md data/counters.json
+          if git diff --staged --quiet; then
+            echo "No cumulative table changes"
+          else
+            git commit -m "chore: daily subscriber table and counter floor"
+            git push
+          fi
+
+      - name: Email subscriber backup and connection report
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          SUBSCRIBER_BACKUP_TO: jin358@gmail.com
+        run: node ./scripts/send-subscriber-backup-email.mjs
