@@ -8912,18 +8912,7 @@ function isDesktopBrowser() {
 }
 
 async function hasInstalledDesktopPwa() {
-  if (isStandaloneDisplay()) {
-    return true;
-  }
-  if (typeof navigator.getInstalledRelatedApps !== "function") {
-    return false;
-  }
-  try {
-    const apps = await navigator.getInstalledRelatedApps();
-    return Array.isArray(apps) && apps.length > 0;
-  } catch {
-    return false;
-  }
+  return isStandaloneDisplay();
 }
 
 function isInstallBannerDismissed() {
@@ -9096,7 +9085,7 @@ function getNotifyPermissionExplain() {
     return {
       status: "已被拒絕，改用頁面內提醒",
       detail: support.isIos
-        ? "請到設定 → 通知 → 災防通報改為允許；或刪除主畫面圖示後重新加入。"
+        ? "請到設定 → 通知 → 防災通報改為允許；或刪除主畫面圖示後重新加入。"
         : "瀏覽器已封鎖本站通知（先前點過拒絕，或把權限彈窗關掉）。請點網址列左側圖示 → 網站設定 → 通知 → 允許。"
     };
   }
@@ -9141,6 +9130,52 @@ function updatePwaTestChecklist() {
 
 let deferredPwaPrompt = window.__jinPwaPrompt || null;
 
+async function promptDesktopPwaInstall() {
+  const promptEvent = deferredPwaPrompt || window.__jinPwaPrompt;
+  if (!promptEvent) {
+    if (pwaInstallText) {
+      pwaInstallText.textContent = isDesktopBrowser()
+        ? "請用 Chrome 或 Edge 開啟本頁後再點安裝。若仍無安裝視窗，請點網址列右側「安裝」圖示，或選單中的「安裝應用程式」。"
+        : "請用 Chrome 開啟，點選右上角選單後選擇「安裝應用程式」。";
+    }
+    return false;
+  }
+  deferredPwaPrompt = promptEvent;
+  deferredPwaPrompt.prompt();
+  try {
+    const choice = await deferredPwaPrompt.userChoice;
+    if (choice?.outcome === "accepted") {
+      if (pwaInstallBanner) {
+        pwaInstallBanner.dataset.installed = "1";
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  deferredPwaPrompt = null;
+  window.__jinPwaPrompt = null;
+  renderPwaInstallBanner();
+  return true;
+}
+
+function hidePwaSplash() {
+  const splash = document.querySelector("#pwaSplash");
+  document.documentElement.classList.remove("pwa-splash-open");
+  if (splash) {
+    splash.hidden = true;
+  }
+}
+
+function initPwaSplashScreen() {
+  const splash = document.querySelector("#pwaSplash");
+  if (!splash || splash.hidden) {
+    return;
+  }
+  const close = () => hidePwaSplash();
+  window.setTimeout(close, 1600);
+  window.addEventListener("load", () => window.setTimeout(close, 400), { once: true });
+}
+
 function renderPwaInstallBanner() {
   if (!pwaInstallBanner) {
     return;
@@ -9157,7 +9192,7 @@ function renderPwaInstallBanner() {
     }
     if (pwaInstallText) {
       pwaInstallText.textContent = deferredPwaPrompt
-        ? "點安裝後可獨立視窗開啟災防通報，並接收通知。"
+        ? "點安裝後可獨立視窗開啟防災通報，並接收通知。"
         : "建議安裝桌面版。點安裝，或從 Chrome／Edge 網址列右側安裝圖示加入電腦。";
     }
     if (pwaInstallBtn) {
@@ -9169,7 +9204,7 @@ function renderPwaInstallBanner() {
   }
   if (isLikelyIosDevice()) {
     if (pwaInstallTitle) {
-      pwaInstallTitle.textContent = "尚未安裝災防通報";
+      pwaInstallTitle.textContent = "尚未安裝防災通報";
     }
     if (pwaInstallText) {
       pwaInstallText.textContent = "在 Safari 點分享，再選「加入主畫面」。";
@@ -9181,7 +9216,7 @@ function renderPwaInstallBanner() {
     return;
   }
   if (pwaInstallTitle) {
-    pwaInstallTitle.textContent = "尚未安裝災防通報";
+    pwaInstallTitle.textContent = "尚未安裝防災通報";
   }
   if (pwaInstallText) {
     pwaInstallText.textContent = deferredPwaPrompt
@@ -9212,6 +9247,7 @@ async function refreshPwaInstallBanner() {
 }
 
 function initPwaInstallExperience() {
+  initPwaSplashScreen();
   if (window.__jinPwaPrompt) {
     deferredPwaPrompt = window.__jinPwaPrompt;
   }
@@ -9236,27 +9272,15 @@ function initPwaInstallExperience() {
     refreshPwaInstallBanner().catch(() => renderPwaInstallBanner());
   });
   pwaInstallBtn?.addEventListener("click", async () => {
-    if (deferredPwaPrompt) {
-      deferredPwaPrompt.prompt();
-      try {
-        const choice = await deferredPwaPrompt.userChoice;
-        if (choice?.outcome === "accepted") {
-          if (pwaInstallBanner) {
-            pwaInstallBanner.dataset.installed = "1";
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-      deferredPwaPrompt = null;
-      window.__jinPwaPrompt = null;
-      renderPwaInstallBanner();
-      return;
+    if (pwaInstallBtn) {
+      pwaInstallBtn.disabled = true;
     }
-    if (pwaInstallText) {
-      pwaInstallText.textContent = isDesktopBrowser()
-        ? "請用 Chrome 或 Edge 開啟，點網址列右側「安裝」圖示，或選單中的「安裝應用程式」。"
-        : "請用 Chrome 開啟，點選右上角選單後選擇「安裝應用程式」。";
+    try {
+      await promptDesktopPwaInstall();
+    } finally {
+      if (pwaInstallBtn) {
+        pwaInstallBtn.disabled = false;
+      }
     }
   });
   pwaInstallDismiss?.addEventListener("click", () => {
@@ -14376,6 +14400,7 @@ initServiceWorker()
     renderNotifyPermissionStatus();
     updatePwaTestChecklist();
     updateNotificationHint();
+    await refreshPwaInstallBanner();
     await pinAndroidWeatherStatusTray();
     if (appState.subscription?.email) {
       await enableBackgroundNotifications(appState.subscription).catch(() => {});

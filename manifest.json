@@ -1,20 +1,14 @@
 {
-  "id": "./",
-  "name": "停班停課+即時災害通報平台",
-  "short_name": "災防通報",
+  "id": "https://jin358-cmd.github.io/weather/",
+  "name": "防災通報",
+  "short_name": "防災通報",
   "description": "全台停班停課、氣象署警特報與即時災防通報",
-  "start_url": "./?source=pwa",
+  "start_url": "./index.html?source=pwa",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "prefer_related_applications": false,
-  "related_applications": [
-    {
-      "platform": "webapp",
-      "url": "https://jin358-cmd.github.io/weather/manifest.json"
-    }
-  ],
   "background_color": "#161d27",
   "theme_color": "#161d27",
   "lang": "zh-Hant-TW",

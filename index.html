@@ -17,17 +17,17 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=233" />
+    <link rel="stylesheet" href="./styles.css?v=234" />
     <link rel="stylesheet" href="./legacy-themes.css?v=204" />
-    <link rel="manifest" href="./manifest.json" />
+    <link rel="manifest" href="./manifest.json?v=6" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
     <meta name="theme-color" content="#161d27" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="災防通報" />
+    <meta name="apple-mobile-web-app-title" content="防災通報" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="application-name" content="災防通報" />
+    <meta name="application-name" content="防災通報" />
     <script>
       window.__jinPwaPrompt = null;
       window.addEventListener("beforeinstallprompt", function (event) {
@@ -35,9 +35,31 @@
         window.__jinPwaPrompt = event;
         window.dispatchEvent(new Event("jin-pwa-prompt-ready"));
       });
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(function () {});
+      }
     </script>
   </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
+    <div id="pwaSplash" class="pwa-splash" hidden>
+      <img class="pwa-splash-icon" src="./icons/icon-192.png" width="96" height="96" alt="" />
+      <p class="pwa-splash-title">防災通報</p>
+    </div>
+    <script>
+      (function () {
+        var standalone =
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.matchMedia("(display-mode: fullscreen)").matches ||
+          window.matchMedia("(display-mode: minimal-ui)").matches ||
+          Boolean(navigator.standalone) ||
+          /(?:\?|&)source=pwa(?:&|$)/.test(location.search);
+        var splash = document.getElementById("pwaSplash");
+        if (standalone && splash) {
+          splash.hidden = false;
+          document.documentElement.classList.add("pwa-splash-open");
+        }
+      })();
+    </script>
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
       <div class="pwa-install-inner">
         <div class="pwa-install-copy">
@@ -574,9 +596,7 @@
           <span id="likeCountValue" class="like-count-value">0000000</span>
         </button>
       </div>
-      <p class="site-credit">
-        <a href="mailto:amjin358@gmail.com">網頁設計 @2026 弘泰科技</a>
-      </p>
+      <p class="site-credit">網頁設計 @2026 弘泰科技</p>
       <section class="channel-talk-footer" aria-label="即時留言回饋">
         <button type="button" id="channelTalkFooterBtn" class="channel-talk-footer-btn">
           <span class="channel-talk-footer-icon" aria-hidden="true">
@@ -650,7 +670,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=229" defer></script>
+    <script src="./app.js?v=230" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=5" defer></script>
   </body>
