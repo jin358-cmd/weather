@@ -3136,12 +3136,12 @@ input[type="checkbox"] {
 .weather-place-sep {
   color: #7b93b3;
   font-weight: 700;
-  font-size: clamp(1.05rem, 4.2vw, 1.3rem);
+  font-size: clamp(1.22rem, 5vw, 1.55rem);
 }
 
 .weather-place {
   margin: 0;
-  font-size: clamp(1.15rem, 4.8vw, 1.45rem);
+  font-size: clamp(1.32rem, 5.4vw, 1.7rem);
   font-weight: 800;
   line-height: 1.35;
   color: #0a3564;
@@ -3151,7 +3151,7 @@ input[type="checkbox"] {
 
 .weather-condition {
   margin: 0;
-  font-size: clamp(1.15rem, 4.8vw, 1.45rem);
+  font-size: clamp(1.32rem, 5.4vw, 1.7rem);
   font-weight: 700;
   line-height: 1.35;
   color: #1f5ae1;
@@ -3866,7 +3866,7 @@ input[type="checkbox"] {
   .weather-place,
   .weather-condition,
   .weather-place-sep {
-    font-size: clamp(0.82rem, 7.8cqi, 1.16rem);
+    font-size: clamp(1.02rem, 9.2cqi, 1.42rem);
     line-height: 1.25;
     white-space: nowrap;
     overflow-wrap: normal;
