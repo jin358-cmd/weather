@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v234-eq-two-day";
+const SW_VERSION = "jin-v235-eq-map-four";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
