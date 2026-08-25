@@ -493,6 +493,49 @@ body {
   pointer-events: none;
 }
 
+.android-shade-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6, 10, 18, 0.72);
+}
+
+.android-shade-prompt[hidden] {
+  display: none !important;
+}
+
+.android-shade-prompt-card {
+  width: min(420px, 100%);
+  padding: 18px 16px 14px;
+  border: 1px solid rgba(255, 227, 138, 0.35);
+  border-radius: 16px;
+  background: #121a28;
+  color: #f4efe6;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.android-shade-prompt-card strong {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 1.12rem;
+}
+
+.android-shade-prompt-card p {
+  margin: 0 0 14px;
+  color: #d8cfc0;
+  line-height: 1.5;
+}
+
+.android-shade-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .pwa-install-copy {
   flex: 1 1 220px;
 }
