@@ -809,6 +809,7 @@ const EARTHQUAKE_RECENT_HOURS = 168;
 const EARTHQUAKE_COORD_CACHE_KEY = "cwaEarthquakeCoordCacheV1";
 const EARTHQUAKE_DETAIL_ENRICH_LIMIT = 12;
 const EARTHQUAKE_PREVIEW_LIMIT = 3;
+const EARTHQUAKE_LIST_DAYS = 2;
 const EARTHQUAKE_MAP_LIMIT = 5;
 const EARTHQUAKE_SCWEB_PAGE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
 const EARTHQUAKE_SCWEB_MAP_BASE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/imgs";
@@ -1164,6 +1165,27 @@ function getTaiwanDateKey(value = Date.now()) {
 function isEarthquakeOnTaiwanToday(timeMs) {
   const stamp = Number(timeMs);
   return Number.isFinite(stamp) && getTaiwanDateKey(stamp) === getTaiwanDateKey();
+}
+
+function isEarthquakeWithinTaiwanDays(timeMs, days = EARTHQUAKE_LIST_DAYS) {
+  const stamp = Number(timeMs);
+  const window = Math.max(1, Number(days) || 1);
+  if (!Number.isFinite(stamp)) {
+    return false;
+  }
+  const today = new Date(`${getTaiwanDateKey()}T00:00:00+08:00`);
+  const eventDay = new Date(`${getTaiwanDateKey(stamp)}T00:00:00+08:00`);
+  if (!Number.isFinite(today.getTime()) || !Number.isFinite(eventDay.getTime())) {
+    return false;
+  }
+  const diffDays = Math.round((today.getTime() - eventDay.getTime()) / (24 * 60 * 60 * 1000));
+  return diffDays >= 0 && diffDays < window;
+}
+
+function getRecentEarthquakesForList() {
+  return (appState.earthquakes || [])
+    .filter((quake) => isEarthquakeWithinTaiwanDays(quake.timeMs, EARTHQUAKE_LIST_DAYS))
+    .sort((a, b) => b.timeMs - a.timeMs);
 }
 
 function getTodayEarthquakesForMap() {
@@ -8213,18 +8235,19 @@ function renderEarthquakePanel() {
   if (!earthquakeList) {
     return;
   }
-  const quakes = enrichEarthquakeDistances(appState.earthquakes || []);
-  appState.earthquakes = quakes;
+  const allQuakes = enrichEarthquakeDistances(appState.earthquakes || []);
+  appState.earthquakes = allQuakes;
+  const quakes = getRecentEarthquakesForList();
   earthquakeList.innerHTML = "";
 
   if (!quakes.length) {
     if (earthquakeSummary) {
       earthquakeSummary.hidden = false;
-      earthquakeSummary.textContent = "目前中央氣象署無近期台灣地區有感地震";
+      earthquakeSummary.textContent = "目前中央氣象署無2日內台灣地區有感地震";
       syncEarthquakeSummaryLevel(null);
     }
     renderEarthquakeSourceMeta(Date.now());
-    earthquakeList.innerHTML = "<li>目前無符合條件的地震事件。</li>";
+    earthquakeList.innerHTML = "<li>目前無2日內符合條件的地震事件。</li>";
     return;
   }
 
@@ -8240,9 +8263,50 @@ function renderEarthquakePanel() {
   renderEarthquakeSourceMeta(Date.now());
 
   const preview = quakes.slice(0, EARTHQUAKE_PREVIEW_LIMIT);
+  const rest = quakes.slice(EARTHQUAKE_PREVIEW_LIMIT);
   preview.forEach((quake, index) => {
     earthquakeList.append(createEarthquakeListItem(quake, { pinned: index === 0 }));
   });
+
+  if (!rest.length) {
+    return;
+  }
+
+  const wrap = document.createElement("li");
+  wrap.className = "earthquake-more-wrap";
+  const details = document.createElement("details");
+  details.className = "earthquake-more-details";
+  const topSummary = document.createElement("summary");
+  topSummary.className = "earthquake-more-summary";
+  topSummary.textContent = `▸ 展開其餘 ${rest.length} 筆通報`;
+  const restList = document.createElement("ul");
+  restList.className = "earthquake-list earthquake-more-list";
+  rest.forEach((quake) => {
+    restList.append(createEarthquakeListItem(quake));
+  });
+  const footer = document.createElement("button");
+  footer.type = "button";
+  footer.className = "earthquake-more-footer";
+  footer.textContent = `▾ 收合其餘 ${rest.length} 筆通報`;
+  footer.hidden = true;
+  footer.addEventListener("click", (event) => {
+    event.preventDefault();
+    details.open = false;
+    window.requestAnimationFrame(() => {
+      const earthquakeTitle = document.querySelector(".visual-break-earthquake");
+      earthquakeTitle?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  const syncCollapseLabels = () => {
+    topSummary.textContent = details.open
+      ? `▾ 收合其餘 ${rest.length} 筆通報`
+      : `▸ 展開其餘 ${rest.length} 筆通報`;
+    footer.hidden = !details.open;
+  };
+  details.addEventListener("toggle", syncCollapseLabels);
+  details.append(topSummary, restList, footer);
+  wrap.append(details);
+  earthquakeList.append(wrap);
 }
 
 function buildEarthquakePopupHtml(quake) {
