@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: daily-subscriber-backup
@@ -25,7 +25,22 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Email subscriber database backup
+      - name: Rebuild subscriber table and counter floor
+        run: node ./scripts/sync-daily-site-data.mjs
+
+      - name: Commit cumulative table to GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/subscribers.csv data/subscribers.md data/counters.json
+          if git diff --staged --quiet; then
+            echo "No cumulative table changes"
+          else
+            git commit -m "chore: daily subscriber table and counter floor"
+            git push
+          fi
+
+      - name: Email subscriber backup and connection report
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
