@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>離線｜災防通報</title>
+    <meta name="theme-color" content="#161d27" />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #161d27;
+        color: #f4efe6;
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+        text-align: center;
+      }
+      main {
+        max-width: 28rem;
+      }
+      img {
+        width: 96px;
+        height: 96px;
+        border-radius: 24px;
+      }
+      h1 {
+        margin: 16px 0 8px;
+        font-size: 1.4rem;
+      }
+      p {
+        margin: 0 0 18px;
+        line-height: 1.6;
+        color: #d8cfc0;
+      }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 10px 20px;
+        background: #ffe38a;
+        color: #161d27;
+        font-weight: 800;
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="./icons/icon-192.png" alt="災防通報" />
+      <h1>目前離線</h1>
+      <p>首頁與核心樣式已快取。網路恢復後即可重新讀取即時災防資料。</p>
+      <button type="button" onclick="location.href='./'">重新連線</button>
+    </main>
+  </body>
+</html>
