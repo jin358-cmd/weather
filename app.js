@@ -809,7 +809,8 @@ const EARTHQUAKE_NATIONAL_INTENSITY = 4;
 const EARTHQUAKE_RECENT_HOURS = 168;
 const EARTHQUAKE_COORD_CACHE_KEY = "cwaEarthquakeCoordCacheV1";
 const EARTHQUAKE_DETAIL_ENRICH_LIMIT = 12;
-const EARTHQUAKE_PREVIEW_LIMIT = 5;
+const EARTHQUAKE_PREVIEW_LIMIT = 3;
+const EARTHQUAKE_MAP_LIMIT = 5;
 const EARTHQUAKE_SCWEB_PAGE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
 const EARTHQUAKE_SCWEB_MAP_BASE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/imgs";
 const SUBSCRIBE_OWNER_INBOX = "jin358@gmail.com";
@@ -1165,9 +1166,12 @@ function isEarthquakeOnTaiwanToday(timeMs) {
 }
 
 function getTodayEarthquakesForMap() {
-  return (appState.earthquakes || []).filter(
-    (quake) => isEarthquakeOnTaiwanToday(quake.timeMs) && Number.isFinite(quake.lat) && Number.isFinite(quake.lon)
-  );
+  return (appState.earthquakes || [])
+    .filter(
+      (quake) => isEarthquakeOnTaiwanToday(quake.timeMs) && Number.isFinite(quake.lat) && Number.isFinite(quake.lon)
+    )
+    .sort((a, b) => b.timeMs - a.timeMs)
+    .slice(0, EARTHQUAKE_MAP_LIMIT);
 }
 
 function geocodeOutageArea(areaText) {
@@ -6739,6 +6743,11 @@ function parseTyphoonOfficialText(newsMarkdown, warnMarkdown) {
   };
 }
 
+function hasLifeThreateningTyphoonInfo() {
+  const official = appState.typhoonOfficial;
+  return Boolean(official?.hasLandWarning || official?.hasWarning);
+}
+
 function getWindyWrap() {
   return windyEmbed?.closest(".windy-wrap-large") || windyEmbed?.parentElement || null;
 }
@@ -8137,14 +8146,19 @@ function getEarthquakeTaiwanMapUrl(quake) {
   return quake?.url || EARTHQUAKE_SCWEB_PAGE;
 }
 
-function createEarthquakeListItem(quake) {
+function createEarthquakeListItem(quake, options = {}) {
+  const pinned = Boolean(options.pinned);
   const item = document.createElement("li");
   const colorKey = quake.alertColor || "gray";
   const intensityHigh = isIntensityThreePlus(quake);
+  const level = getEarthquakeDisasterLevel(quake);
   item.className = `earthquake-item alert-${colorKey}${
     isNationalEarthquakeAlert(quake) ? " is-national" : ""
-  }${intensityHigh ? " intensity-3-plus" : " intensity-below-3"}`;
+  }${intensityHigh ? " intensity-3-plus" : " intensity-below-3"}${
+    pinned ? ` earthquake-item-pinned eq-level-${level}` : ""
+  }`;
   const serialText = formatEarthquakeSerialLabel(quake);
+  const intensityText = formatIntensityLabel(quake.intensityValue);
   const mapUrl = getEarthquakeTaiwanMapUrl(quake);
   const placeLine = getEarthquakeLocatedLabel(quake.place, quake);
   const timeLine = formatDateTime(quake.timeMs);
@@ -8153,11 +8167,15 @@ function createEarthquakeListItem(quake) {
     ? `約 ${quake.distanceKm.toFixed(0)} 公里 ｜${depthText}`
     : depthText;
   const nationalLine = isNationalEarthquakeAlert(quake) ? "國家警報同步" : "";
+  const titleLine = pinned
+    ? `<strong class="earthquake-pinned-kicker">最新：規模 ${quake.magnitude.toFixed(1)}｜最大震度 ${intensityText}</strong>
+        <strong>${serialText}</strong>`
+    : `<strong>${serialText}｜震度 ${intensityText}</strong>`;
   item.innerHTML = `
     <a class="earthquake-item-main" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="開啟台灣地圖地震圖：${serialText}">
       <span class="earthquake-mag">${formatEarthquakeMagnitudeLabel(quake.magnitude)}</span>
       <span class="earthquake-body">
-        <strong>${serialText}｜震度 ${formatIntensityLabel(quake.intensityValue)}</strong>
+        ${titleLine}
         <span class="earthquake-place-label">${placeLine}</span>
         <small class="earthquake-meta-line">${timeLine}</small>
         <small class="earthquake-meta-line earthquake-range-line">${rangeLine}</small>
@@ -8182,6 +8200,7 @@ function renderEarthquakePanel() {
 
   if (!quakes.length) {
     if (earthquakeSummary) {
+      earthquakeSummary.hidden = false;
       earthquakeSummary.textContent = "目前中央氣象署無近期台灣地區有感地震";
       syncEarthquakeSummaryLevel(null);
     }
@@ -8197,12 +8216,13 @@ function renderEarthquakePanel() {
       latest.intensityValue
     )}<span class="earthquake-place-label">${placeLabel}</span>`;
     syncEarthquakeSummaryLevel(latest);
+    earthquakeSummary.hidden = true;
   }
   renderEarthquakeSourceMeta(Date.now());
 
   const preview = quakes.slice(0, EARTHQUAKE_PREVIEW_LIMIT);
-  preview.forEach((quake) => {
-    earthquakeList.append(createEarthquakeListItem(quake));
+  preview.forEach((quake, index) => {
+    earthquakeList.append(createEarthquakeListItem(quake, { pinned: index === 0 }));
   });
 }
 
@@ -8290,14 +8310,7 @@ function updateEarthquakeMapLayer() {
   mapEarthquakeLayer.clearLayers();
   mapLegendMarkers.earthquake = [];
 
-  declutterMapItems(
-    getTodayEarthquakesForMap(),
-    (quake) => ({
-      lat: quake.lat,
-      lon: quake.lon
-    }),
-    MAP_ALERT_LAYER_DECLUTTER
-  ).forEach((quake) => {
+  getTodayEarthquakesForMap().forEach((quake) => {
     if (!Number.isFinite(quake.lat) || !Number.isFinite(quake.lon)) {
       return;
     }
@@ -8421,6 +8434,7 @@ async function fetchEarthquakeData() {
         earthquakeMeta.textContent = appState.earthquakeMetaText;
       }
       if (earthquakeSummary) {
+        earthquakeSummary.hidden = false;
         earthquakeSummary.textContent = "地震資料讀取失敗";
       }
       if (earthquakeList) {
@@ -8675,9 +8689,19 @@ function renderAiAlerts() {
   }
 
   if (typhoon) {
-    if (typhoon.hasWarning || typhoon.level === "高") {
-      alerts.push(`【高風險】颱風風險指數 ${typhoon.score}，建議預先備妥防災物資並避免非必要外出。`);
-    } else if (typhoon.level === "中") {
+    if (hasLifeThreateningTyphoonInfo()) {
+      const official = appState.typhoonOfficial;
+      const name = official?.name ? `（${official.name}）` : "";
+      if (official?.hasLandWarning) {
+        alerts.push(
+          `【高風險】中央氣象署已發布陸上颱風警報${name}，請依地方政府指示避難，避免非必要外出。`
+        );
+      } else {
+        alerts.push(
+          `【高風險】中央氣象署已發布颱風警報${name}，請持續留意路徑與風雨，預先備妥防災物資。`
+        );
+      }
+    } else if (typhoon.level === "中" || typhoon.level === "高") {
       alerts.push(`【注意】颱風風險指數 ${typhoon.score}，請關注地方政府後續警戒資訊。`);
     } else {
       alerts.push("【一般】目前風險偏低，仍建議維持基本防災準備。");
@@ -11163,7 +11187,6 @@ function hasActiveClosureAlert() {
 function hasActiveDisasterAlertStatus() {
   return (
     Boolean(appState.typhoonOfficial?.hasLandWarning || appState.typhoonOfficial?.hasWarning) ||
-    appState.typhoon?.level === "高" ||
     hasActiveNationalEarthquake() ||
     hasActiveFloodWarningStatus() ||
     hasActiveClosureAlert()

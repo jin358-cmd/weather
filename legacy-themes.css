@@ -494,6 +494,10 @@ body.theme-elegant[data-legacy-theme="dusk"] .locate-btn.locate-btn-pulse::after
   font-size: clamp(1.05rem, 2.6vw, 1.45rem) !important;
 }
 
+.theme-elegant .earthquake-pinned-kicker {
+  font-size: clamp(1.05rem, 2.6vw, 1.45rem) !important;
+}
+
 .theme-elegant .earthquake-summary.eq-level-gray,
 .theme-elegant .earthquake-summary.eq-level-gray .earthquake-place-label {
   color: #334155 !important;
