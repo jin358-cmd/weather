@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v239-closure-normal-blue";
+const SW_VERSION = "jin-v240-weekly-icon-align";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
