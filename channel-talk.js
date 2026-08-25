@@ -93,7 +93,7 @@
         pluginKey,
         appearance: "light",
         zIndex: 2400,
-        hideChannelButtonOnBoot: false
+        hideChannelButtonOnBoot: true
       },
       function onBoot(error) {
         window.clearTimeout(bootWatch);
@@ -103,7 +103,11 @@
           console.warn("Channel Talk 啟動失敗，留言改開官方對話頁。", error);
           return;
         }
-        document.documentElement.classList.add("has-channel-talk");
+        try {
+          window.ChannelIO("hideChannelButton");
+        } catch {
+          /* launcher hide is best-effort */
+        }
       }
     );
   }
