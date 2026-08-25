@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v247-weather-place-type";
+const SW_VERSION = "jin-v248-chrome-nav-fix";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -71,6 +71,55 @@ const EARTHQUAKE_CWA_LIST_MIRROR =
 const EARTHQUAKE_NATIONAL_INTENSITY = 4;
 const EARTHQUAKE_RECENT_MS = 168 * 60 * 60 * 1000;
 
+function isSameOrigin(url) {
+  return url.origin === self.location.origin;
+}
+
+function isServiceWorkerScript(url) {
+  return url.pathname.endsWith("/sw.js");
+}
+
+function isAppShellPath(url) {
+  let basePath = "/";
+  try {
+    basePath = new URL("./", self.registration.scope).pathname;
+  } catch {
+    basePath = "/";
+  }
+  const path = url.pathname;
+  return (
+    path === basePath ||
+    path === basePath.replace(/\/$/, "") ||
+    path === `${basePath}index.html` ||
+    path.endsWith("/index.html")
+  );
+}
+
+function canCacheResponse(response) {
+  return Boolean(
+    response &&
+      response.ok &&
+      !response.redirected &&
+      (response.type === "basic" || response.type === "cors")
+  );
+}
+
+async function asChromeNavigationResponse(response) {
+  if (!response) {
+    throw new Error("empty navigation response");
+  }
+  if (!response.redirected && response.type !== "opaqueredirect") {
+    return response;
+  }
+  const body = await response.clone().arrayBuffer();
+  const status = response.status >= 200 && response.status < 300 ? response.status : 200;
+  return new Response(body, {
+    status,
+    statusText: response.statusText || "OK",
+    headers: response.headers
+  });
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(PWA_CACHE_NAME).then(async (cache) => {
@@ -102,16 +151,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   const url = new URL(request.url);
-  const sameOrigin = url.origin === self.location.origin;
+  if (isServiceWorkerScript(url)) {
+    return;
+  }
+  const sameOrigin = isSameOrigin(url);
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(PWA_CACHE_NAME).then((cache) => cache.put("./index.html", copy)).catch(() => {});
-          return response;
-        })
-        .catch(async () => {
+      (async () => {
+        try {
+          const response = await fetch(request);
+          const usable = await asChromeNavigationResponse(response);
+          if (sameOrigin && isAppShellPath(url) && canCacheResponse(response)) {
+            const cache = await caches.open(PWA_CACHE_NAME);
+            await cache.put("./index.html", usable.clone()).catch(() => {});
+          }
+          return usable;
+        } catch {
           const cache = await caches.open(PWA_CACHE_NAME);
           return (
             (await cache.match("./index.html")) ||
@@ -119,7 +174,8 @@ self.addEventListener("fetch", (event) => {
             (await cache.match("./offline.html")) ||
             new Response("目前離線", { headers: { "Content-Type": "text/plain; charset=utf-8" } })
           );
-        })
+        }
+      })()
     );
     return;
   }
@@ -130,7 +186,7 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cached) => {
       const networked = fetch(request)
         .then((response) => {
-          if (response && response.ok) {
+          if (canCacheResponse(response)) {
             const copy = response.clone();
             caches.open(PWA_CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
           }
