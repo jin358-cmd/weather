@@ -1047,28 +1047,6 @@ function isWithinMapLocateRange(lat, lon) {
   return getDistanceKm(focus.lat, focus.lon, pointLat, pointLon) <= MAP_LOCATE_RADIUS_KM + 0.0001;
 }
 
-function isCameraInDisasterMapView(lat, lon) {
-  const pointLat = Number(lat);
-  const pointLon = Number(lon);
-  if (!Number.isFinite(pointLat) || !Number.isFinite(pointLon)) {
-    return false;
-  }
-  if (warningMap?.getBounds) {
-    try {
-      const bounds = warningMap.getBounds();
-      if (bounds?.isValid?.() && bounds.contains([pointLat, pointLon])) {
-        return true;
-      }
-      if (bounds?.isValid?.()) {
-        return false;
-      }
-    } catch {
-      /* fall through to locate range */
-    }
-  }
-  return isWithinMapLocateRange(pointLat, pointLon);
-}
-
 function getMapDeclutterSeparationKm(zoom) {
   const z = Number(zoom);
   if (!Number.isFinite(z) || z >= 17) {
@@ -1612,7 +1590,7 @@ function fillCameraDistrictSelect(preferredTown = "") {
 
   const allOption = document.createElement("option");
   allOption.value = CAMERA_DISTRICT_ALL_CITY;
-  allOption.textContent = "全部地區";
+  allOption.textContent = cityName ? `${cityName}全部` : "全台";
   cameraRegionSelect.append(allOption);
   if (!cityName) {
     cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
@@ -1649,16 +1627,13 @@ function fillCameraCitySelectOptions(selectElement, defaultValue = "follow", lab
   selectElement.innerHTML = "";
   const allOption = document.createElement("option");
   allOption.value = "all";
-  allOption.textContent = labels.all || "全台";
+  allOption.textContent = labels.all || "全部縣市";
+  selectElement.append(allOption);
+
   const followOption = document.createElement("option");
   followOption.value = "follow";
-  followOption.textContent = labels.follow || "定位範圍";
-
-  if (labels.followFirst) {
-    selectElement.append(followOption, allOption);
-  } else {
-    selectElement.append(allOption, followOption);
-  }
+  followOption.textContent = labels.follow || "跟隨上方所選縣市";
+  selectElement.append(followOption);
 
   CITY_LOCATIONS.forEach((city) => {
     const option = document.createElement("option");
@@ -1671,9 +1646,8 @@ function fillCameraCitySelectOptions(selectElement, defaultValue = "follow", lab
 
 function initCameraCitySelect() {
   fillCameraCitySelectOptions(cameraCitySelect, "follow", {
-    all: "全台",
-    follow: "定位範圍",
-    followFirst: true
+    all: "全台路口監控",
+    follow: "跟隨定位範圍"
   });
   syncCityCameraScopeToLocator();
 }
@@ -2422,7 +2396,7 @@ function getSelectedCameraDistrict() {
     const city = CITY_LOCATIONS.find((item) => item.name === cityName);
     return {
       id: CAMERA_DISTRICT_ALL_CITY,
-      label: "全部地區",
+      label: cityName ? `${cityName}全部` : "全國",
       lat: location?.lat ?? city?.lat,
       lon: location?.lon ?? city?.lon,
       radiusKm: CITY_CCTV_RADIUS_KM,
@@ -2445,7 +2419,7 @@ function getSelectedCameraDistrict() {
   const city = CITY_LOCATIONS.find((item) => item.name === cityName);
   return {
     id: CAMERA_DISTRICT_ALL_CITY,
-    label: "全部地區",
+    label: cityName ? `${cityName}全部` : "全國",
     lat: location?.lat ?? city?.lat,
     lon: location?.lon ?? city?.lon,
     radiusKm: 9999,
@@ -2503,11 +2477,22 @@ function syncCameraScopeToLocatorCityForKeyword() {
   if (!keyword) {
     return;
   }
-  if (isNationwideCameraCity(cameraCitySelect) || getSelectedCameraDistrict()?.town) {
+  if (isNationwideCameraCity(cameraCitySelect) || !isLocatorFollowCameraCity(cameraCitySelect)) {
+    if (cameraRegionSelect && !isNationwideCameraCity(cameraCitySelect)) {
+      cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
+    }
     return;
   }
-  if (!cameraRegionSelect?.options?.length) {
+  const locatorCity = String(citySelect?.value || "").trim();
+  const allCityLabel = [...(cameraRegionSelect?.options || [])].find(
+    (option) => option.value === CAMERA_DISTRICT_ALL_CITY
+  )?.textContent || "";
+  const districtCityMismatch = Boolean(locatorCity) && allCityLabel && !allCityLabel.includes(locatorCity);
+  if (!cameraRegionSelect?.options?.length || districtCityMismatch) {
     fillCameraDistrictSelect("");
+  }
+  if (cameraRegionSelect) {
+    cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
   }
 }
 
@@ -2617,39 +2602,6 @@ function getCityCameraFocusPoint() {
 
 function getFreewayCameraFocusPoint() {
   return getFreewayBrowseFocus();
-}
-
-function syncDisasterMapToCameraScope() {
-  if (!warningMap || typeof L === "undefined") {
-    return;
-  }
-  const keyword = getCameraKeywordQuery();
-  const townName = getSelectedCameraDistrict()?.town || "";
-  if (isLocatorFollowCameraCity(cameraCitySelect) && !townName && !keyword) {
-    scheduleFitMapToLocateRange({ animate: true });
-    return;
-  }
-  if (isNationwideCameraCity(cameraCitySelect) && !townName && !keyword) {
-    fitMapToTaiwan(true);
-    return;
-  }
-  const district = getSelectedCameraDistrict();
-  const lat = Number(district?.lat);
-  const lon = Number(district?.lon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    return;
-  }
-  ignoreShelterZoomEvents += 1;
-  warningMap.invalidateSize();
-  warningMap.fitBounds(L.latLng(lat, lon).toBounds(townName ? 4000 : 14000), {
-    padding: [20, 20],
-    maxZoom: townName ? 15 : 12,
-    animate: true
-  });
-  window.setTimeout(() => {
-    ignoreShelterZoomEvents = Math.max(0, ignoreShelterZoomEvents - 1);
-    updateCameraMapLayer();
-  }, 450);
 }
 
 function isFreewayCameraStream(url = "") {
@@ -3377,10 +3329,18 @@ function getCityCamerasForDisasterMap() {
   if (!cityCameraDataset || !Array.isArray(cityCameraDataset.cameras)) {
     return [];
   }
-  const filtered = getFilteredSortedCityCameras({ forMap: true });
+  const focus = getMapLocatePoint();
+  if (!focus) {
+    return [];
+  }
+  const focusPoint = { lat: focus.lat, lon: focus.lon };
   return declutterMapItems(
     dedupeCamerasByIdentity(
-      filtered.filter((camera) => isCameraInDisasterMapView(Number(camera.gisy), Number(camera.gisx)))
+      cityCameraDataset.cameras
+        .filter((camera) => Number.isFinite(Number(camera.gisy)) && Number.isFinite(Number(camera.gisx)))
+        .map((camera) => enrichCityCameraForMap(camera, focusPoint, focus))
+        .filter((camera) => isWithinMapLocateRange(Number(camera.gisy), Number(camera.gisx)))
+        .sort((a, b) => a.distanceKm - b.distanceKm)
     ),
     (camera) => ({ lat: Number(camera.gisy), lon: Number(camera.gisx) })
   );
@@ -4116,7 +4076,25 @@ function refreshCctvMarkerPlace(camera) {
     marker._legendPlace = label;
     marker._cctvCamera = camera;
     try {
-      marker.setIcon(getCctvThumbIcon(camera));
+      const pin = marker.getElement?.()?.querySelector?.(".cctv-map-pin");
+      if (pin) {
+        const nextLabel = getCctvMapRoadLabelHtml(camera);
+        const oldLabel = pin.querySelector(".cctv-map-road-label");
+        if (nextLabel) {
+          const wrap = document.createElement("template");
+          wrap.innerHTML = nextLabel.trim();
+          const nextEl = wrap.content.firstElementChild;
+          if (nextEl && oldLabel) {
+            oldLabel.replaceWith(nextEl);
+          } else if (nextEl) {
+            pin.insertAdjacentElement("afterbegin", nextEl);
+          }
+        } else if (oldLabel) {
+          oldLabel.remove();
+        }
+      } else {
+        marker.setIcon(getCctvThumbIcon(camera));
+      }
       marker.setPopupContent(buildCctvMapPopupHtml(camera));
       if (marker.options) {
         marker.options.title = label;
@@ -5090,7 +5068,7 @@ async function renderCameraList() {
         ? `目前沒有符合「${cityName}${district.town}」的路口監控。`
         : nationwide
           ? "目前沒有可顯示的全台路口監控。"
-          : `定位範圍直徑 ${MAP_LOCATE_DIAMETER_KM} 公里內目前沒有路口監控。可改選全台、縣市、地區或輸入路名關鍵字。`;
+          : `定位範圍直徑 ${MAP_LOCATE_DIAMETER_KM} 公里內目前沒有路口監控。可改選全台路口監控、縣市或輸入路名關鍵字。`;
     showCityCameraListMessage(emptyLabel);
     hideCityCameraLoadProgress();
     return;
@@ -12628,19 +12606,25 @@ function getCctvMapRoadLabelHtml(camera) {
 function getCctvThumbIcon(camera) {
   const streamUrl = String(camera?.html || "").trim();
   const labelHtml = getCctvMapRoadLabelHtml(camera);
-  if (isLikelyDirectImageStream(streamUrl)) {
+  if (!streamUrl) {
     return L.divIcon({
       className: "cctv-map-thumb-marker",
-      html: `<span class="cctv-map-pin">${labelHtml}<span class="cctv-map-thumb">${getCameraPreviewHtml(camera, "cctv-map-thumb-media")}</span></span>`,
-      iconSize: [44, 34],
-      iconAnchor: [22, 17]
+      html: `<span class="cctv-map-pin">${labelHtml}<span class="cctv-map-ring" aria-hidden="true"></span></span>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
     });
   }
+  const useImage = isLikelyDirectImageStream(streamUrl);
+  const mediaClass = useImage ? "cctv-map-thumb-media" : "cctv-map-thumb-media cctv-map-thumb-frame";
+  const thumbClass = useImage ? "cctv-map-thumb" : "cctv-map-thumb cctv-map-thumb--frame";
   return L.divIcon({
     className: "cctv-map-thumb-marker",
-    html: `<span class="cctv-map-pin">${labelHtml}<span class="cctv-map-ring" aria-hidden="true"></span></span>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
+    html: `<span class="cctv-map-pin">${labelHtml}<span class="${thumbClass}">${getCameraPreviewHtml(
+      camera,
+      mediaClass
+    )}</span></span>`,
+    iconSize: [80, 60],
+    iconAnchor: [40, 30]
   });
 }
 
@@ -12665,6 +12649,10 @@ function buildCctvMapPopupHtml(camera) {
   `;
 }
 
+function getCameraMarkerKey(camera) {
+  return String(camera?.id || camera?.html || "").trim();
+}
+
 function updateCameraMapLayer() {
   if (!warningMap) {
     return;
@@ -12672,30 +12660,64 @@ function updateCameraMapLayer() {
   if (!mapCameraLayer) {
     mapCameraLayer = L.layerGroup();
   }
-  mapCameraLayer.clearLayers();
-  mapLegendMarkers.cctv = [];
   const camerasToPlot = getCityCamerasForDisasterMap();
+  const keepKeys = new Set(camerasToPlot.map((camera) => getCameraMarkerKey(camera)).filter(Boolean));
+  const existingByKey = new Map();
+  (mapLegendMarkers.cctv || []).forEach((marker) => {
+    const key = String(marker._cctvMarkerKey || getCameraMarkerKey(marker._cctvCamera) || "").trim();
+    if (key) {
+      existingByKey.set(key, marker);
+    }
+  });
+  existingByKey.forEach((marker, key) => {
+    if (!keepKeys.has(key)) {
+      mapCameraLayer.removeLayer(marker);
+      existingByKey.delete(key);
+    }
+  });
+  const nextMarkers = [];
   camerasToPlot.forEach((camera) => {
     const lat = Number(camera.gisy);
     const lon = Number(camera.gisx);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
       return;
     }
+    const key = getCameraMarkerKey(camera);
     const intersectionName = formatCameraIntersectionShort(camera);
-    const marker = L.marker([lat, lon], {
-      pane: "cameraPane",
-      keyboard: false,
-      icon: getCctvThumbIcon(camera),
-      title: intersectionName,
-      zIndexOffset: 400
-    });
-    marker.bindPopup(buildCctvMapPopupHtml(camera), getMapPopupOptions({ className: "cctv-popup-wrap disaster-map-popup" }));
-    marker._legendPlace = intersectionName;
-    marker._cctvNameOnly = true;
-    marker._cctvCamera = camera;
-    mapLegendMarkers.cctv.push(marker);
+    const streamUrl = String(camera?.html || "").trim();
+    let marker = key ? existingByKey.get(key) : null;
+    if (marker) {
+      marker.setLatLng([lat, lon]);
+      marker._legendPlace = intersectionName;
+      marker._cctvNameOnly = true;
+      marker._cctvCamera = camera;
+      marker._cctvMarkerKey = key;
+      if (marker.options) {
+        marker.options.title = intersectionName;
+      }
+      if (String(marker._cctvStreamUrl || "") !== streamUrl) {
+        marker.setIcon(getCctvThumbIcon(camera));
+        marker._cctvStreamUrl = streamUrl;
+      }
+    } else {
+      marker = L.marker([lat, lon], {
+        pane: "cameraPane",
+        keyboard: false,
+        icon: getCctvThumbIcon(camera),
+        title: intersectionName,
+        zIndexOffset: 400
+      });
+      marker.bindPopup(buildCctvMapPopupHtml(camera), getMapPopupOptions({ className: "cctv-popup-wrap disaster-map-popup" }));
+      marker._legendPlace = intersectionName;
+      marker._cctvNameOnly = true;
+      marker._cctvCamera = camera;
+      marker._cctvMarkerKey = key;
+      marker._cctvStreamUrl = streamUrl;
+    }
+    nextMarkers.push(marker);
     scheduleCameraMapPlaceEnrichment(camera);
   });
+  mapLegendMarkers.cctv = nextMarkers;
   addVisibleLegendMarkers(mapCameraLayer, ["cctv"]);
   mapLayerVisibility["cctv-points"] = isMapCategoryVisible("cctv");
   syncMapLayerVisibility("cctv-points");
@@ -13694,7 +13716,6 @@ cameraKeyword.addEventListener("input", () => {
 });
 
 cameraRegionSelect.addEventListener("change", () => {
-  syncDisasterMapToCameraScope();
   updateCameraMetaText();
   renderCameraList();
   updateCameraMapLayer();
@@ -13705,7 +13726,6 @@ cameraCitySelect?.addEventListener("change", () => {
   if (cameraRegionSelect) {
     cameraRegionSelect.value = CAMERA_DISTRICT_ALL_CITY;
   }
-  syncDisasterMapToCameraScope();
   updateCameraMetaText();
   renderAllCameraLists();
   updateCameraMapLayer();
