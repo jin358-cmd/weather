@@ -5017,6 +5017,60 @@ input[type="checkbox"] {
   border-color: #dc2626;
 }
 
+.earthquake-summary[hidden] {
+  display: none !important;
+}
+
+.earthquake-list li.earthquake-item.earthquake-item-pinned {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  align-items: start;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.earthquake-list li.earthquake-item.earthquake-item-pinned .earthquake-item-main {
+  align-items: start;
+}
+
+.earthquake-pinned-kicker {
+  display: block;
+  font-size: clamp(1.05rem, 2.6vw, 1.45rem);
+  line-height: 1.35;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.earthquake-list li.earthquake-item.earthquake-item-pinned.eq-level-gray {
+  color: #334155;
+  background: #e8eef5;
+  border-color: #94a3b8;
+}
+
+.earthquake-list li.earthquake-item.earthquake-item-pinned.eq-level-yellow {
+  color: #854d0e;
+  background: #fef3c7;
+  border-color: #eab308;
+}
+
+.earthquake-list li.earthquake-item.earthquake-item-pinned.eq-level-orange {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #f97316;
+}
+
+.earthquake-list li.earthquake-item.earthquake-item-pinned.eq-level-red {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+.earthquake-list li.earthquake-item.earthquake-item-pinned .earthquake-body strong,
+.earthquake-list li.earthquake-item.earthquake-item-pinned .earthquake-body small,
+.earthquake-list li.earthquake-item.earthquake-item-pinned .earthquake-place-label {
+  color: inherit;
+}
+
 .earthquake-place-label,
 .eq-located-label {
   display: block;

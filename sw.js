@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v229-eq-today-five";
+const SW_VERSION = "jin-v230-eq-pin-highrisk";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
