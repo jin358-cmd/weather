@@ -6002,11 +6002,14 @@ function renderRainTimeline(hours) {
 function buildWeeklyForecastDays(daily = {}) {
   const dates = Array.isArray(daily.time) ? daily.time : [];
   return dates.slice(0, 7).map((date, index) => {
-    const weekday = new Date(`${date}T12:00:00+08:00`).toLocaleDateString("zh-TW", {
-      weekday: "short",
-      timeZone: "Asia/Taipei"
-    });
-    const monthDay = new Date(`${date}T12:00:00+08:00`).toLocaleDateString("zh-TW", {
+    const weekday = new Date(`${date}T12:00:00+08:00`)
+      .toLocaleDateString("zh-TW", {
+        weekday: "short",
+        timeZone: "Asia/Taipei"
+      })
+      .replace(/^星期/, "週")
+      .replace(/^周/, "週");
+    const monthDay = new Date(`${date}T12:00:00+08:00`).toLocaleDateString("en-US", {
       month: "numeric",
       day: "numeric",
       timeZone: "Asia/Taipei"
@@ -6078,21 +6081,17 @@ function renderWeeklyForecast(days = [], locationLabel = "") {
       windSpeed: day.windSpeedMax
     });
     row.innerHTML = `
-      <div class="weekly-forecast-day">
-        <strong>${index === 0 ? "今天" : day.weekday}</strong>
-        <span>${day.monthDay}</span>
-      </div>
+      <span class="weekly-forecast-date">${day.monthDay}</span>
+      <span class="weekly-forecast-weekday">${index === 0 ? "今天" : day.weekday}</span>
       <div class="weekly-forecast-status">
         <div class="weekly-forecast-icon weekly-forecast-icon-png">${iconHtml}</div>
         <span class="weekly-forecast-label">${day.label}</span>
       </div>
-      <div class="weekly-forecast-side">
-        <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
-        <span class="weekly-forecast-rain">
-          <span class="weekly-forecast-rain-prob">降雨 ${rainProbText}</span>
-          <span class="weekly-forecast-rain-sum">${rainSumText}</span>
-        </span>
-      </div>
+      <span class="weekly-forecast-temps">${minText} / ${maxText}</span>
+      <span class="weekly-forecast-rain">
+        <span class="weekly-forecast-rain-prob">降雨 ${rainProbText}</span>
+        <span class="weekly-forecast-rain-sum">${rainSumText}</span>
+      </span>
     `;
     weeklyForecastList.append(row);
   });
