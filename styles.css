@@ -271,6 +271,7 @@ body {
 .app .air-details,
 .app .closure-list,
 .app .earthquake-list,
+.app .earthquake-list-details,
 .app .earthquake-head,
 .app .earthquake-summary,
 .app .earthquake-meta,
@@ -610,8 +611,10 @@ body {
 
 .pwa-history-list {
   font-size: 12px;
-  padding-left: 0;
+  padding: 10px 12px;
   list-style: none;
+  background: #e8eaed;
+  border-radius: 10px;
 }
 
 .pwa-history-list li,
@@ -620,9 +623,9 @@ body {
 }
 
 .pwa-history-list li {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #f6f3eb;
+  padding: 8px 2px;
+  border-radius: 0;
+  background: transparent;
   color: #2b2924;
 }
 
@@ -5104,38 +5107,32 @@ input[type="checkbox"] {
   gap: 10px;
 }
 
-.earthquake-card > .earthquake-list {
+.earthquake-card > .earthquake-list-details .earthquake-list {
   padding-left: 0;
   list-style: none;
 }
 
-.app .earthquake-card > .earthquake-list {
+.app .earthquake-card > .earthquake-list-details {
   width: min(90%, 34rem);
   max-width: 34rem;
   margin-inline: auto;
   justify-self: center;
 }
 
-.app .earthquake-more-list {
+.app .earthquake-list-details .earthquake-list {
   width: 100%;
   max-width: none;
   margin-inline: 0;
 }
 
-.earthquake-more-wrap {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.earthquake-more-details {
+.earthquake-list-details {
   border: 1px solid var(--border, #dce4f4);
   border-radius: 12px;
   background: #f8fafc;
   padding: 0;
 }
 
-.earthquake-more-summary {
+.earthquake-list-summary {
   cursor: pointer;
   list-style: none;
   padding: 12px 14px;
@@ -5144,18 +5141,22 @@ input[type="checkbox"] {
   user-select: none;
 }
 
-.earthquake-more-summary::-webkit-details-marker {
+.earthquake-list-summary::-webkit-details-marker {
   display: none;
 }
 
-.earthquake-more-list {
+.earthquake-list-summary::marker {
+  content: "";
+}
+
+.earthquake-list-details .earthquake-list {
   margin: 0;
   padding: 0 10px 10px;
   display: grid;
   gap: 10px;
 }
 
-.earthquake-more-footer {
+.earthquake-list-collapse {
   display: block;
   width: calc(100% - 20px);
   margin: 0 10px 10px;
@@ -5169,9 +5170,13 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-.earthquake-more-footer:hover,
-.earthquake-more-footer:focus-visible {
+.earthquake-list-collapse:hover,
+.earthquake-list-collapse:focus-visible {
   background: #e0ebff;
+}
+
+.earthquake-list-collapse[hidden] {
+  display: none !important;
 }
 
 .eq-detail-sheet[hidden] {
@@ -6587,9 +6592,9 @@ body.eq-sheet-open {
 }
 
 .eq-map-pulse-dot.is-latest {
-  background: #dc2626;
-  border-color: #fee2e2;
-  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55);
+  background: #d946ef;
+  border-color: #f5d0fe;
+  box-shadow: 0 0 0 0 rgba(217, 70, 239, 0.55);
   animation-name: eq-map-pulse-latest;
 }
 
@@ -6605,7 +6610,7 @@ body.eq-sheet-open {
 
 .eq-map-pulse-dot.is-latest::before,
 .eq-map-pulse-dot.is-latest::after {
-  border-color: rgba(220, 38, 38, 0.7);
+  border-color: rgba(217, 70, 239, 0.7);
   animation-name: eq-map-ring-latest;
 }
 
@@ -6626,10 +6631,10 @@ body.eq-sheet-open {
 @keyframes eq-map-pulse-latest {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5);
+    box-shadow: 0 0 0 0 rgba(217, 70, 239, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 14px rgba(220, 38, 38, 0);
+    box-shadow: 0 0 0 14px rgba(217, 70, 239, 0);
   }
 }
 
@@ -6674,7 +6679,7 @@ body.eq-sheet-open {
   }
 
   .eq-map-pulse-dot.is-latest {
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.45);
+    box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.45);
   }
 
   .eq-map-pulse-dot::before,

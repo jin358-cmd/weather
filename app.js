@@ -613,6 +613,9 @@ const aiAlertList = document.querySelector("#aiAlertList");
 const earthquakeMeta = document.querySelector("#earthquakeMeta");
 const earthquakeSummary = document.querySelector("#earthquakeSummary");
 const earthquakeList = document.querySelector("#earthquakeList");
+const earthquakeListDetails = document.querySelector("#earthquakeListDetails");
+const earthquakeListSummary = document.querySelector("#earthquakeListSummary");
+const earthquakeListCollapseBtn = document.querySelector("#earthquakeListCollapseBtn");
 const earthquakeDetailSheet = document.querySelector("#earthquakeDetailSheet");
 const earthquakeDetailSheetBody = document.querySelector("#earthquakeDetailSheetBody");
 const earthquakeDetailSheetClose = document.querySelector("#earthquakeDetailSheetClose");
@@ -808,7 +811,6 @@ const EARTHQUAKE_NATIONAL_INTENSITY = 4;
 const EARTHQUAKE_RECENT_HOURS = 168;
 const EARTHQUAKE_COORD_CACHE_KEY = "cwaEarthquakeCoordCacheV1";
 const EARTHQUAKE_DETAIL_ENRICH_LIMIT = 12;
-const EARTHQUAKE_PREVIEW_LIMIT = 3;
 const EARTHQUAKE_LIST_DAYS = 2;
 const EARTHQUAKE_MAP_LIMIT = 4;
 const EARTHQUAKE_SCWEB_PAGE = "https://scweb.cwa.gov.tw/zh-tw/earthquake/data";
@@ -7823,8 +7825,8 @@ function parseAiAlertPresentation(text) {
 function getEarthquakeMapPinStyle(isLatest = false) {
   if (isLatest) {
     return {
-      color: "#7f1d1d",
-      fillColor: "#dc2626",
+      color: "#7e22ce",
+      fillColor: "#d946ef",
       radius: 8,
       weight: 2,
       fillOpacity: 0.95,
@@ -8231,6 +8233,47 @@ function createEarthquakeListItem(quake, options = {}) {
   return item;
 }
 
+function syncEarthquakeListCollapse(count, options = {}) {
+  if (!earthquakeListDetails || !earthquakeListSummary) {
+    return;
+  }
+  earthquakeListDetails.dataset.count = String(Number(count) || 0);
+  earthquakeListDetails.dataset.error = options.error ? "1" : "0";
+  const updateLabels = () => {
+    const open = earthquakeListDetails.open;
+    const n = Number(earthquakeListDetails.dataset.count) || 0;
+    const error = earthquakeListDetails.dataset.error === "1";
+    if (error) {
+      earthquakeListSummary.textContent = open ? "▾ 收合讀取失敗說明" : "▸ 地震資料讀取失敗";
+    } else {
+      earthquakeListSummary.textContent = open
+        ? `▾ 收合 2 日內地震通報（${n} 筆）`
+        : `▸ 展開 2 日內地震通報（${n} 筆）`;
+    }
+    if (earthquakeListCollapseBtn) {
+      earthquakeListCollapseBtn.hidden = !open;
+      earthquakeListCollapseBtn.textContent = error
+        ? "▾ 收合讀取失敗說明"
+        : `▾ 收合 2 日內地震通報（${n} 筆）`;
+    }
+  };
+  if (earthquakeListDetails.dataset.boundToggle !== "1") {
+    earthquakeListDetails.dataset.boundToggle = "1";
+    earthquakeListDetails.addEventListener("toggle", updateLabels);
+    earthquakeListCollapseBtn?.addEventListener("click", (event) => {
+      event.preventDefault();
+      earthquakeListDetails.open = false;
+      window.requestAnimationFrame(() => {
+        document.querySelector(".visual-break-earthquake")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      });
+    });
+  }
+  updateLabels();
+}
+
 function renderEarthquakePanel() {
   if (!earthquakeList) {
     return;
@@ -8239,74 +8282,21 @@ function renderEarthquakePanel() {
   appState.earthquakes = allQuakes;
   const quakes = getRecentEarthquakesForList();
   earthquakeList.innerHTML = "";
-
-  if (!quakes.length) {
-    if (earthquakeSummary) {
-      earthquakeSummary.hidden = false;
-      earthquakeSummary.textContent = "目前中央氣象署無2日內台灣地區有感地震";
-      syncEarthquakeSummaryLevel(null);
-    }
-    renderEarthquakeSourceMeta(Date.now());
-    earthquakeList.innerHTML = "<li>目前無2日內符合條件的地震事件。</li>";
-    return;
-  }
-
-  const latest = quakes[0];
   if (earthquakeSummary) {
-    const placeLabel = getEarthquakeLocatedLabel(latest.place, latest);
-    earthquakeSummary.innerHTML = `最新：規模 ${latest.magnitude.toFixed(1)}｜最大震度 ${formatIntensityLabel(
-      latest.intensityValue
-    )}<span class="earthquake-place-label">${placeLabel}</span>`;
-    syncEarthquakeSummaryLevel(latest);
     earthquakeSummary.hidden = true;
   }
   renderEarthquakeSourceMeta(Date.now());
 
-  const preview = quakes.slice(0, EARTHQUAKE_PREVIEW_LIMIT);
-  const rest = quakes.slice(EARTHQUAKE_PREVIEW_LIMIT);
-  preview.forEach((quake, index) => {
-    earthquakeList.append(createEarthquakeListItem(quake, { pinned: index === 0 }));
-  });
-
-  if (!rest.length) {
+  if (!quakes.length) {
+    earthquakeList.innerHTML = "<li>目前無2日內符合條件的地震事件。</li>";
+    syncEarthquakeListCollapse(0);
     return;
   }
 
-  const wrap = document.createElement("li");
-  wrap.className = "earthquake-more-wrap";
-  const details = document.createElement("details");
-  details.className = "earthquake-more-details";
-  const topSummary = document.createElement("summary");
-  topSummary.className = "earthquake-more-summary";
-  topSummary.textContent = `▸ 展開其餘 ${rest.length} 筆通報`;
-  const restList = document.createElement("ul");
-  restList.className = "earthquake-list earthquake-more-list";
-  rest.forEach((quake) => {
-    restList.append(createEarthquakeListItem(quake));
+  quakes.forEach((quake, index) => {
+    earthquakeList.append(createEarthquakeListItem(quake, { pinned: index === 0 }));
   });
-  const footer = document.createElement("button");
-  footer.type = "button";
-  footer.className = "earthquake-more-footer";
-  footer.textContent = `▾ 收合其餘 ${rest.length} 筆通報`;
-  footer.hidden = true;
-  footer.addEventListener("click", (event) => {
-    event.preventDefault();
-    details.open = false;
-    window.requestAnimationFrame(() => {
-      const earthquakeTitle = document.querySelector(".visual-break-earthquake");
-      earthquakeTitle?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  });
-  const syncCollapseLabels = () => {
-    topSummary.textContent = details.open
-      ? `▾ 收合其餘 ${rest.length} 筆通報`
-      : `▸ 展開其餘 ${rest.length} 筆通報`;
-    footer.hidden = !details.open;
-  };
-  details.addEventListener("toggle", syncCollapseLabels);
-  details.append(topSummary, restList, footer);
-  wrap.append(details);
-  earthquakeList.append(wrap);
+  syncEarthquakeListCollapse(quakes.length);
 }
 
 function buildEarthquakePopupHtml(quake) {
@@ -8520,12 +8510,12 @@ async function fetchEarthquakeData() {
         earthquakeMeta.textContent = appState.earthquakeMetaText;
       }
       if (earthquakeSummary) {
-        earthquakeSummary.hidden = false;
-        earthquakeSummary.textContent = "地震資料讀取失敗";
+        earthquakeSummary.hidden = true;
       }
       if (earthquakeList) {
         earthquakeList.innerHTML = `<li class="status-warn">請稍後重試，或改看 <a href="${EARTHQUAKE_CWA_PAGE}" target="_blank" rel="noopener noreferrer">中央氣象署</a>。</li>`;
       }
+      syncEarthquakeListCollapse(0, { error: true });
       updateEarthquakeMapLayer();
       return [];
     }
