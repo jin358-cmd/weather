@@ -84,7 +84,8 @@ html.is-overlay-locked .eq-detail-sheet,
 html.is-overlay-locked .eq-detail-sheet-panel,
 html.is-overlay-locked .eq-detail-sheet-toolbar,
 html.is-overlay-locked .cctv-monitor-lightbox,
-html.is-overlay-locked .cctv-monitor-lightbox-panel {
+html.is-overlay-locked .cctv-monitor-lightbox-panel,
+html.is-overlay-locked .cctv-monitor-lightbox-close {
   touch-action: manipulation;
 }
 
@@ -5520,7 +5521,7 @@ body.eq-sheet-open {
   width: min(96vw, 920px);
   max-height: 92vh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 10px;
   padding: 12px;
   border-radius: 14px;
@@ -5532,7 +5533,7 @@ body.eq-sheet-open {
 .cctv-monitor-lightbox-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
@@ -5545,8 +5546,10 @@ body.eq-sheet-open {
 }
 
 .cctv-monitor-lightbox-close {
+  justify-self: start;
   flex: 0 0 auto;
-  padding: 6px 12px;
+  min-height: 40px;
+  padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid #7dd3fc;
   background: #102033;
