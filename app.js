@@ -587,6 +587,9 @@ const pwaInstallDismiss = document.querySelector("#pwaInstallDismiss");
 const pwaInstallTitle = document.querySelector("#pwaInstallTitle");
 const pwaInstallText = document.querySelector("#pwaInstallText");
 const torchVideo = document.querySelector("#torchVideo");
+const androidShadePrompt = document.querySelector("#androidShadePrompt");
+const androidShadeAllowBtn = document.querySelector("#androidShadeAllowBtn");
+const androidShadeLaterBtn = document.querySelector("#androidShadeLaterBtn");
 const notificationHint = document.querySelector("#notificationHint");
 const inPageAlertHost = document.querySelector("#inPageAlertHost");
 const autoRefreshMeta = document.querySelector("#autoRefreshMeta");
@@ -734,6 +737,7 @@ const PWA_NOTIFY_HISTORY_KEY = "pwaNotificationHistoryV1";
 const PWA_NOTIFY_COOLDOWN_KEY = "pwaNotificationCooldownV1";
 const PWA_SUBSCRIBER_RECORDS_KEY = "pwaSubscriberRecordsV1";
 const PWA_INSTALL_DISMISS_KEY = "pwaInstallDismissedV1";
+const ANDROID_SHADE_PROMPT_DISMISS_KEY = "androidShadePromptDismissedV1";
 const WEATHER_STATUS_NOTIFY_TAG = "jin-weather-status";
 const NOTIFY_COOLDOWN_MS = 30 * 60 * 1000;
 const CWA_WARNING_PAGE = "https://www.cwa.gov.tw/V8/C/P/Warning/W29.html";
@@ -9118,11 +9122,22 @@ function isWebTorchLikely() {
   return Boolean(navigator.mediaDevices?.getUserMedia);
 }
 
-async function isPwaInstalledForTray() {
-  if (isStandaloneDisplay() || pwaInstallBanner?.dataset.installed === "1") {
+function weatherAssetUrl(path) {
+  try {
+    return new URL(path, document.baseURI).href;
+  } catch {
+    return path;
+  }
+}
+
+function shouldPinWeatherStatusTray() {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+    return false;
+  }
+  if (isLikelyAndroidDevice()) {
     return true;
   }
-  return hasInstalledDesktopPwa();
+  return isStandaloneDisplay() || pwaInstallBanner?.dataset.installed === "1";
 }
 
 function getWeatherStatusPayload() {
@@ -9150,25 +9165,24 @@ function getWeatherStatusPayload() {
   };
 }
 
-function buildWeatherNotificationOptions(payload) {
-  const torchAvailable = Boolean(payload.torchAvailable);
+function buildWeatherNotificationOptions(payload, { withActions = true } = {}) {
+  const torchAvailable = Boolean(payload.torchAvailable) && withActions;
   const isOn = Boolean(payload.torchOn);
+  const icon = weatherAssetUrl("./icons/icon-192.png");
   return {
     body: payload.body || payload.place || "災防通報",
     tag: WEATHER_STATUS_NOTIFY_TAG,
-    silent: true,
+    silent: false,
     renotify: false,
     requireInteraction: false,
-    ongoing: true,
-    vibrate: [],
-    icon: "./icons/icon-192.png",
-    badge: "./icons/icon-192.png",
+    icon,
+    badge: icon,
     actions: torchAvailable
       ? [
           {
             action: "torch-toggle",
             title: isOn ? "關閉手電筒" : "開啟手電筒",
-            icon: isOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png"
+            icon: weatherAssetUrl(isOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png")
           }
         ]
       : [],
@@ -9281,33 +9295,36 @@ async function toggleTorchFromExternal() {
 }
 
 async function showWeatherStatusOnDevice(payload) {
-  const options = buildWeatherNotificationOptions(payload);
   await initServiceWorker();
   const registration = await getNotificationRegistration();
+  const attempts = [
+    buildWeatherNotificationOptions(payload, { withActions: true }),
+    buildWeatherNotificationOptions(payload, { withActions: false })
+  ];
   if (registration?.showNotification) {
-    try {
-      await registration.showNotification(payload.title, options);
-      return true;
-    } catch {
+    for (const options of attempts) {
       try {
-        const fallback = { ...options };
-        delete fallback.ongoing;
-        await registration.showNotification(payload.title, fallback);
+        await registration.showNotification(payload.title, options);
         return true;
       } catch {
-        /* fall through */
+        /* try a simpler payload */
       }
     }
+  }
+  try {
+    const fallback = buildWeatherNotificationOptions(payload, { withActions: false });
+    const notification = new Notification(payload.title, fallback);
+    if (notification) {
+      return true;
+    }
+  } catch {
+    /* fall through to service worker message */
   }
   return postToServiceWorker({ type: "SHOW_WEATHER_STATUS", payload });
 }
 
 async function publishWeatherStatusNotification() {
-  const installed = await isPwaInstalledForTray();
-  if (!installed) {
-    return false;
-  }
-  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+  if (!shouldPinWeatherStatusTray()) {
     return false;
   }
   const payload = getWeatherStatusPayload();
@@ -9340,17 +9357,54 @@ async function registerWeatherStatusPeriodicSync() {
 }
 
 async function pinAndroidWeatherStatusTray() {
-  const installed = await isPwaInstalledForTray();
-  if (!installed) {
-    return;
-  }
-  if (!isWebTorchLikely()) {
+  if (!isLikelyAndroidDevice()) {
     torchCapability = "no";
   }
   registerWeatherStatusPeriodicSync().catch(() => {});
-  if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-    publishWeatherStatusNotification().catch(() => {});
+  if (shouldPinWeatherStatusTray()) {
+    await publishWeatherStatusNotification();
+    hideAndroidShadePrompt();
+    return true;
   }
+  maybeShowAndroidShadePrompt();
+  return false;
+}
+
+function isAndroidShadePromptDismissed() {
+  try {
+    return sessionStorage.getItem(ANDROID_SHADE_PROMPT_DISMISS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function hideAndroidShadePrompt() {
+  if (androidShadePrompt) {
+    androidShadePrompt.hidden = true;
+  }
+}
+
+function maybeShowAndroidShadePrompt() {
+  if (!androidShadePrompt) {
+    return;
+  }
+  if (!isLikelyAndroidDevice()) {
+    hideAndroidShadePrompt();
+    return;
+  }
+  if (typeof Notification === "undefined") {
+    hideAndroidShadePrompt();
+    return;
+  }
+  if (Notification.permission === "granted") {
+    hideAndroidShadePrompt();
+    return;
+  }
+  if (Notification.permission === "denied" || isAndroidShadePromptDismissed()) {
+    hideAndroidShadePrompt();
+    return;
+  }
+  androidShadePrompt.hidden = false;
 }
 
 function consumeTorchQuery() {
@@ -9375,6 +9429,39 @@ function initPwaWeatherTorchExperience() {
     if (data.type === "TORCH_TOGGLE") {
       toggleTorchFromExternal().catch(() => {});
     }
+  });
+  androidShadeAllowBtn?.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const mode = await ensureNotificationPermission();
+    renderNotifyPermissionStatus();
+    if (mode === "granted") {
+      hideAndroidShadePrompt();
+      const shown = await publishWeatherStatusNotification();
+      showInPageAlert(
+        shown ? "已顯示在通知列" : "已允許系統通知",
+        shown
+          ? "請從手機頂端往下滑，即可看到目前天氣、溫度與手電筒。"
+          : "已允許通知。請從手機頂端往下滑查看系統通知列。",
+        { timeoutMs: 7000, variant: "subscription" }
+      );
+      return;
+    }
+    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+      hideAndroidShadePrompt();
+      showInPageAlert("通知權限已被拒絕", getNotifyPermissionExplain().detail || "請到系統設定允許此應用程式的通知。", {
+        timeoutMs: 8000,
+        variant: "not-open"
+      });
+    }
+  });
+  androidShadeLaterBtn?.addEventListener("click", (event) => {
+    event.preventDefault();
+    try {
+      sessionStorage.setItem(ANDROID_SHADE_PROMPT_DISMISS_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    hideAndroidShadePrompt();
   });
   window.addEventListener("appinstalled", () => {
     pinAndroidWeatherStatusTray().catch(() => {});
@@ -13624,8 +13711,8 @@ enableNotifyBtn?.addEventListener("click", async () => {
     return;
   }
   if (mode === "granted") {
-    showInPageAlert("已允許系統通知", "警戒推播會出現在系統通知。安裝桌面版後，天氣與手電筒會固定在安卓由上往下拉開的通知列。", {
-      timeoutMs: 6000,
+    showInPageAlert("已允許系統通知", "請從手機頂端往下滑，即可看到目前天氣、溫度與手電筒開關。", {
+      timeoutMs: 7000,
       variant: "subscription"
     });
     renderSubscriptionStatus("已允許系統通知。");

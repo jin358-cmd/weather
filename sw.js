@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v220-android-shade-weather";
+const SW_VERSION = "jin-v221-android-shade-fix";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",
@@ -82,12 +82,17 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((key) => key.startsWith("jin-pwa-") && key !== PWA_CACHE_NAME).map((key) => caches.delete(key)))
-      )
-      .then(() => self.clients.claim())
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys.filter((key) => key.startsWith("jin-pwa-") && key !== PWA_CACHE_NAME).map((key) => caches.delete(key))
+      );
+      await self.clients.claim();
+      const snapshot = await idbGet(WEATHER_STATUS_KEY).catch(() => null);
+      if (snapshot?.title) {
+        await showWeatherStatusNotification(snapshot);
+      }
+    })()
   );
 });
 
@@ -190,42 +195,47 @@ async function showWeatherStatusNotification(payload = {}) {
   const torchAvailable = snapshot.torchAvailable !== false;
   const title = snapshot.title || "天氣讀取中";
   const body = snapshot.body || snapshot.place || "災防通報";
-  const actions = torchAvailable
-    ? [
-        {
-          action: "torch-toggle",
-          title: torchOn ? "關閉手電筒" : "開啟手電筒",
-          icon: torchOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png"
-        }
-      ]
-    : [];
-  const options = {
+  const icon = new URL("./icons/icon-192.png", self.registration.scope).href;
+  const torchIcon = new URL(
+    torchOn ? "./icons/torch-on-96.png" : "./icons/torch-off-96.png",
+    self.registration.scope
+  ).href;
+  const base = {
     body,
     tag: WEATHER_STATUS_NOTIFY_TAG,
-    silent: true,
+    silent: false,
     renotify: false,
     requireInteraction: false,
-    ongoing: true,
-    vibrate: [],
-    icon: "./icons/icon-192.png",
-    badge: "./icons/icon-192.png",
-    actions,
+    icon,
+    badge: icon,
     data: {
       kind: "weather-status",
       torchOn,
       place: snapshot.place || ""
     }
   };
-  try {
-    await self.registration.showNotification(title, options);
-  } catch {
+  const withActions = {
+    ...base,
+    actions: torchAvailable
+      ? [
+          {
+            action: "torch-toggle",
+            title: torchOn ? "關閉手電筒" : "開啟手電筒",
+            icon: torchIcon
+          }
+        ]
+      : []
+  };
+  const attempts = [withActions, base];
+  for (const options of attempts) {
     try {
-      delete options.ongoing;
       await self.registration.showNotification(title, options);
+      return true;
     } catch {
-      /* permission or platform may reject status notifications */
+      /* try a simpler payload */
     }
   }
+  return false;
 }
 
 async function refreshWeatherStatusFromNetwork() {
