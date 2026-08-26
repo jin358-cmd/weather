@@ -1916,6 +1916,57 @@ html.channel-talk-open .channel-talk-overlay-close {
   opacity: 0.92;
 }
 
+.footer-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.footer-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: #fff;
+}
+
+.footer-share-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.footer-share-facebook {
+  background: #1877f2;
+}
+
+.footer-share-facebook:hover,
+.footer-share-facebook:focus-visible {
+  filter: brightness(1.08);
+  outline: none;
+}
+
+.footer-share-line {
+  background: #06c755;
+}
+
+.footer-share-line:hover,
+.footer-share-line:focus-visible {
+  filter: brightness(1.08);
+  outline: none;
+}
+
 .notification-hint {
   margin-top: 6px;
   color: #5a6787;
