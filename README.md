@@ -67,6 +67,8 @@ python3 -m http.server 4173
 - GitHub 備份資料夾（上傳日期 as V1）：[`backups/2026-08-26-V1`](https://github.com/jin358-cmd/weather/tree/main/backups/2026-08-26-V1)
 - 前一版日期備份：https://jin358-cmd.github.io/weather/weather-2026-08-25.zip
 - 更早 V1：https://jin358-cmd.github.io/weather/weather-v1.zip
+- Splash 圖示 ZIP：https://jin358-cmd.github.io/weather/splash-icons.zip
+- Splash 下載頁：https://jin358-cmd.github.io/weather/download-splash.html
 
 ### 訂閱通知（每日天氣預報 Email）
 
