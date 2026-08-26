@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>下載完整程式碼備份</title>
+    <title>下載 Splash 圖示</title>
     <style>
       body {
         margin: 0;
@@ -40,6 +40,14 @@
         font-weight: 700;
         text-decoration: none;
       }
+      .preview {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 14px;
+        border-radius: 22px;
+        object-fit: cover;
+        background: #161d27;
+      }
       .meta {
         font-size: 13px;
         color: #4a5568;
@@ -51,24 +59,18 @@
   </head>
   <body>
     <main>
-      <h1>完整程式碼備份</h1>
-      <p>目前正式版完整備份（ZIP），標註為 V1，上傳日期：2026-08-26。</p>
+      <h1>Splash 圖示下載</h1>
+      <img class="preview" src="./icons/splash/splash-icon-512.png" alt="防災通報 splash 圖示" />
+      <p>PWA／iOS 啟動畫面與圖示 PNG（暮藍底＋圓角災防圖示）。</p>
       <p>
-        <a class="btn" href="./weather-2026-08-26-V1.zip" download="weather-2026-08-26-V1.zip">下載 weather-2026-08-26-V1.zip</a>
+        <a class="btn" href="./splash-icons.zip" download="splash-icons.zip">下載 splash-icons.zip</a>
       </p>
       <p class="meta">
-        GitHub 備份資料夾：
-        <a href="https://github.com/jin358-cmd/weather/tree/main/backups/2026-08-26-V1">backups/2026-08-26-V1</a>
+        資料夾：
+        <a href="https://github.com/jin358-cmd/weather/tree/main/icons/splash">icons/splash</a>
       </p>
       <p class="meta">
-        前一版日期備份：<a href="./weather-2026-08-25.zip" download="weather-2026-08-25.zip">weather-2026-08-25.zip</a>
-      </p>
-      <p class="meta">
-        Splash 圖示：<a href="./download-splash.html">download-splash.html</a>
-        ／ <a href="./splash-icons.zip" download="splash-icons.zip">splash-icons.zip</a>
-      </p>
-      <p class="meta">
-        更早 V1 備份：<a href="./weather-v1.zip" download="weather-v1.zip">weather-v1.zip</a>
+        完整程式碼備份：<a href="./download.html">download.html</a>
       </p>
     </main>
   </body>
