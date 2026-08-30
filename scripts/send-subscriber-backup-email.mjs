@@ -1,244 +1,218 @@
-#!/usr/bin/env node
-/**
- * Daily backup of subscriber database (data/subscribers.json)
- * emailed to the owner inbox for archival.
- *
- * Delivery order:
- * 1) Resend API when RESEND_API_KEY is set
- * 2) FormSubmit.co AJAX fallback (recipient must activate once)
- */
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
-const SUBSCRIBERS_PATH = path.join(ROOT, "data", "subscribers.json");
-const SUBSCRIBERS_CSV_PATH = path.join(ROOT, "data", "subscribers.csv");
-const SUBSCRIBERS_MD_PATH = path.join(ROOT, "data", "subscribers.md");
-const GITHUB_CONTENTS_CSV =
-  "https://api.github.com/repos/jin358-cmd/weather/contents/data/subscribers.csv";
-const GITHUB_CONTENTS_JSON =
-  "https://api.github.com/repos/jin358-cmd/weather/contents/data/subscribers.json";
-// Must match app.js SITE_PUBLIC_URL — subscriber-facing platform link.
 const SITE_PUBLIC_URL = "https://jin358-cmd.github.io/weather/";
-const BACKUP_TO = process.env.SUBSCRIBER_BACKUP_TO || "jin358@gmail.com";
-const FROM_EMAIL = process.env.MAIL_FROM || "停班停課通報 <onboarding@resend.dev>";
-const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const BACKUP_TO = String(process.env.SUBSCRIBER_BACKUP_TO || "jin358@gmail.com").trim();
+const RESEND_API_KEY = String(process.env.RESEND_API_KEY || "").trim();
+const MAIL_FROM = String(process.env.MAIL_FROM || "").trim();
+const GITHUB_TOKEN = String(process.env.GITHUB_TOKEN || "").trim();
+const GITHUB_REPOSITORY = String(process.env.GITHUB_REPOSITORY || "jin358-cmd/weather").trim();
+const GITHUB_REF_NAME = String(process.env.GITHUB_REF_NAME || "main").trim();
+const SKIP_EMAIL = String(process.env.SKIP_EMAIL || "").trim() === "1";
+const ROOT = process.cwd();
+const REPORT_PATH = join(ROOT, "data", "subscriber-backup-latest.md");
 
-function taipeiDateKey(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Taipei",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).format(date);
+function loadJson(name, fallback) {
+  try {
+    return JSON.parse(readFileSync(join(ROOT, "data", name), "utf8"));
+  } catch {
+    return fallback;
+  }
 }
 
-function taipeiDateTime(date = new Date()) {
-  return new Intl.DateTimeFormat("zh-TW", {
-    timeZone: "Asia/Taipei",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false
-  }).format(date);
+function loadText(name) {
+  try {
+    return readFileSync(join(ROOT, "data", name), "utf8");
+  } catch {
+    return "";
+  }
 }
 
-function normalizeRecord(entry) {
-  if (!entry || typeof entry !== "object") {
-    return null;
-  }
-  const email = String(entry.email || "")
-    .trim()
-    .toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return null;
-  }
-  return {
-    email,
-    topics: Array.isArray(entry.topics) ? entry.topics.map(String) : [],
-    city: String(entry.city || "").trim(),
-    township: String(entry.township || "").trim(),
-    lat: Number(entry.lat),
-    lon: Number(entry.lon),
-    updatedAt: entry.updatedAt || null
+function looksLikeCloudflareChallenge(status, text) {
+  return (
+    status === 403 &&
+    /just a moment|cloudflare|cf-mitigated|attention required/i.test(String(text || ""))
+  );
+}
+
+async function checkGitHubFile(path) {
+  const url = `https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${path}?ref=${encodeURIComponent(GITHUB_REF_NAME)}`;
+  const headers = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "weather-subscriber-backup",
   };
+  if (GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+  }
+  try {
+    const response = await fetch(url, { headers });
+    const payload = await response.json().catch(() => ({}));
+    return {
+      ok: response.ok,
+      status: response.status,
+      url: typeof payload.html_url === "string" ? payload.html_url : "",
+      sha: typeof payload.sha === "string" ? payload.sha.slice(0, 7) : "",
+      message: response.ok ? "可讀取" : String(payload.message || `HTTP ${response.status}`),
+    };
+  } catch (error) {
+    return { ok: false, status: 0, url: "", message: error instanceof Error ? error.message : String(error) };
+  }
 }
 
-async function sendWithResend(toEmail, subject, text) {
+function buildBackupBody({ now, subscribers, counters, csv, md, connections }) {
+  const count = subscribers.length;
+  const lines = subscribers.slice(0, 80).map((item, index) => {
+    const city = String(item.city || "").trim() || "未填縣市";
+    const topics = Array.isArray(item.topics) ? item.topics.join("、") : "";
+    return `${index + 1}. ${item.email}｜${city}｜${topics || "未勾選主題"}`;
+  });
+  const connectionLines = connections.map((item) =>
+    `- ${item.label}：${item.ok ? "成功" : "失敗"}（${item.status || "n/a"}）${item.sha ? ` sha ${item.sha}` : ""}${item.message ? `｜${item.message}` : ""}`
+  );
+
+  return [
+    "台灣即時資訊 每日訂閱者資料庫備份",
+    "",
+    `備份時間：${now}`,
+    `網站：${SITE_PUBLIC_URL}`,
+    `寄送對象：${BACKUP_TO}`,
+    `訂閱筆數：${count}`,
+    `瀏覽／按讚：${Number(counters.visits || 0)} / ${Number(counters.likes || 0)}`,
+    "",
+    "GitHub 連線檢查",
+    ...connectionLines,
+    "",
+    "GitHub 備份檔",
+    `- CSV：${SITE_PUBLIC_URL}data/subscribers.csv`,
+    `- Markdown：${SITE_PUBLIC_URL}data/subscribers.md`,
+    `- 最新備份報告：${SITE_PUBLIC_URL}data/subscriber-backup-latest.md`,
+    "",
+    "本信用途：確認訂閱資料庫與 GitHub 檔案連線，並把當日訂閱清冊寄到管理者信箱。",
+    "即使 FormSubmit 被 GitHub Actions IP 擋下，上方 GitHub 檔案仍是完整備份。",
+    "",
+    "當日訂閱者",
+    ...(lines.length ? lines : ["（目前沒有訂閱者）"]),
+    subscribers.length > 80 ? `…其餘 ${subscribers.length - 80} 筆已寫入 CSV / Markdown` : "",
+    "",
+    "subscribers.md",
+    md || "（尚無 Markdown 備份）",
+    "",
+    "subscribers.csv",
+    "```csv",
+    csv || "email,city,district,topics,createdAt",
+    "```",
+  ].filter((line, index, list) => !(line === "" && list[index - 1] === "")).join("\n");
+}
+
+async function sendWithResend(subject, body) {
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: [toEmail],
+      from: MAIL_FROM || "Weather Alerts <alerts@resend.dev>",
+      to: [BACKUP_TO],
       subject,
-      text
-    })
+      text: body,
+    }),
   });
-  const raw = await response.text();
+  const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(`Resend HTTP ${response.status}: ${raw.slice(0, 240)}`);
+    throw new Error(payload.message || `Resend HTTP ${response.status}`);
   }
-  return { provider: "resend", raw };
+  return payload.id || "resend";
 }
 
-async function sendWithFormSubmit(toEmail, subject, text) {
-  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(toEmail)}`, {
+async function sendWithFormSubmit(subject, body) {
+  const form = new URLSearchParams();
+  form.set("email", BACKUP_TO);
+  form.set("_subject", subject);
+  form.set("message", body);
+  form.set("_template", "box");
+  form.set("_captcha", "false");
+
+  const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(BACKUP_TO)}`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
+      Accept: "application/json, text/plain, */*",
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      Origin: SITE_PUBLIC_URL.replace(/\/$/, ""),
+      Referer: SITE_PUBLIC_URL,
+      "User-Agent":
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     },
-    body: JSON.stringify({
-      _subject: subject,
-      _template: "box",
-      _captcha: "false",
-      _honey: "",
-      message: text,
-      platform: SITE_PUBLIC_URL,
-      backupType: "subscribers-database"
-    })
+    body: form.toString(),
   });
-  const raw = await response.text();
+  const text = await response.text();
+  if (looksLikeCloudflareChallenge(response.status, text)) {
+    const error = new Error("FormSubmit Cloudflare challenge");
+    error.code = "FORMSUBMIT_CLOUDFLARE";
+    error.status = response.status;
+    throw error;
+  }
   if (!response.ok) {
-    throw new Error(`FormSubmit HTTP ${response.status}: ${raw.slice(0, 240)}`);
+    throw new Error(`FormSubmit HTTP ${response.status}: ${text.slice(0, 240)}`);
   }
-  return { provider: "formsubmit", raw };
-}
-
-async function sendEmail(toEmail, subject, text) {
-  if (RESEND_API_KEY) {
-    return sendWithResend(toEmail, subject, text);
-  }
-  return sendWithFormSubmit(toEmail, subject, text);
-}
-
-async function testGithubContents(url, label) {
   try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "jin358-weather-daily-report"
-      }
-    });
-    const raw = await response.text();
-    let name = "";
-    try {
-      name = JSON.parse(raw)?.name || "";
-    } catch {
-      name = "";
+    const payload = JSON.parse(text);
+    if (payload.success === "false" || payload.success === false) {
+      throw new Error(payload.message || "FormSubmit rejected the backup email");
     }
-    return {
-      label,
-      ok: response.ok && Boolean(name),
-      status: response.status,
-      name: name || "-"
-    };
   } catch (error) {
-    return {
-      label,
-      ok: false,
-      status: 0,
-      name: "-",
-      error: String(error?.message || error)
-    };
-  }
-}
-
-function formatConnectionLine(result) {
-  const mark = result.ok ? "正常" : "異常";
-  const extra = result.error ? `｜${result.error}` : "";
-  return `${result.label}：${mark}（HTTP ${result.status}｜${result.name}）${extra}`;
-}
-
-function buildBackupBody(payload, records, connectionResults, tablePreview) {
-  const dateKey = taipeiDateKey();
-  const listLines = records.length
-    ? records
-        .map((row, index) => {
-          const area = [row.city, row.township].filter(Boolean).join("") || "未填地區";
-          const topics = row.topics.length ? row.topics.join(",") : "-";
-          return `${index + 1}. ${row.email}｜${area}｜主題:${topics}`;
-        })
-        .join("\n")
-    : "（目前無訂閱者）";
-
-  const database = {
-    updatedAt: payload.updatedAt || null,
-    backedUpAt: new Date().toISOString(),
-    count: records.length,
-    subscribers: records
-  };
-
-  return [
-    "【訂閱者資料庫每日備份／連接回報】",
-    `備份日期：${dateKey}（台北時間 ${taipeiDateTime()}）`,
-    `收件備份信箱：${BACKUP_TO}`,
-    `訂閱筆數：${records.length}`,
-    `平台：${SITE_PUBLIC_URL}`,
-    `資料來源：data/subscribers.json`,
-    `累計表格：data/subscribers.csv、data/subscribers.md`,
-    "",
-    "—— GitHub 上傳連接測試 ——",
-    ...connectionResults.map(formatConnectionLine),
-    "",
-    "—— 訂閱名單摘要 ——",
-    listLines,
-    "",
-    "—— 累計表格預覽 ——",
-    tablePreview || "（尚無表格）",
-    "",
-    "—— 完整資料庫 JSON ——",
-    JSON.stringify(database, null, 2),
-    "",
-    "本信為系統自動每日備份與連接回報，請妥善保存。"
-  ].join("\n");
-}
-
-async function main() {
-  const raw = await readFile(SUBSCRIBERS_PATH, "utf8");
-  const payload = JSON.parse(raw);
-  const list = Array.isArray(payload.subscribers) ? payload.subscribers : [];
-  const records = list.map(normalizeRecord).filter(Boolean);
-  let tablePreview = "";
-  try {
-    tablePreview = await readFile(SUBSCRIBERS_MD_PATH, "utf8");
-  } catch {
-    try {
-      tablePreview = await readFile(SUBSCRIBERS_CSV_PATH, "utf8");
-    } catch {
-      tablePreview = "（尚未產生表格檔）";
+    if (error instanceof SyntaxError) {
+      throw new Error(`FormSubmit 回傳非 JSON：${text.slice(0, 240)}`);
     }
+    throw error;
   }
-
-  const connectionResults = await Promise.all([
-    testGithubContents(GITHUB_CONTENTS_CSV, "subscribers.csv"),
-    testGithubContents(GITHUB_CONTENTS_JSON, "subscribers.json")
-  ]);
-
-  const dateKey = taipeiDateKey();
-  const allOk = connectionResults.every((item) => item.ok);
-  const subject = `【訂閱名單備份】${dateKey}｜${records.length} 筆｜連接${allOk ? "正常" : "異常"}`;
-  const body = buildBackupBody(payload, records, connectionResults, tablePreview);
-  const result = await sendEmail(BACKUP_TO, subject, body);
-
-  console.log(
-    `Subscriber backup emailed to ${BACKUP_TO}: count=${records.length} via ${result.provider} connect=${allOk ? "ok" : "fail"}`
-  );
-  connectionResults.forEach((item) => {
-    console.log(formatConnectionLine(item));
-  });
+  return "formsubmit";
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+const now = new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
+const store = loadJson("subscribers.json", { subscribers: [] });
+const counters = loadJson("counters.json", { visits: 0, likes: 0 });
+const csv = loadText("subscribers.csv").trim();
+const md = loadText("subscribers.md").trim();
+const subscribers = Array.isArray(store.subscribers) ? store.subscribers : [];
+const connections = [
+  { label: "data/subscribers.csv", ...(await checkGitHubFile("data/subscribers.csv")) },
+  { label: "data/subscribers.json", ...(await checkGitHubFile("data/subscribers.json")) },
+  { label: "data/subscribers.md", ...(await checkGitHubFile("data/subscribers.md")) },
+];
+const subject = `【台灣即時資訊】每日訂閱者備份 ${now}｜${subscribers.length} 筆`;
+const body = buildBackupBody({ now, subscribers, counters, csv, md, connections });
+
+writeFileSync(REPORT_PATH, `${body}\n`, "utf8");
+console.log(`wrote ${REPORT_PATH}`);
+console.log(`subscriberCount=${subscribers.length}`);
+console.log(
+  "githubConnections",
+  connections.map((item) => `${item.label}:${item.ok ? "ok" : "fail"}:${item.status}`).join(", ")
+);
+
+if (SKIP_EMAIL) {
+  console.log("SKIP_EMAIL=1；已寫入 GitHub 備份報告，略過寄信");
+  process.exit(0);
+}
+
+if (!BACKUP_TO) {
+  throw new Error("Missing SUBSCRIBER_BACKUP_TO");
+}
+
+try {
+  const id = RESEND_API_KEY
+    ? await sendWithResend(subject, body)
+    : await sendWithFormSubmit(subject, body);
+  console.log(`subscriber backup email sent via ${RESEND_API_KEY ? "resend" : "formsubmit"}: ${id}`);
+} catch (error) {
+  if (!RESEND_API_KEY && error && error.code === "FORMSUBMIT_CLOUDFLARE") {
+    console.warn(
+      "FormSubmit 被 Cloudflare 擋下（GitHub Actions IP）。GitHub 檔案備份已完成，不中斷工作流程。"
+    );
+    console.warn("若要每天寄到 Gmail，請在 repo Secrets 設定 RESEND_API_KEY（建議）與 MAIL_FROM。");
+    process.exit(0);
+  }
+  throw error;
+}
