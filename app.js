@@ -13306,27 +13306,24 @@ function updateMapForCityChange() {
 }
 
 function addDisasterMapBaseTiles(map) {
-  // Disaster-oriented basemaps: dark canvas for overlays, Taiwan NLSC, and terrain topo.
-  const darkTiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 20,
-    subdomains: "abcd",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-  });
-  const nlscTiles = L.tileLayer(
-    "https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}",
-    {
-      maxZoom: 19,
-      attribution: '圖資 &copy; <a href="https://maps.nlsc.gov.tw/">內政部國土測繪中心</a>'
-    }
-  );
-  const topoTiles = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-    maxZoom: 17,
-    attribution:
-      'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
-  });
-
-  darkTiles.addTo(map);
+  // CARTO raster tiles now watermark "API KEY REQUIRED" without a key.
+  // Keep CARTO only when the owner sets window.JIN_CARTO_API_KEY; otherwise use
+  // Taiwan NLSC EMAP (no key) and invert it to keep the dark overlay canvas.
+  const cartoKey = String(window.JIN_CARTO_API_KEY || "").trim();
+  if (cartoKey) {
+    L.tileLayer(`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(cartoKey)}`, {
+      maxZoom: 20,
+      subdomains: "abcd",
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+    return;
+  }
+  L.tileLayer("https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}", {
+    maxZoom: 19,
+    className: "disaster-map-dark-tiles",
+    attribution: '圖資 &copy; <a href="https://maps.nlsc.gov.tw/">內政部國土測繪中心</a>'
+  }).addTo(map);
 }
 
 function scheduleMapLayersByView({ includeAlertLayers = false } = {}) {
