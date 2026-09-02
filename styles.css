@@ -1487,6 +1487,16 @@ label {
   margin-inline: auto;
 }
 
+html.is-map-day .windy-wrap-large,
+.windy-wrap.is-map-day {
+  background: #dce6ef;
+}
+
+html.is-map-evening .windy-wrap-large,
+.windy-wrap.is-map-evening {
+  background: #0f1622;
+}
+
 .windy-embed {
   position: absolute;
   inset: 0;
@@ -1502,6 +1512,18 @@ label {
   background: #0f1622;
   display: block;
   pointer-events: auto;
+}
+
+html.is-map-day .windy-embed,
+.windy-wrap.is-map-day .windy-embed {
+  background: #dce6ef;
+  filter: none;
+}
+
+html.is-map-evening .windy-embed,
+.windy-wrap.is-map-evening .windy-embed {
+  background: #0f1622;
+  filter: brightness(0.78) saturate(0.92);
 }
 
 .windy-locate-btn {
@@ -1549,6 +1571,45 @@ label {
 .windy-locate-btn:disabled {
   opacity: 0.72;
   cursor: wait;
+}
+
+.map-clock-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  z-index: 520;
+  transform: translateX(-50%);
+  pointer-events: none;
+  box-sizing: border-box;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(22, 29, 39, 0.18);
+  background: rgba(244, 239, 230, 0.92);
+  color: #161d27;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 6px rgba(15, 22, 34, 0.18);
+}
+
+html.is-map-evening .map-clock-badge,
+.map-clock-badge.is-map-evening {
+  border-color: rgba(244, 239, 230, 0.22);
+  background: rgba(15, 22, 34, 0.82);
+  color: #f4efe6;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+.map-clock-badge-windy,
+.windy-wrap .map-clock-badge {
+  top: 6px;
+  right: 8px;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  z-index: 7;
 }
 
 .typhoon-wind-map {
@@ -6128,13 +6189,32 @@ body.eq-sheet-open {
 
 .warning-map {
   overflow: hidden;
+  background: #dce6ef;
 }
 
-.warning-map.leaflet-container {
+html.is-map-evening .warning-map,
+.warning-map.is-map-evening {
   background: #0f1622;
 }
 
+html.is-map-day .warning-map,
+.warning-map.is-map-day {
+  background: #dce6ef;
+}
+
+.warning-map.leaflet-container {
+  background: inherit;
+}
+
+.warning-map .disaster-map-base-tiles,
 .warning-map .disaster-map-dark-tiles {
+  filter: none;
+}
+
+html.is-map-evening .warning-map .disaster-map-nlsc-tiles,
+html.is-map-evening .warning-map .disaster-map-dark-tiles,
+.warning-map.is-map-evening .disaster-map-nlsc-tiles,
+.warning-map.is-map-evening .disaster-map-dark-tiles {
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.92) saturate(0.55);
 }
 
