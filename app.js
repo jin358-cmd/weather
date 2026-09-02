@@ -649,6 +649,9 @@ let blackScreenCameraIds = new Set();
 let utilityAlertTimers = [];
 const DISABLED_CAMERA_HOSTS = new Set([]);
 let warningMap = null;
+let disasterMapBaseLayer = null;
+let mapDayNightTimer = null;
+let lastMapDayNightPeriod = "";
 let mapFloodLayer = null;
 let mapCameraLayer = null;
 let mapCityFocusLayer = null;
@@ -13305,28 +13308,173 @@ function updateMapForCityChange() {
   fitMapToLocateRange(false);
 }
 
-function addDisasterMapBaseTiles(map) {
-  // Disaster-oriented basemaps: dark canvas for overlays, Taiwan NLSC, and terrain topo.
-  const darkTiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 20,
-    subdomains: "abcd",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-  });
-  const nlscTiles = L.tileLayer(
-    "https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}",
-    {
-      maxZoom: 19,
-      attribution: '圖資 &copy; <a href="https://maps.nlsc.gov.tw/">內政部國土測繪中心</a>'
-    }
-  );
-  const topoTiles = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-    maxZoom: 17,
-    attribution:
-      'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
-  });
+const TAIPEI_TIME_ZONE = "Asia/Taipei";
+const MAP_DAY_START_HOUR = 6;
+const MAP_EVENING_START_HOUR = 17;
 
-  darkTiles.addTo(map);
+function readMapClockOverride() {
+  try {
+    const query = String(new URLSearchParams(window.location.search).get("mapClock") || "").toLowerCase();
+    if (query === "evening" || query === "night") {
+      return "evening";
+    }
+    if (query === "day") {
+      return "day";
+    }
+  } catch {
+    /* ignore invalid search params */
+  }
+  return "";
+}
+
+function getTaipeiMapClock(now = new Date()) {
+  let hour = 0;
+  let minute = 0;
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: TAIPEI_TIME_ZONE,
+      hour: "numeric",
+      minute: "numeric",
+      hourCycle: "h23"
+    }).formatToParts(now);
+    hour = Number(parts.find((part) => part.type === "hour")?.value);
+    minute = Number(parts.find((part) => part.type === "minute")?.value);
+  } catch {
+    const taipei = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    hour = taipei.getUTCHours();
+    minute = taipei.getUTCMinutes();
+  }
+  if (!Number.isFinite(hour) || hour === 24) {
+    hour = 0;
+  }
+  if (!Number.isFinite(minute)) {
+    minute = 0;
+  }
+  const override = readMapClockOverride();
+  const isEvening = override ? override === "evening" : hour >= MAP_EVENING_START_HOUR || hour < MAP_DAY_START_HOUR;
+  const period = isEvening ? "evening" : "day";
+  const periodLabel = isEvening ? "晚間" : "白天";
+  const timeLabel = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  return {
+    hour,
+    minute,
+    isEvening,
+    period,
+    periodLabel,
+    timeLabel,
+    override,
+    badgeText: override ? `台北 ${timeLabel}｜${periodLabel}（預覽）` : `台北 ${timeLabel}｜${periodLabel}`
+  };
+}
+
+function applyMapDayNightHostClasses(isEvening) {
+  const root = document.documentElement;
+  root.classList.toggle("is-map-evening", isEvening);
+  root.classList.toggle("is-map-day", !isEvening);
+  const hosts = [document.querySelector("#warningMap"), document.querySelector(".windy-wrap")];
+  hosts.forEach((el) => {
+    if (!el) {
+      return;
+    }
+    el.classList.toggle("is-map-evening", isEvening);
+    el.classList.toggle("is-map-day", !isEvening);
+  });
+}
+
+function updateMapClockBadges(clock) {
+  const badges = [document.querySelector("#disasterMapClock"), document.querySelector("#windyMapClock")];
+  badges.forEach((el) => {
+    if (!el) {
+      return;
+    }
+    el.textContent = clock.badgeText;
+    el.classList.toggle("is-map-evening", clock.isEvening);
+    el.classList.toggle("is-map-day", !clock.isEvening);
+  });
+}
+
+function getDisasterMapCartoKey() {
+  return String(window.JIN_CARTO_API_KEY || "").trim();
+}
+
+function addDisasterMapBaseTiles(map) {
+  // CARTO raster tiles watermark "API KEY REQUIRED" without a key.
+  // Keep CARTO only when the owner sets window.JIN_CARTO_API_KEY; otherwise use
+  // Taiwan NLSC EMAP (no key). Evening appearance uses CSS invert on NLSC tiles.
+  if (disasterMapBaseLayer) {
+    try {
+      map.removeLayer(disasterMapBaseLayer);
+    } catch {
+      /* ignore */
+    }
+    disasterMapBaseLayer = null;
+  }
+  const clock = getTaipeiMapClock();
+  const cartoKey = getDisasterMapCartoKey();
+  if (cartoKey) {
+    const style = clock.isEvening ? "dark_all" : "light_all";
+    disasterMapBaseLayer = L.tileLayer(
+      `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(cartoKey)}`,
+      {
+        maxZoom: 20,
+        subdomains: "abcd",
+        className: "disaster-map-base-tiles disaster-map-carto-tiles",
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      }
+    );
+    disasterMapBaseLayer._cartoStyle = style;
+  } else {
+    disasterMapBaseLayer = L.tileLayer(
+      "https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        className: "disaster-map-base-tiles disaster-map-nlsc-tiles",
+        attribution: '圖資 &copy; <a href="https://maps.nlsc.gov.tw/">內政部國土測繪中心</a>'
+      }
+    );
+  }
+  disasterMapBaseLayer.addTo(map);
+}
+
+function refreshDisasterMapBaseTilesIfNeeded(clock) {
+  if (!warningMap || typeof L === "undefined" || !disasterMapBaseLayer) {
+    return;
+  }
+  const cartoKey = getDisasterMapCartoKey();
+  if (!cartoKey) {
+    return;
+  }
+  const style = clock.isEvening ? "dark_all" : "light_all";
+  if (disasterMapBaseLayer._cartoStyle === style) {
+    return;
+  }
+  addDisasterMapBaseTiles(warningMap);
+}
+
+function applyMapDayNightTheme() {
+  const clock = getTaipeiMapClock();
+  applyMapDayNightHostClasses(clock.isEvening);
+  updateMapClockBadges(clock);
+  if (lastMapDayNightPeriod && lastMapDayNightPeriod !== clock.period) {
+    refreshDisasterMapBaseTilesIfNeeded(clock);
+  }
+  lastMapDayNightPeriod = clock.period;
+}
+
+function startMapDayNightClock() {
+  applyMapDayNightTheme();
+  if (mapDayNightTimer != null) {
+    return;
+  }
+  mapDayNightTimer = window.setInterval(() => {
+    applyMapDayNightTheme();
+  }, 30000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      applyMapDayNightTheme();
+    }
+  });
 }
 
 function scheduleMapLayersByView({ includeAlertLayers = false } = {}) {
@@ -13360,6 +13508,7 @@ function scheduleMapLayersByView({ includeAlertLayers = false } = {}) {
 function initWarningMap() {
   const mapEl = document.querySelector("#warningMap");
   restoreMapLocateFocus();
+  applyMapDayNightTheme();
   if (!mapEl || typeof L === "undefined") {
     loadFloodStations()
       .then(() => fetchLiveFloodData())
@@ -14413,6 +14562,7 @@ initLikeCounter();
 performFullRefresh("manual");
 fetchRoadCameras();
 try {
+  startMapDayNightClock();
   initWarningMap();
 } catch (error) {
   console.warn("災害地圖初始化失敗", error);

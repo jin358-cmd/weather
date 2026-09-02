@@ -86,9 +86,10 @@ python3 -m http.server 4173
 - 手動登錄訂閱者：Actions → **Register weather subscriber**
 - 訂閱名單每日備份：`.github/workflows/daily-subscriber-backup.yml`（每天約台北時間 07:10）
   - 腳本：`scripts/send-subscriber-backup-email.mjs`
-  - 備份收件：`jin358@gmail.com`（完整 JSON＋名單摘要）
+  - GitHub 檔案備份（主要、一定會寫）：`data/subscribers.csv`、`data/subscribers.md`、`data/subscriber-backup-latest.md`
+  - 備份收件：`jin358@gmail.com`（名單摘要＋連線檢查）
   - 可手動執行：Actions → **Daily subscriber database backup email**
-- 可選強化寄信品質：於 Repo Secrets 設定 `RESEND_API_KEY`（以及可選 `MAIL_FROM`）
+- 寄到 Gmail 請在 Repo Secrets 設定 `RESEND_API_KEY`（以及可選 `MAIL_FROM`）。未設定時會改走 FormSubmit；GitHub Actions IP 常被 Cloudflare 擋下，此時工作流程仍會成功，備份以 GitHub 檔案為準
 - 若使用 FormSubmit：請先對 `jin358@gmail.com` 完成一次啟動確認信
 
 ### 一次性啟用（倉庫擁有者必做，約 30 秒）

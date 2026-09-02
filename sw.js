@@ -1,4 +1,4 @@
-const SW_VERSION = "jin-v253-footer-share";
+const SW_VERSION = "jin-v256-map-daynight";
 const PWA_CACHE_NAME = `jin-pwa-${SW_VERSION}`;
 const PWA_PRECACHE_URLS = [
   "./",

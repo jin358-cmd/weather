@@ -23,16 +23,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Rebuild subscriber table and counter floor
         run: node ./scripts/sync-daily-site-data.mjs
 
-      - name: Commit cumulative table to GitHub
+      - name: Write backup report and email connection summary
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          SUBSCRIBER_BACKUP_TO: jin358@gmail.com
+        run: node ./scripts/send-subscriber-backup-email.mjs
+
+      - name: Commit cumulative table and latest backup report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/subscribers.csv data/subscribers.md data/counters.json
+          git add data/subscribers.csv data/subscribers.md data/counters.json data/subscriber-backup-latest.md
           if git diff --staged --quiet; then
             echo "No cumulative table changes"
           else
@@ -40,9 +47,9 @@ jobs:
             git push
           fi
 
-      - name: Email subscriber backup and connection report
-        env:
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          MAIL_FROM: ${{ secrets.MAIL_FROM }}
-          SUBSCRIBER_BACKUP_TO: jin358@gmail.com
-        run: node ./scripts/send-subscriber-backup-email.mjs
+      - name: Upload backup report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: subscriber-backup-latest
+          path: data/subscriber-backup-latest.md
+          if-no-files-found: error

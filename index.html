@@ -2,6 +2,36 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          var query = "";
+          try {
+            query = String(new URLSearchParams(location.search).get("mapClock") || "").toLowerCase();
+          } catch (error) {
+            query = "";
+          }
+          var evening = query === "evening" || query === "night";
+          var day = query === "day";
+          if (!evening && !day) {
+            var parts = new Intl.DateTimeFormat("en-US", {
+              timeZone: "Asia/Taipei",
+              hour: "numeric",
+              hourCycle: "h23"
+            }).formatToParts(new Date());
+            var hour = 0;
+            for (var i = 0; i < parts.length; i += 1) {
+              if (parts[i].type === "hour") hour = Number(parts[i].value);
+            }
+            if (hour === 24) hour = 0;
+            evening = hour >= 17 || hour < 6;
+          }
+          document.documentElement.classList.add(evening ? "is-map-evening" : "is-map-day");
+        } catch (error) {
+          document.documentElement.classList.add("is-map-day");
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
     <title>停班停課+即時災害通報平台</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,7 +47,7 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=246" />
+    <link rel="stylesheet" href="./styles.css?v=248" />
     <link rel="stylesheet" href="./legacy-themes.css?v=204" />
     <link rel="manifest" href="./manifest.json?v=9" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
@@ -228,6 +258,7 @@
               </span>
               <span class="windy-locate-btn-label">定位</span>
             </button>
+            <div id="windyMapClock" class="map-clock-badge map-clock-badge-windy" aria-hidden="true">台北時間</div>
           </div>
         </div>
       </section>
@@ -449,6 +480,7 @@
               <div id="mapAlertBadgesLeft" class="map-alert-badges-col map-alert-badges-left"></div>
               <div id="mapAlertBadgesRight" class="map-alert-badges-col map-alert-badges-right"></div>
             </div>
+            <div id="disasterMapClock" class="map-clock-badge" aria-hidden="true">台北時間</div>
           </div>
           <div class="map-legend map-legend-below" aria-label="地圖圖例對照">
             <h4>圖例對照</h4>
@@ -717,7 +749,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=235" defer></script>
+    <script src="./app.js?v=237" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=5" defer></script>
   </body>
