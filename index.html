@@ -424,6 +424,17 @@ html body .typhoon-card .windy-wrap-large::before{content:"";position:absolute;z
 html body .typhoon-card .windy-wrap-large::after{content:"";position:absolute;z-index:3;pointer-events:auto;bottom:0;left:0;right:0;height:38px;background:linear-gradient(0deg,#142334f2,#142334cb)!important}
 html body .typhoon-card #windyLocateBtn{z-index:5!important}
 html body .typhoon-card #windyEmbed{pointer-events:none!important}
+</style><style id="owner-windy-size-clock-alert-width-r24">
+/* Formal-site Windy sizing: 1:1, up to 560px; override preview's narrow gutters. */
+html body .typhoon-card .windy-wrap.windy-wrap-large{position:relative!important;box-sizing:border-box!important;flex:0 0 auto!important;align-self:center!important;width:min(100%,560px)!important;max-width:560px!important;min-width:0!important;aspect-ratio:1/1!important;height:auto!important;min-height:0!important;max-height:none!important;margin-inline:auto!important;padding:0!important;border-radius:10px!important}
+html body .typhoon-card .windy-wrap-large::before{right:auto!important;width:125px!important;height:35px!important}
+html body .typhoon-card #windyMapClock{display:flex!important;position:absolute!important;top:5px!important;right:6px!important;left:auto!important;z-index:6!important;min-height:35px!important;height:auto!important;padding:7px 12px!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important}
+html body .app .alert-block{width:100%!important;max-width:none!important;box-sizing:border-box!important}
+html body .app .alert-block>.grid{width:100%!important;max-width:none!important;box-sizing:border-box!important}
+html body .app .alert-block .ai-alert-card,html body .app .alert-block .subscription-card{width:100%!important;max-width:none!important;box-sizing:border-box!important}
+html body .app .alert-block #aiAlertList{width:100%!important;max-width:none!important;box-sizing:border-box!important;padding-inline:0!important}
+html body .app .alert-block #aiAlertList>.ai-alert-item{box-sizing:border-box!important;width:100%!important;max-width:none!important;margin-inline:0!important}
+@media(max-width:600px){html body .app .alert-block{padding-inline:8px!important}html body .app .alert-block .ai-alert-card{padding-inline:6px!important}}
 </style></head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
@@ -570,7 +581,7 @@ html body .typhoon-card #windyEmbed{pointer-events:none!important}
               </span>
               <span class="windy-locate-btn-label">定位</span>
             </button>
-            
+            <div id="windyMapClock" class="map-clock-badge map-clock-badge-windy" aria-hidden="true">台灣時間</div>
           </div>
         </div>
       </section>
