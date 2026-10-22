@@ -1,5 +1,5 @@
 {
-  "id": "https://jin358-cmd.github.io/weather/",
+  "id": "./",
   "name": "停班停課+即時災害通報平台",
   "short_name": "防災通報",
   "description": "全台停班停課、氣象署警特報與即時災防通報",
@@ -9,8 +9,8 @@
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "prefer_related_applications": false,
-  "background_color": "#161d27",
-  "theme_color": "#161d27",
+  "background_color": "#eff8fb",
+  "theme_color": "#eaf8ff",
   "lang": "zh-Hant-TW",
   "dir": "ltr",
   "categories": ["weather", "news", "utilities"],
