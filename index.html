@@ -470,6 +470,18 @@ html body .typhoon-card #windyLocateBtn .windy-locate-btn-label{color:#f43f55!im
 html body .typhoon-card #windyLocateBtn{position:absolute!important;top:7px!important;left:7px!important;z-index:10!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;width:auto!important;min-width:92px!important;max-width:130px!important;height:37px!important;min-height:37px!important;padding:6px 13px!important;border-radius:999px!important;border:2px solid #ff6370!important;background:#db1028!important;background-image:linear-gradient(135deg,#f52a40,#b9081c)!important;box-shadow:0 0 0 2px #ff355033,0 3px 10px #1b071588!important;color:#fff!important}
 html body .typhoon-card #windyLocateBtn .locate-icon,html body .typhoon-card #windyLocateBtn .locate-icon svg{width:18px!important;height:18px!important;fill:#fff!important;color:#fff!important}
 html body .typhoon-card #windyLocateBtn .windy-locate-btn-label{color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:14px!important;font-weight:900!important;text-shadow:none!important}
+</style><style id="owner-production-ui-restore-r29">
+/* Restore production-style earthquake card proportions and single-line headline. */
+html body .earthquake-card .earthquake-item-pinned{background:#e4edf7!important;background-image:none!important;border:2px solid #b4bfcb!important;border-radius:15px!important;box-shadow:none!important;position:relative!important;padding:57px 12px 14px!important}
+html body .earthquake-card .earthquake-item-pinned .earthquake-pinned-kicker{position:absolute!important;top:12px!important;left:6px!important;right:6px!important;width:calc(100% - 12px)!important;display:block!important;white-space:nowrap!important;text-align:center!important;font-size:clamp(13px,3.35vw,20px)!important;font-weight:850!important;line-height:1.3!important;letter-spacing:-.065em!important;color:#27394e!important;-webkit-text-fill-color:#27394e!important}
+html body .earthquake-card .earthquake-item-pinned .earthquake-mag{background:#2256d8!important;color:#fff!important}
+html body .earthquake-card .earthquake-item-pinned .earthquake-mag *{color:#fff!important;-webkit-text-fill-color:#fff!important}
+/* Return Windy map controls to the production look; remove preview masks. */
+html body .typhoon-card .windy-wrap-large::before,html body .typhoon-card .windy-wrap-large::after{content:none!important;display:none!important}
+html body .typhoon-card #windyLocateBtn{top:4px!important;left:4px!important;z-index:6!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;width:100px!important;min-width:100px!important;max-width:100px!important;height:28px!important;min-height:28px!important;padding:0 8px!important;border:1px solid #b71c1c!important;border-radius:999px!important;background:#e53935!important;background-image:none!important;color:#fff!important;box-shadow:0 2px 8px #0005!important}
+html body .typhoon-card #windyLocateBtn .locate-icon,html body .typhoon-card #windyLocateBtn .locate-icon svg{width:12px!important;height:12px!important;fill:#fff!important;color:#fff!important}
+html body .typhoon-card #windyLocateBtn .windy-locate-btn-label{color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:11px!important;font-weight:800!important;text-shadow:none!important}
+html body .typhoon-card #windyMapClock{min-height:30px!important;height:auto!important;padding:5px 10px!important}
 </style></head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
@@ -1108,7 +1120,7 @@ html body .typhoon-card #windyLocateBtn .windy-locate-btn-label{color:#fff!impor
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="./app.js?v=242" defer></script>
+    <script src="./app.js?v=243" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=5" defer></script>
 
