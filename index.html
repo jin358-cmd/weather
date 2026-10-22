@@ -188,6 +188,23 @@
 }
 @media(min-width:901px){.weather-bottom-navigation{display:none}}
 </style>
+
+<style id="owner-patch-20261022-r2">
+html body {background-color:#202d3d!important;color:#edf4fb!important}
+html body .app .card, html body .app .controls.card{background-color:#24344a!important;border-color:#49627b!important;color:#f4f8ff!important}
+html body .app .typhoon-card .typhoon-layout{display:flex!important;flex-direction:column!important;gap:14px!important}
+html body .app .typhoon-card .windy-wrap{order:-1!important;width:100%!important;max-width:none!important}
+html body .app .typhoon-card .typhoon-panel{order:2!important;width:100%!important}
+html body .app .typhoon-card .typhoon-panel .risk-badge{margin-top:4px}
+html body .app .alert-block,html body .app .alert-block .subscription-card,html body .app .alert-block .ai-alert-card{background:#2a3b50!important;color:#f5f8fc!important}
+html body .app .alert-block label,html body .app .alert-block p,html body .app .alert-block li,html body .app .alert-block span,html body .app .alert-block strong,html body .app .alert-block summary,html body .app .alert-block small{color:#f5f8fc!important;opacity:1!important}
+html body .app .alert-block input[type="email"]{background:#152538!important;color:#fff!important;border:1px solid #8399ac!important}
+html body .app .alert-block input::placeholder{color:#b9cbdb!important;opacity:1}
+html body .hero .locate-wrap-hero{display:flex!important;justify-content:center!important;margin:12px auto 4px!important;position:relative!important;inset:auto!important;transform:none!important;width:100%!important}
+html body .hero .locate-wrap-hero .locate-btn{width:auto!important;min-width:124px!important;max-width:max-content!important;padding:8px 14px!important;min-height:38px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;background:#253950!important;color:#f8fbff!important;border:1px solid #7293ad!important;font-size:14px!important}
+html body .hero .locate-wrap-hero .locate-icon,html body .hero .locate-wrap-hero .locate-icon svg{width:17px!important;height:17px!important;fill:#ff5965!important;color:#ff5965!important}
+@media(max-width:900px){html body .weather-bottom-navigation{background:#223348!important;border-color:#6686a5!important}html body .weather-bottom-navigation a{color:#f6f9ff!important}}
+</style>
 </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
@@ -236,7 +253,18 @@
             <span class="hero-title-tail">通報平台</span>
           </h1>
         </div>
-
+        <div class="locate-wrap locate-wrap-hero">
+          <button id="locateBtn" type="button" class="locate-btn locate-btn-pulse">
+            <span class="locate-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
+                />
+              </svg>
+            </span>
+            <span class="locate-btn-label">定位選區</span>
+          </button>
+        </div>
       </header>
 
       <section class="controls card">
@@ -249,18 +277,7 @@
             <label for="townshipSelect">鄉鎮市區</label>
             <select id="townshipSelect" aria-label="鄉鎮市區"></select>
           </div>
-        <div class="locate-wrap locate-wrap-regional">
-          <button id="locateBtn" type="button" class="locate-btn locate-btn-pulse">
-            <span class="locate-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path
-                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
-                />
-              </svg>
-            </span>
-            <span class="locate-btn-label">定位選區</span>
-          </button>
-        </div>
+        
         </div>
         <p id="regionMemoryMeta" class="timestamp" aria-live="polite">區域偏好：尚未儲存</p>
         <p id="lastUpdated" class="timestamp">尚未更新資料</p>
@@ -338,8 +355,7 @@
         </div>
       </section>
 
-      <div id="section-weather"
-        id="townshipWeatherTitle"
+      <div id="townshipWeatherTitle"
         class="visual-break section-title-bar visual-break-weather"
         style="--visual-image: url('https://images.unsplash.com/photo-1428908728789-d2de25dbd4e2?auto=format&fit=crop&w=1400&q=80')"
       >
@@ -834,8 +850,8 @@
 <nav class="weather-bottom-navigation" aria-label="手機底部分頁導覽">
   <a href="#section-closure" aria-current="location"><span class="bottom-nav-icon" aria-hidden="true">📢</span><span>停班停課</span></a>
   <a href="#section-typhoon" ><span class="bottom-nav-icon" aria-hidden="true">🌀</span><span>颱風</span></a>
-  <a href="#section-weather" ><span class="bottom-nav-icon" aria-hidden="true">☁️</span><span>天氣預報</span></a>
-  <a href="#section-earthquake" ><span class="bottom-nav-icon" aria-hidden="true">🌏</span><span>地震資訊</span></a>
+  <a href="#townshipWeatherTitle" ><span class="bottom-nav-icon" aria-hidden="true">🌤️</span><span>天氣預報</span></a>
+  <a href="#section-earthquake" ><span class="bottom-nav-icon" aria-hidden="true">🫨</span><span>地震資訊</span></a>
   <a href="#section-map" ><span class="bottom-nav-icon" aria-hidden="true">🗺️</span><span>災害地圖</span></a>
 </nav>
 <script>
