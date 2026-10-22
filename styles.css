@@ -8418,3 +8418,14 @@ html.is-map-evening .warning-map .disaster-map-dark-tiles,
 .in-page-alert-host.is-fullscreen-mode .in-page-alert-subscription .in-page-alert-close {
   flex: 0 0 auto;
 }
+
+/* Township weather module: centered heading and responsive card group (2026-10-22) */
+.visual-break-weather .visual-break-caption {
+  width: 100%;
+  text-align: center;
+}
+.weather-block .weather-air-grid {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+}
