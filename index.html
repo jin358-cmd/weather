@@ -156,6 +156,26 @@
       .controls .locate-wrap-regional .locate-icon { color: #ff4c59; width: 16px; height: 16px; }
       .controls .locate-wrap-regional .locate-icon svg { fill: #ff4c59; width: 16px; height: 16px; }
     </style>
+
+    <script defer>
+      document.addEventListener("DOMContentLoaded", () => {
+        const label = document.querySelector("#locateBtn .locate-btn-label");
+        const stamp = document.getElementById("lastUpdated");
+        function syncOwnerLabels() {
+          if (label && label.textContent.trim() === "依設備定位選區") label.textContent = "定位選區";
+          if (stamp) {
+            const raw = stamp.textContent;
+            const m = raw.match(/(?:資料更新時間：|更新：)?(?:\\d{4}[\\/.-])?(\\d{1,2})[\\/.-](\\d{1,2})[^\\d]*(\\d{1,2}):(\\d{2})(?::\\d{2})?/);
+            if (m) stamp.textContent = `更新：${m[1]}/${m[2]} ${m[3]}:${m[4]}${raw.includes("（自動）") ? "（自動）" : ""}`;
+          }
+        }
+        for (const node of [label, stamp]) {
+          if (!node) continue;
+          new MutationObserver(syncOwnerLabels).observe(node, { childList: true, characterData: true, subtree: true });
+        }
+        syncOwnerLabels();
+      });
+    </script>
   </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
