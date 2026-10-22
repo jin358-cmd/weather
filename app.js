@@ -6838,7 +6838,7 @@ function buildWindyEmbedUrl(lat, lon, zoom = 5, { precision = 3, markerLat, mark
     height: String(box.height),
     zoom: String(zoom),
     level: "surface",
-    overlay: "rain",
+    overlay: "wind",
     product: "ecmwf",
     menu: "",
     message: "true",
