@@ -8217,7 +8217,7 @@ function createEarthquakeListItem(quake, options = {}) {
     : depthText;
   const nationalLine = isNationalEarthquakeAlert(quake) ? "國家警報同步" : "";
   const titleLine = pinned
-    ? `<strong class="earthquake-pinned-kicker"><span>最新：規模 ${quake.magnitude.toFixed(1)}</span><span>最大震度 ${intensityText}</span></strong>
+    ? `<strong class="earthquake-pinned-kicker">最新：規模 ${quake.magnitude.toFixed(1)}｜最大震度 ${intensityText}</strong>
         <strong>${serialText}</strong>`
     : `<strong>${serialText}｜震度 ${intensityText}</strong>`;
   item.innerHTML = `
