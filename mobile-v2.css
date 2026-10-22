@@ -108,3 +108,93 @@
  .v2-shell .v2-panel .card{color:#e8f2fc}
 }
 @media(min-width:768px){.v2-quickloc,.v2-more-link{display:none!important}}
+
+
+/* Owner accepted v2.2: youthful daylight palette, short single-page tabs (mobile only). */
+@media (max-width:767px) {
+  html { scroll-behavior:auto!important; }
+  html,body,body.theme-elegant { background:#eff8fb!important; color:#203d54!important; color-scheme:light!important; }
+  body.theme-elegant .ambient-bg {display:none!important}
+  main.app {max-width:620px!important;background:linear-gradient(165deg,#eaf8ff 0%,#f8fcfd 48%,#fff9ee 100%)!important;
+    padding:0 0 calc(82px + env(safe-area-inset-bottom))!important;min-height:100dvh!important;}
+  .v2-topbar,.v2-command,.v2-actions,.v2-more-link,.v2-bottomline {display:none!important}
+  .v2-shell {display:block!important}
+  .v2-quickloc {position:sticky!important;top:0!important;z-index:940!important;display:flex!important;
+    margin:0!important;min-height:66px!important;padding:8px 11px!important;gap:8px!important;
+    border:0!important;border-bottom:1px solid #cae6ee!important;border-radius:0!important;
+    background:rgba(250,255,255,.97)!important;backdrop-filter:blur(16px);
+    box-shadow:0 3px 14px #135a8514!important;color:#203b52!important;}
+  .v2-place-line {display:flex;gap:8px;align-items:center;min-width:0;flex:1;font-size:18px}
+  .v2-place-line>div {display:flex;flex-direction:column;gap:2px;min-width:0}
+  .v2-place-line b {font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1e4758}
+  .v2-place-line small {font-size:10px;color:#617a89;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+  .v2-loc-actions {display:flex;align-items:center;gap:4px;flex-shrink:0}
+  .v2-quickloc button,.v2-loc-actions button {border-radius:12px!important;border:1px solid #b3dfe5!important;background:#e9faf6!important;
+    color:#136a6e!important;min-height:44px!important;min-width:42px!important;padding:8px!important;
+    font-size:16px!important;font-weight:800!important}
+  #v2-change-place {font-size:11px!important;min-width:80px!important;padding:8px 7px!important}
+  .v2-column {margin:0!important;min-width:0!important}
+  .v2-panel {display:none!important;margin:0!important;padding:12px!important;min-height:0!important;
+    background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
+  .v2-panel.is-active {display:block!important}
+  .v2-panel .v2-panel-head,.v2-panel .v2-panel-desc,.v2-panel .visual-break {display:none!important}
+  .v2-panel .card,.v2-panel .weather-card,.v2-panel .closure-card,.v2-panel .earthquake-card {
+    background:#fff!important;color:#183c52!important;border:1px solid #d9eaf1!important;border-radius:18px!important;
+    box-shadow:0 8px 26px #24708a16!important;clip-path:none!important}
+  .v2-panel .card {padding:14px!important}
+  .v2-panel .card::before {display:none!important}
+  .v2-panel .card h1,.v2-panel .card h2,.v2-panel .card h3,
+  .v2-panel .card p,.v2-panel .card label,.v2-panel .card small,
+  .v2-panel .card .timestamp {color:#21465b}
+  .v2-panel .weather-block {background:transparent!important;border:0!important;padding:0!important}
+  .v2-panel .weather-metrics {gap:9px!important}
+  .v2-panel .weather-metrics>div {background:#e7f7ff!important;border-radius:12px!important}
+  #v2-notices .closure-card {border-top:5px solid #ffab72!important}
+  #v2-conditions .weather-card {border-top:5px solid #76cad2!important}
+  #v2-earthquake .earthquake-card {border-top:5px solid #acacef!important}
+  #v2-windy .typhoon-card {border-top:5px solid #7aa2e5!important;padding:9px!important}
+  #v2-monitor .map-card {border-top:5px solid #8bd0ae!important;padding:9px!important}
+  /* Retain original Windy/map content. Constrain visual viewport instead of rebuilding embeds. */
+  #v2-windy .windy-wrap,#v2-windy .windy-embed {min-height:270px!important;
+    height:clamp(270px,calc(100dvh - 185px),660px)!important;width:100%!important;}
+  #v2-monitor .warning-map {min-height:260px!important;
+    height:clamp(260px,calc(100dvh - 195px),660px)!important;width:100%!important;}
+  .v2-bottomnav {position:fixed!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    left:0!important;right:0!important;bottom:0!important;z-index:950!important;
+    background:rgba(255,255,255,.97)!important;border:0!important;border-top:1px solid #cae5e9!important;
+    box-shadow:0 -5px 28px #285c7918!important;padding:6px 4px calc(8px + env(safe-area-inset-bottom))!important;gap:2px}
+  .v2-bottomnav a {display:flex!important;flex-direction:column!important;align-items:center!important;
+    justify-content:center!important;gap:2px!important;text-align:center;color:#546f7f!important;min-height:54px!important;
+    padding:5px 1px!important;border-radius:12px!important;font-size:11px!important;font-weight:700!important}
+  .v2-bottomnav a .v2-nav-icon {font-size:22px!important;line-height:1.2}
+  .v2-bottomnav a span:last-child {font-size:10px!important;color:inherit!important;white-space:nowrap!important;letter-spacing:-.02em}
+  .v2-bottomnav a.is-active {background:linear-gradient(160deg,#d9f8f3,#e5f0ff)!important;color:#135e70!important}
+  .v2-bottomnav a:focus-visible,.v2-quickloc button:focus-visible {outline:3px solid #207aaf!important;outline-offset:2px}
+  .v2-settings {display:none!important;position:fixed!important;z-index:990!important;top:0!important;left:0!important;right:0!important;
+    bottom:0!important;overflow-y:auto!important;overscroll-behavior:contain;
+    background:#f4fbff!important;color:#203f52!important;padding:12px 14px calc(95px + env(safe-area-inset-bottom))!important;}
+  .v2-settings.is-open {display:block!important}
+  .v2-settings-head {position:sticky;top:0;z-index:2;display:flex;align-items:center;
+    justify-content:space-between;background:#f4fbff;padding:8px 0 13px;color:#1d5469;font-size:19px}
+  .v2-settings-head button {height:44px;width:44px;border:1px solid #bbdfe8;border-radius:12px;background:white;color:#28566b;font-size:20px}
+  .v2-settings .controls,.v2-settings .v2-drawer,.v2-install {display:block!important;border:1px solid #d3eaf0!important;
+    background:#fff!important;color:#23465b!important;border-radius:16px!important;padding:14px!important;margin-bottom:12px!important;
+    box-shadow:none!important;clip-path:none!important}
+  .v2-settings .controls * {max-width:100%}
+  .v2-settings select,.v2-settings button {min-height:44px}
+  .v2-settings .auto-refresh-row {display:block!important}
+  .v2-settings summary {font-size:14px;color:#1c4d62!important}
+  #v2-install-app {width:100%;background:#27aaa0;border:0;border-radius:12px;color:#fff;font-size:14px;font-weight:800}
+  #v2-install-hint {font-size:12px;line-height:1.5;color:#617b88}
+  .v2-empty {color:#526e7a!important}
+  @media (max-width:365px) {
+    #v2-change-place {min-width:70px!important;font-size:10px!important}
+    .v2-place-line b {font-size:11px}
+    .v2-bottomnav a span:last-child {font-size:9px!important}
+  }
+}
+@media (min-width:768px) {
+  .v2-quickloc,.v2-settings-head,.v2-install {display:none!important}
+  .v2-settings,.v2-settings #v2-region-box,.v2-settings #v2-alert-box {display:contents!important}
+  .v2-panel {display:contents!important}
+}
