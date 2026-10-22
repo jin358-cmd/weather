@@ -8644,6 +8644,15 @@ function appendAiAlertItem({ tag, tone, summary, locations = [], recovered = fal
   }
   const item = document.createElement("li");
   item.className = `ai-alert-item ai-alert-${tone || "neutral"}`;
+  const severityText = String(tag || "") + " " + String(summary || "");
+  let severity = "unknown";
+  if (/暫時無法更新|資料不足|讀取失敗|尚未取得|無法判定/.test(severityText)) severity = "unknown";
+  else if (/恢復正常|無積淹水|無停班停課|解除|目前無|無異常/.test(severityText)) severity = "normal";
+  else if (/國家緊急|重大|極高|最高等級\\s*[34]|等級\\s*4|震度\\s*[5-7]|高風險|停班停課.*停止上班|明天停止上班|明日停止上班/.test(severityText)) severity = "critical";
+  else if (/等級\\s*3|震度\\s*4|警報|高度警戒|積淹水警戒/.test(severityText)) severity = "high";
+  else if (/等級\\s*[12]|注意|警戒|監測|通報|中風險|停電|停水/.test(severityText)) severity = "watch";
+  item.dataset.severity = severity;
+
   if (top) {
     item.classList.add("ai-alert-top");
   }
