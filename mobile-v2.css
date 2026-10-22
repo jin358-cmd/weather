@@ -198,3 +198,10 @@
   .v2-settings,.v2-settings #v2-region-box,.v2-settings #v2-alert-box {display:contents!important}
   .v2-panel {display:contents!important}
 }
+/* Owner 2026-10-22: typhoon map is the first visible content, risk and analysis follow. */
+@media (max-width:767px) {
+  #v2-windy .typhoon-layout {display:flex!important;flex-direction:column!important;gap:12px!important;}
+  #v2-windy .windy-wrap {order:0!important;}
+  #v2-windy .typhoon-panel {order:1!important;}
+  #v2-windy .typhoon-card {padding:8px!important;}
+}
