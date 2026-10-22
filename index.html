@@ -400,6 +400,14 @@ html body .earthquake-card .earthquake-item-pinned .earthquake-body strong:not(.
 html body .earthquake-card .earthquake-item-pinned .earthquake-mag{background:#1455df!important;color:#fff!important}
 html body .earthquake-card .earthquake-item-pinned .earthquake-mag *{color:#fff!important;-webkit-text-fill-color:#fff!important}
 @media(max-width:420px){html body .earthquake-card .earthquake-item-pinned .earthquake-pinned-kicker{font-size:clamp(13px,3.65vw,17px)!important;letter-spacing:-.075em!important}}
+</style><style id="owner-preview-refresh-windy-lock-r21">
+/* High-contrast refresh action. */
+html body #refreshBtn{background:#ec343b!important;border:2px solid #ff8388!important;color:#fff!important;border-radius:999px!important;box-shadow:0 4px 14px #c0183555!important;min-height:48px!important}
+html body #refreshBtn .refresh-btn-label{color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:900!important}
+/* Lock embedded Windy interactions so layer menus never open from taps. Keep the map visible. */
+html body #windyEmbed{pointer-events:none!important;touch-action:pan-y!important}
+html body .windy-wrap-large{isolation:isolate!important}
+html body #windyLocateBtn{z-index:4!important}
 </style></head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
@@ -489,7 +497,7 @@ html body .earthquake-card .earthquake-item-pinned .earthquake-mag *{color:#fff!
           </div>
         </div>
         <button id="refreshBtn" type="button" class="refresh-btn">
-          <span class="refresh-btn-label">立即更新資料</span>
+          <span class="refresh-btn-label">⟳ 立即更新資訊</span>
         </button>
       </section>
 
@@ -1047,7 +1055,7 @@ html body .earthquake-card .earthquake-item-pinned .earthquake-mag *{color:#fff!
   <a href="#section-closure" aria-current="location"><span class="bottom-nav-icon" aria-hidden="true">📢</span><span>停班停課</span></a>
   <a href="#section-typhoon" ><span class="bottom-nav-icon typhoon-cyclone-glyph" aria-hidden="true">🌀</span><span>颱風</span></a>
   <a href="#section-weather" ><span class="bottom-nav-icon" aria-hidden="true">🌤️</span><span>天氣預報</span></a>
-  <a href="#section-earthquake" ><span class="bottom-nav-icon" aria-hidden="true">📉</span><span>地震資訊</span></a>
+  <a href="#section-earthquake" ><span class="bottom-nav-icon" aria-hidden="true">〽️</span><span>地震資訊</span></a>
   <a href="#section-map" ><span class="bottom-nav-icon" aria-hidden="true">🗺️</span><span>災害地圖</span></a>
   <button type="button" id="bottomFeedbackBtn" class="bottom-feedback-btn" aria-label="即時留言回饋"><span class="bottom-nav-icon" aria-hidden="true">💬</span><span>即時留言</span></button>
 </nav>
