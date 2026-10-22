@@ -1,22 +1,40 @@
-/* PMOS Weather Mobile UI v2.0: isolated preview branch only */
-@media (max-width: 767px) {
-  .mobile-v2-nav {position:sticky;top:0;z-index:1100;display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:rgba(18,35,54,.96);border:1px solid #496274;border-radius:12px;scrollbar-width:none}
-  .mobile-v2-nav::-webkit-scrollbar{display:none}
-  .mobile-v2-nav a{flex:none;text-decoration:none;color:#fff;font-weight:700;font-size:14px;border:1px solid #72899c;border-radius:30px;padding:10px 13px;white-space:nowrap}
-  .mobile-v2-nav a:focus-visible,.mobile-v2-toggle:focus-visible{outline:3px solid #ffdc76;outline-offset:2px}
-  .mobile-v2-toggle{width:100%;min-height:44px;margin:5px 0 10px;border:1px solid #7894a5;border-radius:10px;background:#173b57;color:#fff;font:700 15px system-ui,sans-serif;text-align:left;padding:10px 16px;cursor:pointer}
-  .mobile-v2-toggle::after{content:" ＋";float:right}
-  .mobile-v2-toggle[aria-expanded="true"]::after{content:" −"}
-  .mobile-v2-folded{display:none !important}
-  .app .hero{padding-top:12px;padding-bottom:12px}
-  .app .hero .eyebrow{display:none}
-  .app .visual-break{min-height:56px;margin-block:12px 4px}
-  .app .visual-break-caption{font-size:clamp(17px,4.5vw,22px)}
-  .app .controls.card{padding:12px}
-  .app .controls .auto-refresh-row{margin-top:7px}
-  .app .controls .timestamp{font-size:12px}
-  .mobile-v2-nav,.mobile-v2-toggle{scroll-margin-top:76px}
+/* PMOS Weather V2: independently designed mobile dashboard. No desktop or production impact. */
+.v2-shell{display:none}
+@media(max-width:767px){
+ html{scroll-behavior:smooth} body.theme-elegant{background:#080f1d!important;color:#eaf4ff!important}
+ body .ambient-bg{opacity:.24}
+ main.app{display:flex!important;flex-direction:column;gap:0!important;padding:0 13px 24px!important;max-width:620px!important;background:transparent!important}
+ .v2-shell{display:block;order:0;width:100%;font-family:"Noto Sans TC",system-ui,sans-serif}
+ .v2-brand{display:flex;align-items:center;gap:10px;padding:19px 4px 14px;color:#f2f8ff}
+ .v2-orbit{font-size:27px;color:#44dcd4}.v2-brand strong{display:block;font-size:18px;letter-spacing:.09em}.v2-brand em{font-style:normal;color:#57e5d9}.v2-brand small{display:block;color:#6e91af;font-size:9px;letter-spacing:.14em;margin-top:3px}.v2-live{margin-left:auto;font-size:10px;border:1px solid #235753;background:#10302f;border-radius:18px;padding:6px 9px;color:#7ef4c2}
+ .v2-head{display:flex;justify-content:space-between;align-items:center;padding:21px 21px 23px;background:radial-gradient(circle at 95% 7%,rgba(37,201,202,.18),transparent 46%),linear-gradient(140deg,#142f47,#0d192c 75%);border:1px solid #28516a;border-radius:22px;box-shadow:0 15px 40px #0004}
+ .v2-kicker{font-size:11px;color:#6dece2;letter-spacing:.16em}.v2-head h1{font-size:clamp(28px,8vw,40px);line-height:1.35;margin:8px 0 12px;font-weight:900;color:#fff}.v2-head h1 span{color:#8ef1e9}.v2-head p{font-size:12px;color:#a9bed1;margin:0}.v2-head-glyph{font-size:66px;color:#356778;opacity:.55}
+ .v2-tabs{position:sticky;top:0;z-index:900;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:13px 0 20px;padding:6px;border-radius:15px;background:#0c1d2f;border:1px solid #264158;backdrop-filter:blur(12px)}
+ .v2-tabs a{display:grid;place-items:center;min-height:44px;padding:7px 2px;color:#c5d7e7;text-decoration:none;font-size:12px;font-weight:800;border-radius:10px}.v2-tabs a.active,.v2-tabs a:focus-visible{background:#1e5964;color:#fff}
+ .v2-group{margin-bottom:21px;scroll-margin-top:85px}
+ .v2-section-title{display:flex;align-items:center;gap:11px;margin:0 0 10px;padding:0 3px}.v2-index{display:grid;place-items:center;flex:0 0 33px;height:33px;border-radius:10px;background:#123a48;color:#6fe7e4;font-size:12px;font-weight:900}.v2-section-title h2{font-size:17px;line-height:1.4;color:#effaff;margin:0}.v2-section-title p{color:#799aaf;font-size:11px;margin:2px 0 0}
+ .v2-shell .card{background:#112337!important;border:1px solid #27435d!important;box-shadow:none!important;border-radius:16px!important;clip-path:none!important;color:#edf6ff}
+ .v2-shell .card:before{display:none!important}
+ .v2-shell .controls{gap:10px!important}.v2-shell .controls .locate-wrap{padding:2px 0 5px!important}.v2-shell .locate-btn{max-width:none!important;width:100%!important;border-radius:12px!important}
+ .v2-shell .controls #regionMemoryMeta,.v2-shell .controls .auto-refresh-row{display:none!important}
+ .v2-shell .controls .refresh-btn{width:100%!important;max-width:none!important;border-radius:10px!important;clip-path:none!important}
+ .v2-shell .closure-card{padding:17px!important}
+ .v2-shell .weather-block{padding:0!important;border:0!important;background:transparent!important}.v2-shell .weather-card{border-radius:16px!important;padding:14px!important}
+ .v2-shell .weather-temp-main{font-size:clamp(42px,12vw,62px)!important}
+ .v2-shell .weather-metrics{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+ .v2-shell .weather-metrics>div{background:#182f45!important;border-radius:10px!important;padding:8px 3px!important}
+ .v2-shell .typhoon-card{padding:10px!important}.v2-shell .windy-wrap{min-height:330px!important}.v2-shell .windy-embed{min-height:330px!important}
+ .v2-shell .typhoon-layout{display:flex!important;flex-direction:column!important}
+ .v2-shell .earthquake-card{padding:13px!important}
+ .v2-extras{margin:0 0 23px;border:1px solid #2a4960;border-radius:15px;background:#0f2538;overflow:hidden}
+ .v2-extras>summary{display:flex;justify-content:space-between;gap:8px;padding:17px 14px;cursor:pointer;font-weight:800;color:#e3f6ff;font-size:14px}.v2-extras>summary span{color:#79b7c0;font-size:12px}.v2-extras .alert-block{border:0!important;padding:9px!important}
+ .v2-map-group .map-card{padding:8px!important}.v2-map-group .warning-map{min-height:420px!important}
+ .v2-notes{order:5;margin-top:6px!important}
+ .v2-legacy-hero{display:none!important}
+ main.app > .mobile-v2-nav, main.app > .visual-break, main.app > .mobile-v2-toggle{display:none!important}
+ .v2-shell .visual-break{display:none!important}
+ .site-footer{background:#0b192a!important}
+ .v2-shell select,.v2-shell button,.v2-shell input{min-height:43px}
+ .v2-shell .map-legend{background:transparent!important}
 }
-@media (min-width: 768px) {
-  .mobile-v2-nav,.mobile-v2-toggle{display:none!important}
-}
+@media(min-width:768px){.v2-shell{display:contents}.v2-brand,.v2-head,.v2-tabs,.v2-section-title{display:none!important}.v2-group,.v2-extras{display:contents}.v2-legacy-hero{display:flex}}
