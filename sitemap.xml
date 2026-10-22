@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://weather.pmos.space/</loc></url>
+  <url><loc>https://weather.pmos.space/disaster/</loc></url>
+  <url><loc>https://weather.pmos.space/disaster/school-closure/</loc></url>
+  <url><loc>https://weather.pmos.space/disaster/typhoon/</loc></url>
+  <url><loc>https://weather.pmos.space/disaster/flood/</loc></url>
+  <url><loc>https://weather.pmos.space/disaster/earthquake/</loc></url>
+  <url><loc>https://weather.pmos.space/disaster/regions/</loc></url>
 </urlset>
