@@ -414,6 +414,16 @@ html body .earthquake-card .earthquake-item-pinned{background:#d8eaff!important;
 html body .earthquake-card .earthquake-item-pinned .earthquake-pinned-kicker{position:absolute!important;top:12px!important;left:5px!important;right:5px!important;width:calc(100% - 10px)!important;max-width:none!important;display:block!important;text-align:center!important;white-space:nowrap!important;font-weight:900!important;letter-spacing:-.07em!important;font-size:clamp(14px,3.75vw,24px)!important;line-height:1.28!important;color:#1245ae!important;-webkit-text-fill-color:#1245ae!important}
 html body .earthquake-card .earthquake-item-pinned .earthquake-mag{background:#1455df!important}
 @media(max-width:420px){html body .earthquake-card .earthquake-item-pinned .earthquake-pinned-kicker{font-size:clamp(13px,3.5vw,17px)!important;letter-spacing:-.08em!important}}
+</style><style id="owner-windy-controls-and-quake-title-r23">
+/* Moderate-sized, prominent quake headline that fits the lead card. */
+html body .earthquake-card .earthquake-item-pinned{padding-top:64px!important}
+html body .earthquake-card .earthquake-item-pinned .earthquake-pinned-kicker{font-size:clamp(13px,3.3vw,19px)!important;font-weight:850!important;letter-spacing:-.065em!important;top:14px!important;line-height:1.35!important;white-space:nowrap!important}
+/* Windy is cross-origin: mask its built-in controls, without changing its data. */
+html body .typhoon-card .windy-wrap-large{position:relative!important;overflow:hidden!important}
+html body .typhoon-card .windy-wrap-large::before{content:"";position:absolute;z-index:3;pointer-events:auto;top:0;left:0;right:0;height:37px;background:linear-gradient(180deg,#142334ee,#142334c9)!important}
+html body .typhoon-card .windy-wrap-large::after{content:"";position:absolute;z-index:3;pointer-events:auto;bottom:0;left:0;right:0;height:38px;background:linear-gradient(0deg,#142334f2,#142334cb)!important}
+html body .typhoon-card #windyLocateBtn{z-index:5!important}
+html body .typhoon-card #windyEmbed{pointer-events:none!important}
 </style></head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
