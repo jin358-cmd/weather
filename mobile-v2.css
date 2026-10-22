@@ -1,0 +1,22 @@
+/* PMOS Weather Mobile UI v2.0: isolated preview branch only */
+@media (max-width: 767px) {
+  .mobile-v2-nav {position:sticky;top:0;z-index:1100;display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:rgba(18,35,54,.96);border:1px solid #496274;border-radius:12px;scrollbar-width:none}
+  .mobile-v2-nav::-webkit-scrollbar{display:none}
+  .mobile-v2-nav a{flex:none;text-decoration:none;color:#fff;font-weight:700;font-size:14px;border:1px solid #72899c;border-radius:30px;padding:10px 13px;white-space:nowrap}
+  .mobile-v2-nav a:focus-visible,.mobile-v2-toggle:focus-visible{outline:3px solid #ffdc76;outline-offset:2px}
+  .mobile-v2-toggle{width:100%;min-height:44px;margin:5px 0 10px;border:1px solid #7894a5;border-radius:10px;background:#173b57;color:#fff;font:700 15px system-ui,sans-serif;text-align:left;padding:10px 16px;cursor:pointer}
+  .mobile-v2-toggle::after{content:" ＋";float:right}
+  .mobile-v2-toggle[aria-expanded="true"]::after{content:" −"}
+  .mobile-v2-folded{display:none !important}
+  .app .hero{padding-top:12px;padding-bottom:12px}
+  .app .hero .eyebrow{display:none}
+  .app .visual-break{min-height:56px;margin-block:12px 4px}
+  .app .visual-break-caption{font-size:clamp(17px,4.5vw,22px)}
+  .app .controls.card{padding:12px}
+  .app .controls .auto-refresh-row{margin-top:7px}
+  .app .controls .timestamp{font-size:12px}
+  .mobile-v2-nav,.mobile-v2-toggle{scroll-margin-top:76px}
+}
+@media (min-width: 768px) {
+  .mobile-v2-nav,.mobile-v2-toggle{display:none!important}
+}
