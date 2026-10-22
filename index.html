@@ -58,8 +58,8 @@
       crossorigin=""
     />
     <link rel="preconnect" href="https://cdn.channel.io" crossorigin />
-    <link rel="stylesheet" href="./styles.css?v=249" />
-    <link rel="stylesheet" href="./legacy-themes.css?v=205" />
+    <link rel="stylesheet" href="./styles.css?v=250" />
+    <link rel="stylesheet" href="./legacy-themes.css?v=206" />
     <link rel="manifest" href="./manifest.json?v=9" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
@@ -131,6 +131,31 @@
         navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(function () {});
       }
     </script>
+  
+    <style id="owner-dark-region-patch">
+      /* Owner UI: keep section blocks dark even when older theme overrides load. */
+      html body .app .card, html body .app .controls.card,
+      html body .app .earthquake-card, html body .app .weather-card,
+      html body .app .closure-card {
+        background: #101a2b !important;
+        color: #f0f6ff !important;
+        border-color: #34485f !important;
+      }
+      html body .app .card label, html body .app .card p,
+      html body .app .card span, html body .app .card strong,
+      html body .app .card li { color: inherit; }
+      html body .app .card select, html body .app .card button,
+      html body .app .card .refresh-btn {
+        background-color: #1c2c42 !important;
+        color: #f5f9ff !important;
+        border-color: #47627c !important;
+      }
+      .controls .region-grid { align-items: end; }
+      .controls .locate-wrap-regional { display: flex; align-items: end; justify-content: flex-start; }
+      .controls .locate-wrap-regional .locate-btn { width: auto; min-height: 38px; padding: 7px 12px; font-size: 13px; }
+      .controls .locate-wrap-regional .locate-icon { color: #ff4c59; width: 16px; height: 16px; }
+      .controls .locate-wrap-regional .locate-icon svg { fill: #ff4c59; width: 16px; height: 16px; }
+    </style>
   </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
@@ -179,18 +204,7 @@
             <span class="hero-title-tail">通報平台</span>
           </h1>
         </div>
-        <div class="locate-wrap">
-          <button id="locateBtn" type="button" class="locate-btn locate-btn-pulse">
-            <span class="locate-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path
-                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
-                />
-              </svg>
-            </span>
-            <span class="locate-btn-label">依設備定位選區</span>
-          </button>
-        </div>
+
       </header>
 
       <section class="controls card">
@@ -203,6 +217,18 @@
             <label for="townshipSelect">鄉鎮市區</label>
             <select id="townshipSelect" aria-label="鄉鎮市區"></select>
           </div>
+        <div class="locate-wrap locate-wrap-regional">
+          <button id="locateBtn" type="button" class="locate-btn locate-btn-pulse">
+            <span class="locate-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
+                />
+              </svg>
+            </span>
+            <span class="locate-btn-label">定位選區</span>
+          </button>
+        </div>
         </div>
         <p id="regionMemoryMeta" class="timestamp" aria-live="polite">區域偏好：尚未儲存</p>
         <p id="lastUpdated" class="timestamp">尚未更新資料</p>
