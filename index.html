@@ -435,6 +435,20 @@ html body .app .alert-block .ai-alert-card,html body .app .alert-block .subscrip
 html body .app .alert-block #aiAlertList{width:100%!important;max-width:none!important;box-sizing:border-box!important;padding-inline:0!important}
 html body .app .alert-block #aiAlertList>.ai-alert-item{box-sizing:border-box!important;width:100%!important;max-width:none!important;margin-inline:0!important}
 @media(max-width:600px){html body .app .alert-block{padding-inline:8px!important}html body .app .alert-block .ai-alert-card{padding-inline:6px!important}}
+</style><style id="owner-severity-colors-r25">
+/* Severity-based colors for disaster alert cards; class is assigned from event content. */
+html body .app .alert-block .ai-alert-item[data-severity="critical"]{background:#b91c1c!important;border:2px solid #8b1717!important}
+html body .app .alert-block .ai-alert-item[data-severity="critical"] .ai-alert-tag{background:#871414!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body .app .alert-block .ai-alert-item[data-severity="critical"] .ai-alert-body{color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body .app .alert-block .ai-alert-item[data-severity="high"]{background:#fff0da!important;border:2px solid #e58b22!important}
+html body .app .alert-block .ai-alert-item[data-severity="high"] .ai-alert-tag{background:#c66c09!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body .app .alert-block .ai-alert-item[data-severity="watch"]{background:#fff6d4!important;border:2px solid #d8b132!important}
+html body .app .alert-block .ai-alert-item[data-severity="watch"] .ai-alert-tag{background:#efc75a!important;color:#5e4500!important;-webkit-text-fill-color:#5e4500!important}
+html body .app .alert-block .ai-alert-item[data-severity="normal"]{background:#e6f6eb!important;border:2px solid #48a875!important}
+html body .app .alert-block .ai-alert-item[data-severity="normal"] .ai-alert-tag{background:#138653!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body .app .alert-block .ai-alert-item[data-severity="unknown"]{background:#e6edf5!important;border:2px solid #8799af!important}
+html body .app .alert-block .ai-alert-item[data-severity="unknown"] .ai-alert-tag{background:#60758d!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body .app .alert-block .ai-alert-item:not([data-severity="critical"]) .ai-alert-body{color:#25394e!important;-webkit-text-fill-color:#25394e!important}
 </style></head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
