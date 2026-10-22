@@ -1190,8 +1190,9 @@ function isEarthquakeWithinTaiwanDays(timeMs, days = EARTHQUAKE_LIST_DAYS) {
 }
 
 function getRecentEarthquakesForList() {
+  // Display the latest three available records even when fewer than three occurred in the last two days.
   return (appState.earthquakes || [])
-    .filter((quake) => isEarthquakeWithinTaiwanDays(quake.timeMs, EARTHQUAKE_LIST_DAYS))
+    .filter((quake) => Number.isFinite(quake.timeMs))
     .sort((a, b) => b.timeMs - a.timeMs);
 }
 
@@ -8258,11 +8259,11 @@ function syncEarthquakeListCollapse(count, options = {}) {
     const open = earthquakeListDetails.open;
     const restCount = Number(earthquakeListDetails.dataset.count) || 0;
     earthquakeListSummary.textContent = open
-      ? `▾ 收合其餘 2 日內地震通報（${restCount} 筆）`
-      : `▸ 展開其餘 2 日內地震通報（${restCount} 筆）`;
+      ? `▾ 收合其餘地震通報（${restCount} 筆）`
+      : `▸ 展開其餘地震通報（${restCount} 筆）`;
     if (earthquakeListCollapseBtn) {
       earthquakeListCollapseBtn.hidden = !open;
-      earthquakeListCollapseBtn.textContent = `▾ 收合其餘 2 日內地震通報（${restCount} 筆）`;
+      earthquakeListCollapseBtn.textContent = `▾ 收合其餘地震通報（${restCount} 筆）`;
     }
   };
   if (earthquakeListDetails.dataset.boundToggle !== "1") {
@@ -8299,7 +8300,7 @@ function renderEarthquakePanel() {
   renderEarthquakeSourceMeta(Date.now());
 
   if (!quakes.length) {
-    earthquakeList.innerHTML = "<li>目前無2日內符合條件的地震事件。</li>";
+    earthquakeList.innerHTML = "<li>目前沒有可顯示的地震紀錄。</li>";
     syncEarthquakeListCollapse(0);
     return;
   }
