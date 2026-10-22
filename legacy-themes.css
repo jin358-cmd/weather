@@ -784,3 +784,43 @@ body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a[aria-current="pag
     font-size: clamp(0.95rem, 3.6vw, 1.1rem) !important;
   }
 }
+
+
+/* 2026-10-22 Owner requested dark-mode legibility restoration.
+   Scope: dark dusk theme only; leave maps and weather data behavior intact. */
+body.theme-elegant[data-legacy-theme="dusk"] {
+  background: #161d27 !important;
+  color: #f4efe6;
+}
+body.theme-elegant[data-legacy-theme="dusk"] .app,
+body.theme-elegant[data-legacy-theme="dusk"] .closure-card,
+body.theme-elegant[data-legacy-theme="dusk"] .typhoon-card,
+body.theme-elegant[data-legacy-theme="dusk"] .earthquake-card,
+body.theme-elegant[data-legacy-theme="dusk"] .map-card,
+body.theme-elegant[data-legacy-theme="dusk"] .weather-block {
+  color: var(--text);
+}
+body.theme-elegant[data-legacy-theme="dusk"] .earthquake-list-details {
+  background: #273140;
+  border-color: #536274;
+}
+body.theme-elegant[data-legacy-theme="dusk"] .earthquake-list-summary {
+  color: #e7e1d6;
+}
+body.theme-elegant[data-legacy-theme="dusk"] .earthquake-list-collapse {
+  background: #354256;
+  border-color: #8296ae;
+  color: #ffffff;
+}
+body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav {
+  background: #1f2834;
+  color: #f4efe6;
+}
+body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a {
+  color: #f4efe6;
+}
+body.theme-elegant[data-legacy-theme="dusk"] .legacy-top-nav a:focus-visible,
+body.theme-elegant[data-legacy-theme="dusk"] button:focus-visible {
+  outline: 3px solid #e4bb76;
+  outline-offset: 2px;
+}
