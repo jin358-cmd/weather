@@ -1,0 +1,82 @@
+{
+  "schema": "pmos.visual-editor.owner-integration.v1",
+  "moduleId": "PMOS-MOD-VISUAL-EDITOR-001",
+  "phase": "11.4",
+  "mode": "PREVIEW_ONLY",
+  "integrationStatus": "BLOCKED_PENDING_OWNER_ALIGNMENT",
+  "currentDiscovery": {
+    "pmosStaging": {
+      "projectId": "qknvavzaaqtquyykztoa",
+      "observedStatus": "INACTIVE",
+      "usage": "CANDIDATE_NOT_APPROVED",
+      "autoResume": false
+    },
+    "evaDesktopBridge": {
+      "repository": "jin358-cmd/eva-desktop-bridge",
+      "usage": "IDENTITY_ADAPTER_CANDIDATE_NOT_VERIFIED"
+    },
+    "excludedProjectClasses": [
+      "NavPilot",
+      "tainan-achang-production",
+      "tainan-achang-test"
+    ]
+  },
+  "identity": {
+    "adapter": "PMOS_OWNER_AUTH",
+    "status": "NOT_CONFIGURED",
+    "requirements": [
+      "verify bearer token or session cryptographically against an approved issuer",
+      "validate issuer,audience,expiry,nonce/session binding where applicable",
+      "fetch owner authorization from trusted server-side source not editable user metadata",
+      "enforce least privilege and session revocation",
+      "protect writes against CSRF when using cookies"
+    ],
+    "neverTrust": [
+      "unverified token claims",
+      "client-provided ownerId",
+      "client-supplied approval flags",
+      "user_metadata"
+    ]
+  },
+  "evidence": {
+    "status": "NOT_CONFIGURED",
+    "adapter": "PMOS_EVIDENCE_STORE",
+    "suggestedRecords": [
+      "evidenceId",
+      "moduleId",
+      "documentHashSha256",
+      "payload",
+      "createdByVerifiedSubject",
+      "createdAtServer",
+      "verificationStatus",
+      "readbackHashSha256",
+      "immutableRevision"
+    ],
+    "requirements": [
+      "approved project and schema",
+      "deny-by-default row level security",
+      "append-only evidence versioning",
+      "server-computed SHA-256 readback comparison",
+      "idempotency key for retries",
+      "authenticated audit log",
+      "no client-side secrets"
+    ],
+    "schemaMigrationAuthorized": false
+  },
+  "release": {
+    "gate": "LOCKED",
+    "cannotReleaseUntil": [
+      "authenticated owner",
+      "verified QA evidence and readback",
+      "approved deployment target and exact git SHA",
+      "separate explicit production approval",
+      "rollback plan"
+    ],
+    "productionDeploymentAuthorized": false
+  },
+  "securityGuarantees": {
+    "noSecretsStored": true,
+    "noDatabaseWrites": true,
+    "noProductionChange": true
+  }
+}
