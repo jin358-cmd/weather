@@ -12,6 +12,11 @@ function invoke(handler, method, headers = {}) {
     setHeader(name, value) { out.headers[name.toLowerCase()] = value; return this; },
     end(body = '') { out.body = body ? JSON.parse(body) : null; return out; }
   };
+  // Mirror Node.js ServerResponse.statusCode for accurate status assertions.
+  Object.defineProperty(res, 'statusCode', {
+    get() { return out.statusCode; },
+    set(code) { out.statusCode = code; }
+  });
   return Promise.resolve(handler(req, res)).then(() => out);
 }
 
