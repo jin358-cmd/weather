@@ -219,6 +219,33 @@ html body .app .typhoon-card .risk-badge.risk-high,
 html body .app .typhoon-card #typhoonRiskBadge.risk-high{background:#c92938!important;background-image:none!important;color:#fff!important;border:1px solid #ef7680!important;text-shadow:none!important}
 html body .app .typhoon-card #typhoonRiskBadge.risk-high *{color:#fff!important}
 </style>
+
+<style id="owner-patch-20261022-r4">
+/* Pinned quake headline gets full card width, without squeezing the type. */
+html body .earthquake-item-pinned{position:relative!important;padding-top:60px!important}
+html body .earthquake-item-pinned .earthquake-pinned-kicker{position:absolute!important;top:13px!important;left:12px!important;right:12px!important;display:block!important;white-space:nowrap!important;font-size:clamp(14px,3.5vw,20px)!important;line-height:1.35!important;letter-spacing:-.045em!important;font-weight:800!important;color:#263648!important}
+html body .earthquake-item .earthquake-mag,html body .earthquake-item .earthquake-mag *,html body .earthquake-item-pinned .earthquake-mag,html body .earthquake-item-pinned .earthquake-mag *{color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:none!important}
+html body .alert-block .ai-alert-card .ai-alert-item:not(.ai-alert-danger):not(.ai-alert-critical):not(.ai-alert-top),
+html body .alert-block .ai-alert-card .ai-alert-item{color:#26384d!important}
+html body .alert-block .ai-alert-card .ai-alert-item .ai-alert-body,
+html body .alert-block .ai-alert-card .ai-alert-item .ai-alert-more-details,
+html body .alert-block .ai-alert-card .ai-alert-item .ai-alert-more-details *,
+html body .alert-block .ai-alert-card .ai-alert-item .ai-alert-location-list,
+html body .alert-block .ai-alert-card .ai-alert-item .ai-alert-location-list *{color:#243448!important;opacity:1!important;-webkit-text-fill-color:#243448!important}
+html body .alert-block .ai-alert-card .ai-alert-item.ai-alert-top .ai-alert-body{color:#fff!important;-webkit-text-fill-color:#fff!important}
+html body .alert-block .subscription-card .subscription-email-note,
+html body .alert-block .subscription-card #notifyPermissionStatus,
+html body .alert-block .subscription-card #notificationHint{color:#e5efff!important;-webkit-text-fill-color:#e5efff!important;opacity:1!important}
+html body .alert-block .subscription-card #notifyHistoryList,
+html body .alert-block .subscription-card #notifyHistoryList li{color:#e5efff!important;-webkit-text-fill-color:#e5efff!important;background:#26364a!important}
+html body .channel-talk-footer{margin:8px auto!important;padding:0!important}
+html body .channel-talk-footer-btn{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:8px!important;min-height:44px!important;height:44px!important;width:100%!important;padding:5px 12px!important;border-radius:11px!important}
+html body .channel-talk-footer-icon,html body .channel-talk-footer-icon svg{width:19px!important;height:19px!important;flex:0 0 19px!important}
+html body .channel-talk-footer-copy{display:flex!important;align-items:center!important;justify-content:center!important;gap:0!important}
+html body .channel-talk-footer-copy strong{font-size:15px!important;line-height:1.2!important;margin:0!important}
+html body .channel-talk-footer-copy small{display:none!important}
+@media(max-width:360px){html body .earthquake-item-pinned .earthquake-pinned-kicker{font-size:13px!important;letter-spacing:-.06em!important}}
+</style>
 </head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
@@ -794,7 +821,7 @@ html body .app .typhoon-card #typhoonRiskBadge.risk-high *{color:#fff!important}
           </span>
           <span class="channel-talk-footer-copy">
             <strong>即時留言回饋</strong>
-            <small>有建議、錯誤或缺資料，可直接留言給我們</small>
+            
           </span>
         </button>
       </section>
@@ -859,7 +886,7 @@ html body .app .typhoon-card #typhoonRiskBadge.risk-high *{color:#fff!important}
     <script src="./app.js?v=238" defer></script>
     <script src="./legacy-theme.js" defer></script>
     <script src="./channel-talk.js?v=5" defer></script>
-<section aria-label="全台災害資訊查詢" style="margin:24px auto;padding:16px;max-width:980px;background:#f3f7fc;color:#20354b;border-radius:12px"><strong>全台 22 縣市防災資訊</strong>　<a href="/disaster/">災害資訊導覽</a>　<a href="/disaster/school-closure/">停班停課</a>　<a href="/disaster/typhoon/">颱風動態</a>　<a href="/disaster/flood/">淹水警戒</a>　<a href="/disaster/earthquake/">地震資訊</a></section>
+
   
 <nav class="weather-bottom-navigation" aria-label="手機底部分頁導覽">
   <a href="#section-closure" aria-current="location"><span class="bottom-nav-icon" aria-hidden="true">📢</span><span>停班停課</span></a>
