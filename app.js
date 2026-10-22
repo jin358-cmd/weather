@@ -8217,9 +8217,30 @@ function createEarthquakeListItem(quake, options = {}) {
     : depthText;
   const nationalLine = isNationalEarthquakeAlert(quake) ? "國家警報同步" : "";
   const titleLine = pinned
-    ? `<strong class="earthquake-pinned-kicker">最新：規模 ${quake.magnitude.toFixed(1)}｜最大震度 ${intensityText}</strong>
-        <strong>${serialText}</strong>`
+    ? `<span class="earthquake-pinned-kicker">最新地震通報</span><strong>${serialText}</strong>`
     : `<strong>${serialText}｜震度 ${intensityText}</strong>`;
+  if (pinned) {
+    item.classList.add("earthquake-featured");
+    item.innerHTML = `
+      <a class="earthquake-featured-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="查看最新地震詳細資訊">
+        <div class="earthquake-featured-head"><strong>最新地震通報</strong><span>最新一筆</span></div>
+        <div class="earthquake-featured-metrics">
+          <div><small>地震規模</small><strong>${quake.magnitude.toFixed(1)}</strong></div>
+          <div><small>最大震度</small><strong>${intensityText}</strong></div>
+        </div>
+        <div class="earthquake-featured-details">
+          <strong>${serialText}</strong>
+          <span>${placeLine}</span>
+          <small>發生時間：${timeLine}</small>
+          <small>${depthText}${Number.isFinite(quake.distanceKm) ? ` ｜ 距離約 ${quake.distanceKm.toFixed(0)} 公里` : ""}</small>
+        </div>
+      </a>
+      <span class="earthquake-links">
+        <a href="${quake.pwsUrl || quake.url}" target="_blank" rel="noopener noreferrer">公眾警示</a>
+        <a href="${mapUrl}" target="_blank" rel="noopener noreferrer">地震圖</a>
+      </span>`;
+    return item;
+  }
   item.innerHTML = `
     <a class="earthquake-item-main" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="開啟台灣地圖地震圖：${serialText}">
       <span class="earthquake-mag">${formatEarthquakeMagnitudeLabel(quake.magnitude)}</span>
