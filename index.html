@@ -273,6 +273,13 @@ html body .alert-block .ai-alert-item.ai-alert-flood-1 .ai-alert-body,
 html body .alert-block .ai-alert-item.ai-alert-flood-2 .ai-alert-body,
 html body .alert-block .ai-alert-item.ai-alert-flood-3 .ai-alert-body,
 html body .alert-block .ai-alert-item.ai-alert-flood-4 .ai-alert-body{color:#193c51!important;-webkit-text-fill-color:#193c51!important}
+</style><style id="owner-six-tab-feedback">
+@media(max-width:900px){
+html body .weather-bottom-navigation{grid-template-columns:repeat(6,minmax(0,1fr))!important;padding-inline:2px!important;gap:1px!important}
+html body .weather-bottom-navigation a,html body .weather-bottom-navigation .bottom-feedback-btn{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;min-width:0!important;min-height:52px!important;padding:4px 1px!important;font-size:10px!important;line-height:1.2!important;color:#f6f9ff!important;background:transparent!important;border:0!important;text-align:center!important;white-space:nowrap!important}
+html body .weather-bottom-navigation .bottom-nav-icon{font-size:19px!important}
+html body .channel-talk-footer{display:none!important}
+}
 </style></head>
   <body class="theme-elegant" data-legacy-theme="dusk">
     <aside id="pwaInstallBanner" class="pwa-install-banner" hidden>
@@ -921,9 +928,17 @@ html body .alert-block .ai-alert-item.ai-alert-flood-4 .ai-alert-body{color:#193
   <a href="#townshipWeatherTitle" ><span class="bottom-nav-icon" aria-hidden="true">🌤️</span><span>天氣預報</span></a>
   <a href="#section-earthquake" ><span class="bottom-nav-icon" aria-hidden="true">🌋</span><span>地震資訊</span></a>
   <a href="#section-map" ><span class="bottom-nav-icon" aria-hidden="true">🗺️</span><span>災害地圖</span></a>
+  <button type="button" id="bottomFeedbackBtn" class="bottom-feedback-btn" aria-label="即時留言回饋"><span class="bottom-nav-icon" aria-hidden="true">💬</span><span>即時留言</span></button>
 </nav>
 <script>
 document.addEventListener('DOMContentLoaded',function(){const items=Array.from(document.querySelectorAll('.weather-bottom-navigation a'));items.forEach(a=>a.addEventListener('click',()=>{items.forEach(b=>b.removeAttribute('aria-current'));a.setAttribute('aria-current','location')}));});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+ const b=document.getElementById("bottomFeedbackBtn");
+ const original=document.getElementById("channelTalkFooterBtn");
+ if(b&&original)b.addEventListener("click",function(){original.click()});
+});
 </script>
 </body>
 </html>
