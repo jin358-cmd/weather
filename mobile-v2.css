@@ -205,3 +205,81 @@
   #v2-windy .typhoon-panel {order:1!important;}
   #v2-windy .typhoon-card {padding:8px!important;}
 }
+
+
+/* Owner correction 2026-10-22: mobile content blocks must be dark, not only page chrome.
+   Overrides v2.2 light rules; preserves Windy/maps, panel visibility, tab order and behavior. */
+@media (max-width:767px) {
+  html, body, body.theme-elegant {
+    background:#0b1422!important;
+    color:#edf5ff!important;
+    color-scheme:dark!important;
+  }
+  main.app {
+    background:linear-gradient(165deg,#111f32 0%,#0b1422 60%,#142033 100%)!important;
+  }
+  .v2-quickloc {
+    background:rgba(18,31,48,.98)!important;
+    color:#eff8ff!important;
+    border-bottom-color:#395269!important;
+    box-shadow:0 3px 14px #0005!important;
+  }
+  .v2-place-line b,.v2-quickloc b{color:#f5faff!important}
+  .v2-place-line small,.v2-quickloc small{color:#bccfe0!important}
+  .v2-quickloc button,#v2-change-place{
+    background:#25465e!important;color:#fff!important;border:1px solid #7594ad!important;
+  }
+  .v2-panel .card,
+  .v2-panel .weather-card,
+  .v2-panel .closure-card,
+  .v2-panel .earthquake-card,
+  .v2-panel .typhoon-card,
+  .v2-panel .map-card {
+    background:#17283b!important;
+    color:#edf6ff!important;
+    border:1px solid #425a70!important;
+    box-shadow:0 8px 26px #0004!important;
+  }
+  .v2-panel .card h1,.v2-panel .card h2,.v2-panel .card h3,
+  .v2-panel .card p,.v2-panel .card label,.v2-panel .card small,
+  .v2-panel .card .timestamp,
+  .v2-panel .card strong,.v2-panel .card li,
+  .v2-panel .card dt,.v2-panel .card dd {
+    color:#e7f1fc!important;
+  }
+  .v2-panel .weather-metrics>div,
+  .v2-panel .metrics>div,
+  .v2-panel .earthquake-list-details,
+  .v2-panel .v2-drawer {
+    background:#21354b!important;
+    color:#f1f7ff!important;
+    border-color:#4b657c!important;
+  }
+  .v2-panel .earthquake-list-summary,
+  .v2-panel .v2-drawer summary {color:#ecf6ff!important}
+  .v2-settings,.v2-settings-head {
+    background:#101e2e!important;color:#f0f7ff!important;
+  }
+  .v2-settings .controls,.v2-settings .v2-drawer,.v2-install {
+    background:#1a2b40!important;color:#edf6ff!important;border-color:#48647c!important;
+  }
+  .v2-settings .controls label,.v2-settings summary,
+  .v2-settings-head,.v2-settings .v2-drawer summary {
+    color:#eef6ff!important;
+  }
+  .v2-settings select,.v2-settings input,.v2-settings button,
+  .v2-settings-head button {
+    background:#243c52!important;color:#fff!important;border:1px solid #69869f!important;
+  }
+  #v2-install-hint,.v2-empty{color:#c1d2df!important}
+  #v2-install-app{background:#087f79!important;color:#fff!important;border-color:#50b5ad!important}
+  .v2-bottomnav {
+    background:rgba(12,25,40,.97)!important;border-top:1px solid #415b70!important;
+    box-shadow:0 -5px 28px #0005!important;
+  }
+  .v2-bottomnav a,.v2-bottomnav a span:last-child{color:#c9dbea!important}
+  .v2-bottomnav a.is-active{
+    background:linear-gradient(160deg,#264960,#1d344b)!important;color:#fff!important;
+  }
+  .v2-bottomnav a.is-active span:last-child{color:#fff!important}
+}
