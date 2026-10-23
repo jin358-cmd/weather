@@ -1,7 +1,7 @@
 {
   "schema": "pmos.visual-editor.acceptance-manifest.v1",
   "module": "PMOS-MOD-VISUAL-EDITOR-001",
-  "generatedAt": "2026-10-23T14:09:10Z",
+  "generatedAt": "2026-10-23T14:10:44Z",
   "evidenceLevel": "LOCAL_AUTOMATED_PRECOMMIT",
   "baseline": {
     "branch": "feature/pmos-visual-editor-module",
@@ -12,7 +12,7 @@
     "assets/pmos-weather-logo.svg": "bf4355acd0c30d60d7a84c01f10eb09e8a30ce1a2cbaacf53332ba398e85f15a"
   },
   "editorArtifacts": {
-    "visual-editor/editor-app.js": "0964eb54aec9df8470aa283dc5b325e0591887a2a4cc16fc41490920fe009460",
+    "visual-editor/editor-app.js": "a93e59c490fd5bd6c8f8a5637ba911ad9e9fc04dffb3ecbfd4e11865ff95d4b3",
     "visual-editor/editor-core.js": "ac00bda9953682e211a6544733eda99b5a66d7fd842d63c1b4a386a6cfd14ed8",
     "visual-editor/index.html": "e34bd774b49fd7d7f377cbec7733c66fe225b74b74315195f66825b430c8ff4b",
     "visual-editor/live-layout.html": "0e773bdbc9f948c128388b053396c197cb17466c2be69c9816a35e8c5165320e",

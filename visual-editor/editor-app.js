@@ -17,6 +17,7 @@
   let state = Core.defaultState();
   let selectedKey = 'logo', selectedNode = null, selectedKind = 'image';
   let undo = [], redo = [], overlay = null, drag = null, textSnapshotTaken = false;
+  let initRun = 0, initializedDocument = null;
 
   function setStatus(message, tone = '') { $('state').textContent = message; $('state').dataset.tone = tone; }
   function report(message) { $('report').textContent = message; }
@@ -188,8 +189,24 @@
   function undoAction() { const previous = undo.pop(); if (!previous) return; redo = Core.pushUndo(redo, state); state = previous; frame.contentWindow.location.reload(); updateUndoButtons(); setStatus('已復原上一步', 'ok'); }
   function redoAction() { const next = redo.pop(); if (!next) return; undo = Core.pushUndo(undo, state); state = next; frame.contentWindow.location.reload(); updateUndoButtons(); setStatus('已重做一步', 'ok'); }
 
-  function handleFrameLoad() { removeOverlay(); selectedNode = null; try { inspect(); } catch (error) { setStatus('Adapter 未就緒', 'bad'); report(error.message); } }
-  frame.addEventListener('load', handleFrameLoad);
+  function initializeFrame() {
+    const run = ++initRun;
+    const attempt = count => {
+      if (run !== initRun) return;
+      try {
+        const d = doc();
+        const ready = Object.values(registry).some(item => d.querySelector(item.selector));
+        if (!ready) {
+          if (count < 40) { setStatus('正在等待 Weather DOM…'); setTimeout(() => attempt(count + 1), 100); return; }
+          throw new Error('Weather DOM 載入逾時，未找到可編輯區塊');
+        }
+        if (initializedDocument === d) { applyAll(); return; }
+        initializedDocument = d; removeOverlay(); selectedNode = null; inspect();
+      } catch (error) { setStatus('Adapter 未就緒', 'bad'); report(error.message); }
+    };
+    attempt(0);
+  }
+  frame.addEventListener('load', initializeFrame);
   $('editMode').onchange = () => { if ($('editMode').checked) { select(selectedKey); setStatus('編輯模式開啟 · 請點選真實頁面元素', 'warn'); } else { removeOverlay(); setStatus('安全瀏覽模式 · 網站互動可正常操作', 'ok'); } };
   $('target').onchange = () => { if ($('target').value !== 'clicked-text') select($('target').value); };
   $('device').onchange = () => { snapshot(); setDevice($('device').value); };
@@ -205,7 +222,7 @@
   updateUndoButtons(); $('gapValue').textContent = state.layout.cardGap;
   try { const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); if (saved) { state = Core.validateDraft(saved); setStatus('已找到並自動開啟此瀏覽器的本機草稿', 'ok'); } }
   catch { setStatus('本機草稿無效，已使用原始版面', 'bad'); }
-  // A cached same-origin page can finish before this deferred script registers its
-  // load listener. Initialize immediately in that case; a later load safely reapplies.
-  if (frame.contentDocument?.readyState === 'complete') queueMicrotask(handleFrameLoad);
+  // Start immediately for cached pages and retry until the actual Weather DOM replaces
+  // the iframe's initial about:blank document. The load event starts a fresh run too.
+  queueMicrotask(initializeFrame);
 })();
