@@ -20,6 +20,7 @@ test('editor targets actual Weather DOM selectors without modifying source featu
   }
   assert.match(app, /pmos-editor-selection-overlay/);
   assert.match(app, /crypto\.subtle\.digest\('SHA-256'/);
+  assert.match(app, /contentDocument\?\.readyState === 'complete'/);
 });
 
 test('touch scrolling is not disabled on content and production limits are explicit', () => {

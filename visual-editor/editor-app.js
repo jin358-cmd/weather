@@ -188,7 +188,8 @@
   function undoAction() { const previous = undo.pop(); if (!previous) return; redo = Core.pushUndo(redo, state); state = previous; frame.contentWindow.location.reload(); updateUndoButtons(); setStatus('已復原上一步', 'ok'); }
   function redoAction() { const next = redo.pop(); if (!next) return; undo = Core.pushUndo(undo, state); state = next; frame.contentWindow.location.reload(); updateUndoButtons(); setStatus('已重做一步', 'ok'); }
 
-  frame.addEventListener('load', () => { removeOverlay(); selectedNode = null; try { inspect(); } catch (error) { setStatus('Adapter 未就緒', 'bad'); report(error.message); } });
+  function handleFrameLoad() { removeOverlay(); selectedNode = null; try { inspect(); } catch (error) { setStatus('Adapter 未就緒', 'bad'); report(error.message); } }
+  frame.addEventListener('load', handleFrameLoad);
   $('editMode').onchange = () => { if ($('editMode').checked) { select(selectedKey); setStatus('編輯模式開啟 · 請點選真實頁面元素', 'warn'); } else { removeOverlay(); setStatus('安全瀏覽模式 · 網站互動可正常操作', 'ok'); } };
   $('target').onchange = () => { if ($('target').value !== 'clicked-text') select($('target').value); };
   $('device').onchange = () => { snapshot(); setDevice($('device').value); };
@@ -204,4 +205,7 @@
   updateUndoButtons(); $('gapValue').textContent = state.layout.cardGap;
   try { const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); if (saved) { state = Core.validateDraft(saved); setStatus('已找到並自動開啟此瀏覽器的本機草稿', 'ok'); } }
   catch { setStatus('本機草稿無效，已使用原始版面', 'bad'); }
+  // A cached same-origin page can finish before this deferred script registers its
+  // load listener. Initialize immediately in that case; a later load safely reapplies.
+  if (frame.contentDocument?.readyState === 'complete') queueMicrotask(handleFrameLoad);
 })();
