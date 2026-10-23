@@ -22,4 +22,26 @@ jobs:
       - name: Confirm Node.js runtime
         run: node --version
       - name: Execute fail-closed security tests
-        run: node --test visual-editor/tests/security-gates.test.cjs
+        id: security_test
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test --test-reporter=tap visual-editor/tests/security-gates.test.cjs 2>&1 | tee security-test-results.tap
+      - name: Publish auditable test summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '## PMOS Visual Editor Security Gates'
+            echo "Commit: $GITHUB_SHA"
+            echo 'Scope: API handler tests, not live HTTP E2E'
+            echo 'Production deployment: NOT AUTHORIZED'
+            echo '### TAP results'
+            echo '~~~text'
+            if [ -f security-test-results.tap ]; then
+              cat security-test-results.tap
+            else
+              echo 'No test output: execution did not start or failed before output.'
+            fi
+            echo '~~~'
+          } >> "$GITHUB_STEP_SUMMARY"
