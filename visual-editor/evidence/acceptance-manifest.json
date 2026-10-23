@@ -1,8 +1,8 @@
 {
   "schema": "pmos.visual-editor.acceptance-manifest.v1",
   "module": "PMOS-MOD-VISUAL-EDITOR-001",
-  "generatedAt": "2026-10-23T14:11:59Z",
-  "evidenceLevel": "LOCAL_AUTOMATED_PRECOMMIT",
+  "generatedAt": "2026-10-23T14:18:20Z",
+  "evidenceLevel": "PREVIEW_AUTOMATED_BROWSER_EMULATION",
   "baseline": {
     "branch": "feature/pmos-visual-editor-module",
     "remoteHead": "2453180023b697c89451c9aec2a63e639f2a1eb8",
@@ -16,7 +16,7 @@
     "visual-editor/editor-core.js": "ac00bda9953682e211a6544733eda99b5a66d7fd842d63c1b4a386a6cfd14ed8",
     "visual-editor/index.html": "e34bd774b49fd7d7f377cbec7733c66fe225b74b74315195f66825b430c8ff4b",
     "visual-editor/live-layout.html": "0e773bdbc9f948c128388b053396c197cb17466c2be69c9816a35e8c5165320e",
-    "visual-editor/qa.html": "384c6bd7908eeb1c9f35da3f7be01928b4114b15617d0455c878203938597a99",
+    "visual-editor/qa.html": "5933805171bb1cb49b29119214f9f8117a7c3fabc905a4cd78a2895b1b0cb9c9",
     "visual-editor/verification.html": "d420efb6194e96a6a4b839b7220a793b81af548b4d505e18c2723ca1497c27dd",
     "visual-editor/owner-integration-contract.json": "68a37d889643bb36124d70e6462f822ed559cad2af4d3dea570da9cdc4b3a2cc"
   },
@@ -25,6 +25,16 @@
     "tests": 14,
     "passed": 14,
     "failed": 0
+  },
+  "previewEvidence": {
+    "url": "https://weather-2pi3t4ti4-tjc1.vercel.app/visual-editor/live-layout.html",
+    "realDomEditableHooks": "6/6",
+    "weatherWeeklyForecastInteraction": "PASS",
+    "selectionTextEditUndo": "PASS",
+    "localDraftSaveReloadReadback": "PASS",
+    "historyDialog": "PASS",
+    "desktopScreenshot": "CAPTURED",
+    "mobile390Screenshot": "CAPTURED"
   },
   "limits": {
     "draftStorage": "local browser only",

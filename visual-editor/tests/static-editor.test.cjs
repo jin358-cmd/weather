@@ -36,6 +36,8 @@ test('QA page is current, separates evidence levels, and its inline script parse
   assert.match(qa, /pmos\.visual-editor\.qa\.v3/);
   assert.match(qa, /AUTOMATED_BROWSER_EMULATION/);
   assert.match(qa, /physicalPhoneTest:'PENDING'/);
+  assert.match(qa, /location\.pathname\.endsWith\('\/index\.html'\)/);
+  assert.match(qa, /hooks=selectors\.every/);
   const scripts = [...qa.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(match => match[1]).filter(Boolean);
   assert.equal(scripts.length, 1);
   assert.doesNotThrow(() => new Function(scripts[0]));
