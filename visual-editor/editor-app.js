@@ -202,7 +202,10 @@
         }
         if (initializedDocument === d) { applyAll(); return; }
         initializedDocument = d; removeOverlay(); selectedNode = null; inspect();
-      } catch (error) { setStatus('Adapter 未就緒', 'bad'); report(error.message); }
+      } catch (error) {
+        if (count < 40) { setStatus('正在等待 Weather DOM…'); setTimeout(() => attempt(count + 1), 100); return; }
+        setStatus('Adapter 未就緒', 'bad'); report(error.message);
+      }
     };
     attempt(0);
   }

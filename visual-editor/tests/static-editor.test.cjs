@@ -23,6 +23,7 @@ test('editor targets actual Weather DOM selectors without modifying source featu
   assert.match(app, /count < 40/);
   assert.match(app, /Weather DOM 載入逾時/);
   assert.match(app, /initializedDocument === d/);
+  assert.match(app, /catch \(error\) \{\s*if \(count < 40\)/);
 });
 
 test('touch scrolling is not disabled on content and production limits are explicit', () => {
