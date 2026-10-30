@@ -1,15 +1,15 @@
 台灣即時資訊 每日訂閱者資料庫備份
 
-備份時間：2026/10/29 10:23:07
+備份時間：2026/10/30 10:33:51
 網站：https://jin358-cmd.github.io/weather/
 寄送對象：jin358@gmail.com
 訂閱筆數：0
-瀏覽／按讚：497 / 16
+瀏覽／按讚：504 / 16
 
 GitHub 連線檢查
 - data/subscribers.csv：成功（200） sha 401e277｜可讀取
 - data/subscribers.json：成功（200） sha 83cc7d4｜可讀取
-- data/subscribers.md：成功（200） sha e1ca3ca｜可讀取
+- data/subscribers.md：成功（200） sha e3d02b2｜可讀取
 
 GitHub 備份檔
 - CSV：https://jin358-cmd.github.io/weather/data/subscribers.csv
@@ -25,7 +25,7 @@ GitHub 備份檔
 subscribers.md
 # 訂閱者累計名單
 
-- 更新時間（台北）：2026/10/29 10:23:06
+- 更新時間（台北）：2026/10/30 10:33:50
 - 累計筆數：0
 
 | 序號 | Email | 縣市 | 鄉鎮 | 主題 | 更新時間 |
